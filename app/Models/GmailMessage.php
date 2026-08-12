@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\GmailMessageFactory;
+use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'payload',
     'imported_at',
 ])]
+#[Appends(['mailbox_email'])]
 class GmailMessage extends Model
 {
     /** @use HasFactory<GmailMessageFactory> */
