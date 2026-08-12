@@ -3,8 +3,11 @@
 ## Decisions
 
 - Build a Laravel + Filament app.
+- App name: `DEH FAQ Autoresponder`.
+- Manage deployment through the existing Megyk Docker Compose stack for now.
 - Connect Laravel directly to Postgres with pgvector.
-- Use the current Supabase/Postgres knowledge tables as the starting point.
+- Use a discrete Postgres database for the Laravel app, then migrate or re-ingest
+  the current FAQ knowledge.
 - Use `/opt/homebrew/var/www/megyk-automations/workflows/Self-Learning_FAQs_RAG.json`
   as the behavioral source of truth for the first implementation.
 - Create Eloquent models over existing tables instead of building an adapter
@@ -20,6 +23,10 @@
 - Existing retrieval can be reproduced with `public.match_faqs_json(...)`.
 - Keep Google login for Filament users completely separate from the Gmail
   mailbox integration used to receive and send FAQ emails.
+- Use exact email allowlisting for app access initially.
+- Use roles `admin`, `reviewer`, and `viewer` initially.
+- Use OpenAI directly through Laravel's first-party AI SDK.
+- Preserve a break-glass password admin login.
 
 ## MVP Workflow
 
@@ -31,6 +38,8 @@
 6. Review and edit the draft in Filament.
 7. Approve and send, or create a Gmail draft.
 8. Store the final approved answer for future retrieval.
+
+See `implementation-plan.md` for the fuller current plan.
 
 ## Authentication And Google Accounts
 
