@@ -12,3 +12,13 @@ Known related infrastructure:
 
 The Laravel app will likely be deployed as another service in the main Compose
 stack once scaffolded.
+
+## Google Credentials
+
+The app will need separate Google OAuth/client configuration for:
+
+- Filament user login with Google identity scopes.
+- Gmail API mailbox access for receiving messages and creating or sending
+  replies.
+
+These credentials should be stored and rotated independently.

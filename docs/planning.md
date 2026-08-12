@@ -18,6 +18,8 @@
   live in `public.faq_approved_responses`.
 - Existing FAQ embeddings are 1536-dimensional vectors.
 - Existing retrieval can be reproduced with `public.match_faqs_json(...)`.
+- Keep Google login for Filament users completely separate from the Gmail
+  mailbox integration used to receive and send FAQ emails.
 
 ## MVP Workflow
 
@@ -29,6 +31,27 @@
 6. Review and edit the draft in Filament.
 7. Approve and send, or create a Gmail draft.
 8. Store the final approved answer for future retrieval.
+
+## Authentication And Google Accounts
+
+There are two independent Google/OAuth concerns:
+
+1. Filament user authentication
+   - Lets DEH team members sign into the Laravel app with their own Google
+     accounts.
+   - Uses minimal identity scopes only.
+   - Determines who the user is and what app permissions they have.
+   - Access is deny-by-default and restricted with Laravel authorization.
+
+2. Gmail mailbox integration
+   - Lets Laravel receive FAQ emails and create or send replies from the chosen
+     operational mailbox.
+   - Uses Gmail API scopes and credentials for that mailbox/integration.
+   - Is not tied to the currently logged-in Filament user.
+   - Runs through queued jobs and app-level configuration.
+
+Do not conflate these. A reviewer logging into Filament with Google is not the
+same actor as the Gmail mailbox used by the autoresponder workflow.
 
 ## Likely Filament Screens
 
