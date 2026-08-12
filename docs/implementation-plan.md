@@ -112,6 +112,17 @@ Initial resources/pages:
 - Processing runs or job logs
 - Settings for Gmail/OpenAI/retrieval thresholds
 
+First scaffold pass includes:
+
+- Google OAuth login routes via Socialite at `/auth/google` and
+  `/auth/google/callback`
+- Filament password login retained as the break-glass path
+- deny-by-default team access through `authorized_emails`
+- simple Filament resources for allowlisted emails, FAQ entries, and approved
+  responses
+- app-owned FAQ tables that mirror the useful shape of the legacy Supabase
+  tables while using a discrete Laravel database
+
 ## Likely App-Owned Tables
 
 These names are provisional and should be finalized during scaffolding.
@@ -144,6 +155,10 @@ Use OpenAI directly for both:
 
 - embeddings: `text-embedding-3-small`, 1536 dimensions
 - reply generation: model to be selected during implementation
+
+Note: Laravel Boost MCP was not exposed in the current Codex session, so the
+initial scaffold used installed package introspection, Artisan, and the local
+`vendor/laravel/ai` package sources.
 
 ## Self-Learning Strategy To Iterate
 
