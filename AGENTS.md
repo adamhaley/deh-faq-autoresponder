@@ -3,6 +3,9 @@
 This project is the canonical home for the Laravel + Filament replacement for
 the current DEH FAQ RAG autoresponder.
 
+`CLAUDE.md` mirrors this project context for Claude-style tooling. Keep both
+files aligned when changing project-level agent instructions.
+
 ## Intent
 
 - Build a pragmatic Laravel app on top of the existing Postgres/Supabase data.
@@ -26,6 +29,8 @@ the current DEH FAQ RAG autoresponder.
 - Add only the new tables required for the Filament workflow.
 - Keep the first version human-reviewed: draft, edit, approve, then send or
   create a Gmail draft.
+- Use OpenAI directly through Laravel's first-party AI SDK.
+- Use `text-embedding-3-small` and 1536-dimensional embeddings for continuity.
 - Keep diffs small and document deployment friction as it is discovered.
 
 ## Supabase Ninja Mode
