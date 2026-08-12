@@ -27,3 +27,26 @@ the current DEH FAQ RAG autoresponder.
 - Keep the first version human-reviewed: draft, edit, approve, then send or
   create a Gmail draft.
 - Keep diffs small and document deployment friction as it is discovered.
+
+## Supabase Ninja Mode
+
+This client uses self-hosted Supabase. For schema inspection, debugging, and
+migrations, prefer direct `psql` access over the Supabase CLI.
+
+Store the direct Postgres connection string in the local, ignored `.env` file:
+
+```bash
+DATABASE_URL=postgresql://postgres:REPLACE_WITH_POSTGRES_PASSWORD@supabase.megyk.com:5433/postgres
+```
+
+Use it like this:
+
+```bash
+source .env && psql "$DATABASE_URL"
+source .env && psql "$DATABASE_URL" -c "select now();"
+source .env && psql "$DATABASE_URL" -f database/migrations/some_file.sql
+```
+
+Never print the full `DATABASE_URL` or commit real credentials. If a direct
+connection fails, verify the current password from the production Supabase env
+on the server before falling back to the Supabase SQL Editor.
