@@ -12,6 +12,8 @@
 - Add only minimal app-owned workflow tables.
 - Keep n8n live during overlap.
 - Cut over once Laravel has feature parity for the approval workflow.
+- Do not use Google Sheets in the Laravel implementation. Sheet data is legacy
+  reference material only.
 - Existing FAQ knowledge lives in `public.faqs`; approved response overrides
   live in `public.faq_approved_responses`.
 - Existing FAQ embeddings are 1536-dimensional vectors.

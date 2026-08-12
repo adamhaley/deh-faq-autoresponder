@@ -12,6 +12,11 @@ For the initial Laravel implementation,
 is the behavioral source of truth. The Filament app should first reproduce the
 useful parts of that workflow before improving or replacing them.
 
+Google Sheets is legacy-only. The Laravel implementation should not depend on
+Google Sheets for review, approvals, state, or reporting. Sheet columns are only
+useful as a reference for the operational fields that the current workflow
+tracks.
+
 The current workflow appears to use:
 
 - Gmail trigger
@@ -52,11 +57,11 @@ The n8n workflow currently:
    ```
 
 4. Generates a German email reply segment from the top FAQ matches.
-5. Appends or updates the Google Sheet named `FAQ Responder Approvals`.
+5. Appends or updates the legacy Google Sheet named `FAQ Responder Approvals`.
 
 ## Current Approval Sheet Columns
 
-The approval sheet uses these operational columns:
+The legacy approval sheet uses these operational columns:
 
 - `date`
 - `thread_id`
@@ -69,7 +74,8 @@ The approval sheet uses these operational columns:
 - `Approved`
 - `Sent`
 
-These fields are a good starting point for the Laravel workflow tables.
+These fields are a good starting point for Laravel-owned workflow tables, not a
+Google Sheets integration target.
 
 ## Current Reply Prompt Behavior
 
