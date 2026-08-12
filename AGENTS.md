@@ -36,7 +36,8 @@ migrations, prefer direct `psql` access over the Supabase CLI.
 Store the direct Postgres connection string in the local, ignored `.env` file:
 
 ```bash
-DATABASE_URL=postgresql://postgres:REPLACE_WITH_POSTGRES_PASSWORD@supabase.megyk.com:5433/postgres
+POSTGRES_PASSWORD=REPLACE_WITH_POSTGRES_PASSWORD
+DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@supabase.megyk.com:5433/postgres
 ```
 
 Use it like this:
