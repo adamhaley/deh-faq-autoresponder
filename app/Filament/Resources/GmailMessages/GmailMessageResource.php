@@ -27,9 +27,8 @@ class GmailMessageResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('mailbox.email')
+                TextInput::make('mailbox_email')
                     ->label('Mailbox')
-                    ->state(fn (GmailMessage $record): ?string => $record->mailbox?->email)
                     ->disabled()
                     ->dehydrated(false),
                 TextInput::make('from_email')
