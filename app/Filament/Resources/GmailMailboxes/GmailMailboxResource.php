@@ -8,6 +8,7 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -35,6 +36,11 @@ class GmailMailboxResource extends Resource
                     ->disabled(),
                 Toggle::make('is_active')
                     ->label('Active'),
+                TagsInput::make('label_ids')
+                    ->label('Gmail labels')
+                    ->placeholder('INBOX'),
+                TextInput::make('import_query')
+                    ->label('Import query'),
                 TextInput::make('sync_status')
                     ->disabled(),
                 TextInput::make('last_history_id')
@@ -51,6 +57,7 @@ class GmailMailboxResource extends Resource
             ->columns([
                 TextColumn::make('email')->searchable()->sortable(),
                 TextColumn::make('sync_status')->badge()->sortable(),
+                TextColumn::make('label_ids')->badge(),
                 IconColumn::make('is_active')->boolean()->label('Active'),
                 TextColumn::make('last_history_id')->sortable(),
                 TextColumn::make('last_sync_at')->dateTime()->sortable(),

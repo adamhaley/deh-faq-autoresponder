@@ -23,9 +23,10 @@ class GmailMailboxFactory extends Factory
             'refresh_token' => 'refresh-token',
             'token_expires_at' => now()->addHour(),
             'scopes' => ['https://www.googleapis.com/auth/gmail.modify'],
+            'label_ids' => GmailMailbox::DefaultLabelIds,
             'last_history_id' => (string) fake()->numberBetween(1000, 9999),
             'is_active' => true,
-            'sync_status' => 'connected',
+            'sync_status' => GmailMailbox::SyncStatusConnected,
         ];
     }
 }
