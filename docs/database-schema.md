@@ -1,7 +1,7 @@
 # Database Schema
 
-Captured from the shared self-hosted Supabase/Postgres instance on 2026-08-12
-using Ninja Mode direct `psql`.
+Captured from the shared legacy Supabase-hosted Postgres instance on 2026-08-12
+using direct `psql`.
 
 The shared database contains multiple projects. The FAQ autoresponder currently
 appears to use only:

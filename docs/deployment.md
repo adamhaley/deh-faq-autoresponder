@@ -6,8 +6,9 @@ Known related infrastructure:
 
 - server base directory: `/opt/megyk/`
 - main Compose home: `/opt/megyk/n8n-docker-caddy`
-- Supabase Compose home: `/opt/megyk/supabase/docker`
-- Supabase public URL: `https://supabase.megyk.com`
+- legacy Supabase Compose home: `/opt/megyk/supabase/docker`
+- legacy Supabase public URL: `https://supabase.megyk.com`
+- Laravel Postgres service details: verify from the deployment environment
 - n8n public URL: `https://n8n.megyk.com`
 
 The Laravel app will likely be deployed as another service in the main Compose

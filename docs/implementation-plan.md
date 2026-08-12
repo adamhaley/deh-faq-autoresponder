@@ -30,13 +30,14 @@ route.
 
 ## Database Direction
 
-Use a discrete Postgres database for this Laravel app rather than sharing all app
-tables with the current Supabase database.
+Use a discrete Postgres database for this Laravel app. The legacy Supabase
+environment is only a source to inspect and migrate or re-ingest FAQ data from;
+it is not a runtime dependency for the Laravel app.
 
 This means the existing FAQ data needs to move into the new app database. Viable
 migration paths:
 
-1. SQL dump/import from the current Supabase tables.
+1. SQL dump/import from the current legacy Supabase-hosted Postgres FAQ tables.
 2. Clean re-ingest and re-embed the existing FAQ source material.
 3. Hybrid: dump/import text rows, then regenerate embeddings in Laravel.
 
@@ -120,7 +121,7 @@ First scaffold pass includes:
 - deny-by-default team access through `authorized_emails`
 - simple Filament resources for allowlisted emails, FAQ entries, and approved
   responses
-- app-owned FAQ tables that mirror the useful shape of the legacy Supabase
+- app-owned FAQ tables that mirror the useful shape of the legacy Postgres
   tables while using a discrete Laravel database
 
 ## Likely App-Owned Tables
@@ -156,9 +157,8 @@ Use OpenAI directly for both:
 - embeddings: `text-embedding-3-small`, 1536 dimensions
 - reply generation: model to be selected during implementation
 
-Note: Laravel Boost MCP was not exposed in the current Codex session, so the
-initial scaffold used installed package introspection, Artisan, and the local
-`vendor/laravel/ai` package sources.
+Note: Laravel Boost MCP is available and should be used for Laravel-specific
+documentation, schema inspection, and project rule recording.
 
 ## Self-Learning Strategy To Iterate
 

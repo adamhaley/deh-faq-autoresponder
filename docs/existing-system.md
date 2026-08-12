@@ -22,10 +22,14 @@ The current workflow appears to use:
 - Gmail trigger
 - question parsing
 - embeddings
-- Supabase/Postgres vector retrieval
+- Postgres/pgvector retrieval
 - OpenAI reply generation
 - Google Sheets approval logging
 - optional Gmail reply sending
+
+Supabase appears here only because it hosts the legacy workflow's Postgres/RPC
+surface. It is historical source context, not a dependency target for the
+Laravel replacement.
 
 The Laravel replacement should preserve the useful data shape while moving the
 operational review workflow into Filament.
@@ -41,7 +45,7 @@ The n8n workflow currently:
    - `questions[]`
 2. Generates an embedding for each question with OpenAI
    `text-embedding-3-small`.
-3. Calls Supabase/PostgREST RPC:
+3. Calls the legacy HTTP RPC endpoint backed by Postgres:
 
    ```text
    POST https://supabase.megyk.com/rest/v1/rpc/match_faqs_json
