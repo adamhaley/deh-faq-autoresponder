@@ -18,8 +18,8 @@ class EmailQuestionOverview extends StatsOverviewWidget
         $metrics = app(EmailQuestionDashboardMetrics::class);
         $since = Carbon::now()->subDays(7);
         $reviewed = $metrics->reviewedSince($since);
-        $agreementRate = $metrics->agreementRateSince($since);
-        $disagreements = $metrics->disagreementCountSince($since);
+        $alignmentRate = $metrics->alignmentRateSince($since);
+        $misalignments = $metrics->misalignmentCountSince($since);
 
         return [
             Stat::make('Pending review', number_format($metrics->pendingReviewCount()))
@@ -28,12 +28,12 @@ class EmailQuestionOverview extends StatsOverviewWidget
             Stat::make('Reviewed last 7 days', number_format($reviewed))
                 ->description('Human-reviewed question classifications')
                 ->color('info'),
-            Stat::make('AI/Human agreement', $agreementRate === null ? 'N/A' : "{$agreementRate}%")
+            Stat::make('AI/Human alignment', $alignmentRate === null ? 'N/A' : "{$alignmentRate}%")
                 ->description($reviewed === 0 ? 'No reviewed data yet' : 'Last 7 days')
-                ->color($agreementRate === null || $agreementRate < 70 ? 'warning' : 'success'),
-            Stat::make('Disagreements last 7 days', number_format($disagreements))
-                ->description('Human review differed from AI classification')
-                ->color($disagreements > 0 ? 'danger' : 'success'),
+                ->color($alignmentRate === null || $alignmentRate < 70 ? 'warning' : 'success'),
+            Stat::make('Misalignments last 7 days', number_format($misalignments))
+                ->description('Human review was not aligned with AI classification')
+                ->color($misalignments > 0 ? 'danger' : 'success'),
         ];
     }
 }

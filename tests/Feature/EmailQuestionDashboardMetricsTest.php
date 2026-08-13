@@ -12,7 +12,7 @@ class EmailQuestionDashboardMetricsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_calculates_reviewed_agreement_metrics(): void
+    public function test_it_calculates_reviewed_alignment_metrics(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-08-13 12:00:00'));
 
@@ -34,7 +34,7 @@ class EmailQuestionDashboardMetricsTest extends TestCase
                 'reviewed_at' => now()->subDay(),
             ]);
 
-        $disagreement = EmailQuestion::factory()
+        $misalignment = EmailQuestion::factory()
             ->reviewedAs(EmailQuestion::ReviewStatusValid)
             ->create([
                 'question_text' => 'Can this inherited gemstone be valued?',
@@ -53,18 +53,18 @@ class EmailQuestionDashboardMetricsTest extends TestCase
 
         $this->assertSame(1, $metrics->pendingReviewCount());
         $this->assertSame(3, $metrics->reviewedSince(now()->subDays(7)));
-        $this->assertSame(67, $metrics->agreementRateSince(now()->subDays(7)));
-        $this->assertSame(1, $metrics->disagreementCountSince(now()->subDays(7)));
+        $this->assertSame(67, $metrics->alignmentRateSince(now()->subDays(7)));
+        $this->assertSame(1, $metrics->misalignmentCountSince(now()->subDays(7)));
 
-        $daily = $metrics->dailyDisagreementRates(3);
+        $daily = $metrics->dailyMisalignmentRates(3);
 
         $this->assertSame(['Aug 11', 'Aug 12', 'Aug 13'], $daily['labels']);
-        $this->assertSame([0, 50, null], $daily['disagreement_rates']);
+        $this->assertSame([0, 50, null], $daily['misalignment_rates']);
         $this->assertSame([1, 2, 0], $daily['reviewed_counts']);
 
         $this->assertSame(
-            [$disagreement->id],
-            $metrics->recentDisagreementsQuery()->pluck('id')->all(),
+            [$misalignment->id],
+            $metrics->recentMisalignmentsQuery()->pluck('id')->all(),
         );
 
         Carbon::setTestNow();

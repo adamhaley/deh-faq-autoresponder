@@ -24,28 +24,28 @@ class EmailQuestionDashboardMetrics
             ->count();
     }
 
-    public function agreementRateSince(Carbon $since): ?int
+    public function alignmentRateSince(Carbon $since): ?int
     {
         $questions = $this->reviewedQuestionsQuery()
             ->where('reviewed_at', '>=', $since)
             ->get();
 
-        return $this->agreementRate($questions);
+        return $this->alignmentRate($questions);
     }
 
-    public function disagreementCountSince(Carbon $since): int
+    public function misalignmentCountSince(Carbon $since): int
     {
         return $this->reviewedQuestionsQuery()
             ->where('reviewed_at', '>=', $since)
             ->get()
-            ->reject(fn (EmailQuestion $question): bool => $this->agreesWithHumanReview($question))
+            ->reject(fn (EmailQuestion $question): bool => $this->alignsWithHumanReview($question))
             ->count();
     }
 
     /**
-     * @return array{labels: list<string>, disagreement_rates: list<int|null>, reviewed_counts: list<int>}
+     * @return array{labels: list<string>, misalignment_rates: list<int|null>, reviewed_counts: list<int>}
      */
-    public function dailyDisagreementRates(int $days): array
+    public function dailyMisalignmentRates(int $days): array
     {
         $start = now()->subDays($days - 1)->startOfDay();
         $end = now()->endOfDay();
@@ -55,23 +55,23 @@ class EmailQuestionDashboardMetrics
             ->groupBy(fn (EmailQuestion $question): string => $question->reviewed_at?->toDateString() ?? '');
 
         $labels = [];
-        $disagreementRates = [];
+        $misalignmentRates = [];
         $reviewedCounts = [];
 
         foreach (CarbonPeriod::create($start, '1 day', $end) as $date) {
             $day = $date->toDateString();
             $questions = $questionsByDay->get($day, collect());
             $reviewedCount = $questions->count();
-            $agreementRate = $this->agreementRate($questions);
+            $alignmentRate = $this->alignmentRate($questions);
 
             $labels[] = $date->format('M j');
             $reviewedCounts[] = $reviewedCount;
-            $disagreementRates[] = $agreementRate === null ? null : 100 - $agreementRate;
+            $misalignmentRates[] = $alignmentRate === null ? null : 100 - $alignmentRate;
         }
 
         return [
             'labels' => $labels,
-            'disagreement_rates' => $disagreementRates,
+            'misalignment_rates' => $misalignmentRates,
             'reviewed_counts' => $reviewedCounts,
         ];
     }
@@ -79,9 +79,9 @@ class EmailQuestionDashboardMetrics
     /**
      * @return Builder<EmailQuestion>
      */
-    public function recentDisagreementsQuery(): Builder
+    public function recentMisalignmentsQuery(): Builder
     {
-        return $this->disagreementsQuery()
+        return $this->misalignmentsQuery()
             ->with('message:id,from_email,subject')
             ->latest('reviewed_at');
     }
@@ -89,9 +89,9 @@ class EmailQuestionDashboardMetrics
     /**
      * @return Builder<EmailQuestion>
      */
-    private function disagreementsQuery(): Builder
+    private function misalignmentsQuery(): Builder
     {
-        return $this->addDisagreementConstraint($this->reviewedQuestionsQuery());
+        return $this->addMisalignmentConstraint($this->reviewedQuestionsQuery());
     }
 
     /**
@@ -116,7 +116,7 @@ class EmailQuestionDashboardMetrics
      * @param  Builder<EmailQuestion>  $query
      * @return Builder<EmailQuestion>
      */
-    private function addDisagreementConstraint(Builder $query): Builder
+    private function addMisalignmentConstraint(Builder $query): Builder
     {
         return $query->where(function (Builder $query): void {
             $query
@@ -147,7 +147,7 @@ class EmailQuestionDashboardMetrics
     /**
      * @param  Collection<int, EmailQuestion>  $questions
      */
-    private function agreementRate(Collection $questions): ?int
+    private function alignmentRate(Collection $questions): ?int
     {
         $reviewedCount = $questions->count();
 
@@ -155,14 +155,14 @@ class EmailQuestionDashboardMetrics
             return null;
         }
 
-        $agreements = $questions
-            ->filter(fn (EmailQuestion $question): bool => $this->agreesWithHumanReview($question))
+        $alignments = $questions
+            ->filter(fn (EmailQuestion $question): bool => $this->alignsWithHumanReview($question))
             ->count();
 
-        return (int) round(($agreements / $reviewedCount) * 100);
+        return (int) round(($alignments / $reviewedCount) * 100);
     }
 
-    private function agreesWithHumanReview(EmailQuestion $question): bool
+    private function alignsWithHumanReview(EmailQuestion $question): bool
     {
         return $this->humanStatusForClassification($question->classification) === $question->review_status;
     }

@@ -96,7 +96,7 @@ PROMPT,
     {
         $examples = collect();
 
-        $disagreements = $this->reviewedExampleQuery($question)
+        $misalignments = $this->reviewedExampleQuery($question)
             ->whereNotNull('classification')
             ->where(function (Builder $query): void {
                 $query
@@ -125,7 +125,7 @@ PROMPT,
             ->limit(3)
             ->get();
 
-        $examples = $examples->merge($disagreements);
+        $examples = $examples->merge($misalignments);
 
         foreach ([
             EmailQuestion::ReviewStatusValid,

@@ -3,9 +3,9 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
-use App\Filament\Widgets\EmailQuestionDisagreementRateChart;
+use App\Filament\Widgets\EmailQuestionMisalignmentRateChart;
 use App\Filament\Widgets\EmailQuestionOverview;
-use App\Filament\Widgets\RecentEmailQuestionDisagreements;
+use App\Filament\Widgets\RecentEmailQuestionMisalignments;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -49,8 +49,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 EmailQuestionOverview::class,
-                EmailQuestionDisagreementRateChart::class,
-                RecentEmailQuestionDisagreements::class,
+                EmailQuestionMisalignmentRateChart::class,
+                RecentEmailQuestionMisalignments::class,
             ])
             ->middleware([
                 EncryptCookies::class,

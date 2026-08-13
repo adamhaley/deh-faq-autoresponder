@@ -5,7 +5,7 @@ namespace App\Filament\Widgets;
 use App\Services\EmailQuestions\EmailQuestionDashboardMetrics;
 use Filament\Widgets\ChartWidget;
 
-class EmailQuestionDisagreementRateChart extends ChartWidget
+class EmailQuestionMisalignmentRateChart extends ChartWidget
 {
     protected static bool $isLazy = false;
 
@@ -13,17 +13,17 @@ class EmailQuestionDisagreementRateChart extends ChartWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $heading = 'AI/Human Disagreement Rate';
+    protected ?string $heading = 'AI/Human Misalignment Rate';
 
     protected function getData(): array
     {
-        $metrics = app(EmailQuestionDashboardMetrics::class)->dailyDisagreementRates(30);
+        $metrics = app(EmailQuestionDashboardMetrics::class)->dailyMisalignmentRates(30);
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Disagreement rate',
-                    'data' => $metrics['disagreement_rates'],
+                    'label' => 'Misalignment rate',
+                    'data' => $metrics['misalignment_rates'],
                     'borderColor' => '#d16068',
                     'backgroundColor' => 'rgba(209, 96, 104, 0.16)',
                     'fill' => true,

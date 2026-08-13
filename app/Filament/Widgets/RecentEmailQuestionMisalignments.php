@@ -9,7 +9,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
 
-class RecentEmailQuestionDisagreements extends TableWidget
+class RecentEmailQuestionMisalignments extends TableWidget
 {
     protected static bool $isLazy = false;
 
@@ -20,9 +20,9 @@ class RecentEmailQuestionDisagreements extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Recent AI/Human Disagreements')
+            ->heading('Recent AI/Human Misalignments')
             ->query(fn (): Builder => app(EmailQuestionDashboardMetrics::class)
-                ->recentDisagreementsQuery()
+                ->recentMisalignmentsQuery()
                 ->limit(5))
             ->columns([
                 TextColumn::make('question_text')
