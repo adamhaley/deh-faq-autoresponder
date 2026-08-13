@@ -68,7 +68,7 @@ class GmailMailboxOAuthTest extends TestCase
                 'code' => 'google-code',
                 'state' => 'known-state',
             ]))
-            ->assertRedirect('/admin/gmail-mailboxes');
+            ->assertRedirect('/admin/settings/gmail-mailboxes');
 
         $this->assertDatabaseHas(GmailMailbox::class, [
             'email' => 'mailbox@example.com',
@@ -104,7 +104,7 @@ class GmailMailboxOAuthTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('integrations.gmail.redirect'))
-            ->assertRedirect('/admin/gmail-mailboxes')
+            ->assertRedirect('/admin/settings/gmail-mailboxes')
             ->assertSessionHasErrors('gmail');
 
         $this->assertNull(session('gmail_oauth_state'));

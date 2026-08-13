@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\GmailMailboxes;
 
+use App\Filament\Clusters\Settings\SettingsCluster;
 use App\Filament\Resources\GmailMailboxes\Pages\ManageGmailMailboxes;
 use App\Models\GmailMailbox;
 use BackedEnum;
@@ -23,9 +24,13 @@ class GmailMailboxResource extends Resource
 {
     protected static ?string $model = GmailMailbox::class;
 
+    protected static ?string $cluster = SettingsCluster::class;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
     protected static ?string $navigationLabel = 'Gmail Mailboxes';
+
+    protected static ?int $navigationSort = 20;
 
     public static function form(Schema $schema): Schema
     {
