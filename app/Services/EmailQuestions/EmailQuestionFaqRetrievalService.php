@@ -7,6 +7,7 @@ use App\Models\EmailQuestionFaqMatch;
 use App\Models\FaqEntry;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Embeddings;
 
 class EmailQuestionFaqRetrievalService
@@ -37,24 +38,35 @@ class EmailQuestionFaqRetrievalService
      */
     public function retrieve(EmailQuestion $question, int $matchCount = self::DefaultMatchCount): Collection
     {
+        $startedAt = hrtime(true);
         $queryText = $this->queryText($question);
 
         if ($queryText === '') {
             $question->faqMatches()->delete();
 
+            Log::info('Email question FAQ retrieval skipped empty query.', [
+                'email_question_id' => $question->id,
+                'elapsed_ms' => $this->elapsedMilliseconds($startedAt),
+            ]);
+
             return collect();
         }
 
         $embeddingModel = (string) config('services.openai.embedding_model', 'text-embedding-3-small');
+        $embeddingStartedAt = hrtime(true);
         $embedding = Embeddings::for([$queryText])
             ->dimensions(1536)
             ->cache()
             ->generate(model: $embeddingModel)
             ->first();
+        $embeddingElapsedMs = $this->elapsedMilliseconds($embeddingStartedAt);
 
+        $matchingStartedAt = hrtime(true);
         $matches = $this->matchesForEmbedding($embedding, $matchCount);
+        $matchingElapsedMs = $this->elapsedMilliseconds($matchingStartedAt);
         $retrievedAt = now();
 
+        $persistenceStartedAt = hrtime(true);
         DB::transaction(function () use ($question, $matches, $retrievedAt, $embeddingModel, $queryText, $matchCount): void {
             $question->faqMatches()->delete();
 
@@ -76,6 +88,17 @@ class EmailQuestionFaqRetrievalService
                 ]);
             });
         });
+        $persistenceElapsedMs = $this->elapsedMilliseconds($persistenceStartedAt);
+
+        Log::info('Email question FAQ retrieval completed.', [
+            'email_question_id' => $question->id,
+            'embedding_model' => $embeddingModel,
+            'match_count' => $matches->count(),
+            'embedding_ms' => $embeddingElapsedMs,
+            'vector_query_ms' => $matchingElapsedMs,
+            'persistence_ms' => $persistenceElapsedMs,
+            'elapsed_ms' => $this->elapsedMilliseconds($startedAt),
+        ]);
 
         return $question
             ->faqMatches()
@@ -102,5 +125,10 @@ class EmailQuestionFaqRetrievalService
     private function queryText(EmailQuestion $question): string
     {
         return trim($question->normalized_question ?: $question->question_text);
+    }
+
+    private function elapsedMilliseconds(int $startedAt): int
+    {
+        return (int) round((hrtime(true) - $startedAt) / 1_000_000);
     }
 }

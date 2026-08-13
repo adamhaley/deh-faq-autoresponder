@@ -7,6 +7,7 @@ use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailQuestionFaqMatch;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class EmailQuestionAnswerDraftGenerationService
@@ -33,7 +34,10 @@ class EmailQuestionAnswerDraftGenerationService
 
     public function generate(EmailQuestion $question): EmailQuestionAnswerDraft
     {
+        $startedAt = hrtime(true);
+        $loadStartedAt = hrtime(true);
         $question->loadMissing(['faqMatches.faqEntry.approvedResponse', 'message:id,subject,from_email,snippet,text_body']);
+        $loadElapsedMs = $this->elapsedMilliseconds($loadStartedAt);
 
         $matches = $question->faqMatches;
 
@@ -41,7 +45,9 @@ class EmailQuestionAnswerDraftGenerationService
             throw new \RuntimeException('FAQ matches must be retrieved before generating an answer draft.');
         }
 
+        $generationStartedAt = hrtime(true);
         $response = (new EmailQuestionAnswerGenerator)->prompt($this->prompt($question, $matches));
+        $generationElapsedMs = $this->elapsedMilliseconds($generationStartedAt);
         $answer = is_string($response['answer'] ?? null) ? trim($response['answer']) : '';
         $reason = is_string($response['reason'] ?? null) ? trim($response['reason']) : null;
 
@@ -49,7 +55,8 @@ class EmailQuestionAnswerDraftGenerationService
             throw new \RuntimeException('Answer generator did not return a usable answer.');
         }
 
-        return EmailQuestionAnswerDraft::query()->updateOrCreate(
+        $persistenceStartedAt = hrtime(true);
+        $draft = EmailQuestionAnswerDraft::query()->updateOrCreate(
             ['email_question_id' => $question->id],
             [
                 'generated_answer' => $answer,
@@ -71,6 +78,19 @@ class EmailQuestionAnswerDraftGenerationService
                 'reviewed_at' => null,
             ],
         )->load(['emailQuestion', 'reviewer']);
+        $persistenceElapsedMs = $this->elapsedMilliseconds($persistenceStartedAt);
+
+        Log::info('Email question answer draft generation completed.', [
+            'email_question_id' => $question->id,
+            'answer_draft_id' => $draft->id,
+            'faq_match_count' => $matches->count(),
+            'load_ms' => $loadElapsedMs,
+            'generation_ms' => $generationElapsedMs,
+            'persistence_ms' => $persistenceElapsedMs,
+            'elapsed_ms' => $this->elapsedMilliseconds($startedAt),
+        ]);
+
+        return $draft;
     }
 
     /**
@@ -127,5 +147,10 @@ MATCH,
                 );
             })
             ->implode("\n\n");
+    }
+
+    private function elapsedMilliseconds(int $startedAt): int
+    {
+        return (int) round((hrtime(true) - $startedAt) / 1_000_000);
     }
 }

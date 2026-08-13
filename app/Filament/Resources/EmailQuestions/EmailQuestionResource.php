@@ -29,6 +29,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 
 class EmailQuestionResource extends Resource
 {
@@ -152,7 +153,13 @@ class EmailQuestionResource extends Resource
                             ->label('Retrieve FAQ matches')
                             ->icon(Heroicon::ArrowPath)
                             ->action(function (EmailQuestion $record): void {
+                                $startedAt = hrtime(true);
                                 app(EmailQuestionFaqRetrievalService::class)->retrieve($record);
+
+                                Log::info('Filament action retrieved FAQ matches.', [
+                                    'email_question_id' => $record->id,
+                                    'elapsed_ms' => self::elapsedMilliseconds($startedAt),
+                                ]);
                             }),
                     ])
                     ->schema([
@@ -190,7 +197,13 @@ class EmailQuestionResource extends Resource
                                 ->icon(Heroicon::Sparkles)
                                 ->color('primary')
                                 ->action(function (EmailQuestion $record): void {
+                                    $startedAt = hrtime(true);
                                     app(EmailQuestionAnswerDraftGenerationService::class)->generate($record);
+
+                                    Log::info('Filament action generated answer draft.', [
+                                        'email_question_id' => $record->id,
+                                        'elapsed_ms' => self::elapsedMilliseconds($startedAt),
+                                    ]);
                                 }),
                             Action::make('editFinalAnswer')
                                 ->label('Edit final answer')
@@ -340,8 +353,10 @@ class EmailQuestionResource extends Resource
             ])
             ->recordActions([
                 ViewAction::make()
-                    ->modalCancelActionLabel('Close'),
-                EditAction::make(),
+                    ->modalCancelActionLabel('Close')
+                    ->slideOver(),
+                EditAction::make()
+                    ->slideOver(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
@@ -364,5 +379,10 @@ class EmailQuestionResource extends Resource
         return [
             'index' => ManageEmailQuestions::route('/'),
         ];
+    }
+
+    private static function elapsedMilliseconds(int $startedAt): int
+    {
+        return (int) round((hrtime(true) - $startedAt) / 1_000_000);
     }
 }

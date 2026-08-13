@@ -64,7 +64,8 @@ class GmailMessageResource extends Resource
                 TextColumn::make('imported_at')->dateTime()->sortable(),
             ])
             ->recordActions([
-                ViewAction::make(),
+                ViewAction::make()
+                    ->slideOver(),
             ]);
     }
 
