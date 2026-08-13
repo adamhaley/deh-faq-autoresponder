@@ -86,7 +86,8 @@ class EmailQuestionResource extends Resource
                         TextEntry::make('normalized_question')
                             ->placeholder('Not normalized yet')
                             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->columnSpanFull(),
                 Section::make('Human Review')
                     ->afterHeader([
                         ActionGroup::make([
@@ -188,7 +189,8 @@ class EmailQuestionResource extends Resource
                             ])
                             ->columns(2)
                             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->columnSpanFull(),
                 Section::make('Answer Draft')
                     ->afterHeader([
                         ActionGroup::make([
@@ -283,7 +285,8 @@ class EmailQuestionResource extends Resource
                             ->label('Reviewed at')
                             ->dateTime()
                             ->placeholder('Not reviewed yet'),
-                    ]),
+                    ])
+                    ->columnSpanFull(),
                 Section::make('Source email')
                     ->schema([
                         TextEntry::make('message.mailbox.email')
@@ -296,7 +299,8 @@ class EmailQuestionResource extends Resource
                         TextEntry::make('message.snippet')
                             ->label('Snippet')
                             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 
