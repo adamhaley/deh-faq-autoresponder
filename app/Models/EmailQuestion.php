@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'gmail_message_id',
@@ -81,6 +83,17 @@ class EmailQuestion extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by_user_id');
+    }
+
+    public function faqMatches(): HasMany
+    {
+        return $this->hasMany(EmailQuestionFaqMatch::class)
+            ->orderBy('rank');
+    }
+
+    public function answerDraft(): HasOne
+    {
+        return $this->hasOne(EmailQuestionAnswerDraft::class);
     }
 
     /**

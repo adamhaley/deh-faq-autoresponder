@@ -4,4 +4,5 @@ Before planning or editing, find the row whose globs match the file's path and r
 
 | Applies to | Rule file |
 | --- | --- |
+| app/Services/EmailQuestions/** | .ai/rules/email-questions.md |
 | **/*, phpunit.xml | .ai/rules/general.md |

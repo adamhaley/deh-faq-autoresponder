@@ -4,6 +4,9 @@ namespace App\Filament\Resources\EmailQuestions;
 
 use App\Filament\Resources\EmailQuestions\Pages\ManageEmailQuestions;
 use App\Models\EmailQuestion;
+use App\Models\EmailQuestionAnswerDraft;
+use App\Services\EmailQuestions\EmailQuestionAnswerDraftGenerationService;
+use App\Services\EmailQuestions\EmailQuestionFaqRetrievalService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -15,6 +18,7 @@ use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -142,6 +146,131 @@ class EmailQuestionResource extends Resource
                             ->label('AI Reason')
                             ->columnSpanFull(),
                     ]),
+                Section::make('RAG Context')
+                    ->afterHeader([
+                        Action::make('retrieveFaqMatches')
+                            ->label('Retrieve FAQ matches')
+                            ->icon(Heroicon::ArrowPath)
+                            ->action(function (EmailQuestion $record): void {
+                                app(EmailQuestionFaqRetrievalService::class)->retrieve($record);
+                            }),
+                    ])
+                    ->schema([
+                        RepeatableEntry::make('faqMatches')
+                            ->label('Retrieved FAQ matches')
+                            ->placeholder('No FAQ matches retrieved yet.')
+                            ->schema([
+                                TextEntry::make('rank')
+                                    ->label('Rank')
+                                    ->badge(),
+                                TextEntry::make('similarity')
+                                    ->label('Similarity')
+                                    ->formatStateUsing(fn (float $state): string => number_format($state * 100, 1).'%')
+                                    ->badge()
+                                    ->color(fn (float $state): string => $state >= 0.8 ? 'success' : 'warning'),
+                                TextEntry::make('faqEntry.question')
+                                    ->label('FAQ question')
+                                    ->columnSpanFull(),
+                                TextEntry::make('faqEntry.answer')
+                                    ->label('FAQ answer')
+                                    ->columnSpanFull(),
+                                TextEntry::make('faqEntry.approvedResponse.approved_response')
+                                    ->label('Approved response override')
+                                    ->placeholder('No approved response override')
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(2)
+                            ->columnSpanFull(),
+                    ]),
+                Section::make('Answer Draft')
+                    ->afterHeader([
+                        ActionGroup::make([
+                            Action::make('generateAnswerDraft')
+                                ->label('Generate draft answer')
+                                ->icon(Heroicon::Sparkles)
+                                ->color('primary')
+                                ->action(function (EmailQuestion $record): void {
+                                    app(EmailQuestionAnswerDraftGenerationService::class)->generate($record);
+                                }),
+                            Action::make('editFinalAnswer')
+                                ->label('Edit final answer')
+                                ->icon(Heroicon::PencilSquare)
+                                ->schema([
+                                    Textarea::make('final_answer')
+                                        ->label('Final answer')
+                                        ->required()
+                                        ->rows(8),
+                                ])
+                                ->fillForm(fn (EmailQuestion $record): array => [
+                                    'final_answer' => $record->answerDraft?->final_answer
+                                        ?? $record->answerDraft?->generated_answer
+                                        ?? '',
+                                ])
+                                ->action(function (array $data, EmailQuestion $record): void {
+                                    $record->answerDraft?->update([
+                                        'final_answer' => $data['final_answer'],
+                                    ]);
+                                }),
+                            Action::make('approveAnswerDraft')
+                                ->label('Approve answer')
+                                ->icon(Heroicon::CheckCircle)
+                                ->color('success')
+                                ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
+                                    EmailQuestionAnswerDraft::StatusApproved,
+                                    auth()->id(),
+                                )),
+                            Action::make('needsRevisionAnswerDraft')
+                                ->label('Needs revision')
+                                ->icon(Heroicon::ExclamationTriangle)
+                                ->color('warning')
+                                ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
+                                    EmailQuestionAnswerDraft::StatusNeedsRevision,
+                                    auth()->id(),
+                                )),
+                            Action::make('rejectAnswerDraft')
+                                ->label('Reject answer')
+                                ->icon(Heroicon::XCircle)
+                                ->color('danger')
+                                ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
+                                    EmailQuestionAnswerDraft::StatusRejected,
+                                    auth()->id(),
+                                )),
+                        ])
+                            ->label('Draft actions')
+                            ->icon(Heroicon::ChevronDown)
+                            ->button(),
+                    ])
+                    ->schema([
+                        TextEntry::make('answerDraft.status')
+                            ->label('Status')
+                            ->badge()
+                            ->placeholder('No draft generated yet')
+                            ->color(fn (?string $state): string => $state === null ? 'gray' : EmailQuestionAnswerDraft::statusColor($state))
+                            ->formatStateUsing(fn (?string $state): string => $state === null ? 'No draft' : EmailQuestionAnswerDraft::statusOptions()[$state] ?? $state),
+                        TextEntry::make('answerDraft.generated_at')
+                            ->label('Generated at')
+                            ->dateTime()
+                            ->placeholder('No draft generated yet'),
+                        TextEntry::make('answerDraft.generated_answer')
+                            ->label('Generated answer')
+                            ->placeholder('No draft generated yet')
+                            ->columnSpanFull(),
+                        TextEntry::make('answerDraft.final_answer')
+                            ->label('Final answer')
+                            ->placeholder('Not edited yet')
+                            ->columnSpanFull(),
+                        TextEntry::make('answerDraft.generation_reason')
+                            ->label('Generation reason')
+                            ->placeholder('No generation reason yet')
+                            ->columnSpanFull(),
+                        TextEntry::make('answerDraft.reviewer.name')
+                            ->label('Reviewed by')
+                            ->placeholder('Not reviewed yet'),
+                        TextEntry::make('answerDraft.reviewed_at')
+                            ->label('Reviewed at')
+                            ->dateTime()
+                            ->placeholder('Not reviewed yet'),
+                    ]),
                 Section::make('Source email')
                     ->schema([
                         TextEntry::make('message.mailbox.email')
@@ -167,6 +296,12 @@ class EmailQuestionResource extends Resource
                     ->label('Question')
                     ->searchable()
                     ->limit(80),
+                TextColumn::make('faq_matches_count')
+                    ->label('RAG')
+                    ->badge()
+                    ->formatStateUsing(fn (?int $state): string => (string) ($state ?? 0))
+                    ->color(fn (?int $state): string => ($state ?? 0) > 0 ? 'success' : 'gray')
+                    ->sortable(),
                 TextColumn::make('message.from_email')
                     ->label('From')
                     ->searchable()
@@ -219,7 +354,8 @@ class EmailQuestionResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['message.mailbox', 'reviewer'])
+            ->with(['answerDraft.reviewer', 'faqMatches.faqEntry.approvedResponse', 'message.mailbox', 'reviewer'])
+            ->withCount('faqMatches')
             ->latest();
     }
 
