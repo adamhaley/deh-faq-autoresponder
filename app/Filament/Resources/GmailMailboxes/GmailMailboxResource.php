@@ -23,7 +23,7 @@ class GmailMailboxResource extends Resource
 {
     protected static ?string $model = GmailMailbox::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
+    protected static string|BackedEnum|null $navigationIcon = null;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Settings';
 

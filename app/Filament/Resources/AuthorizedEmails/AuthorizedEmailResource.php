@@ -21,7 +21,7 @@ class AuthorizedEmailResource extends Resource
 {
     protected static ?string $model = AuthorizedEmail::class;
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shield-check';
+    protected static string|\BackedEnum|null $navigationIcon = null;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Settings';
 
