@@ -26,6 +26,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'classification_metadata',
     'classified_at',
     'reviewed_at',
+    'faq_retrieval_status',
+    'faq_retrieval_error',
+    'faq_retrieval_started_at',
+    'faq_retrieval_completed_at',
+    'faq_retrieval_failed_at',
 ])]
 class EmailQuestion extends Model
 {
@@ -47,6 +52,16 @@ class EmailQuestion extends Model
 
     public const ReviewStatusNeedsHuman = 'needs_human';
 
+    public const FaqRetrievalStatusNotStarted = 'not_started';
+
+    public const FaqRetrievalStatusQueued = 'queued';
+
+    public const FaqRetrievalStatusProcessing = 'processing';
+
+    public const FaqRetrievalStatusCompleted = 'completed';
+
+    public const FaqRetrievalStatusFailed = 'failed';
+
     /** @use HasFactory<EmailQuestionFactory> */
     use HasFactory;
 
@@ -56,6 +71,7 @@ class EmailQuestion extends Model
     protected $attributes = [
         'question_order' => 1,
         'review_status' => self::ReviewStatusPendingReview,
+        'faq_retrieval_status' => self::FaqRetrievalStatusNotStarted,
         'parser_version' => 'n8n-chat-v1',
     ];
 
@@ -72,6 +88,9 @@ class EmailQuestion extends Model
             'classification_metadata' => 'array',
             'classified_at' => 'datetime',
             'reviewed_at' => 'datetime',
+            'faq_retrieval_started_at' => 'datetime',
+            'faq_retrieval_completed_at' => 'datetime',
+            'faq_retrieval_failed_at' => 'datetime',
         ];
     }
 
@@ -164,6 +183,30 @@ class EmailQuestion extends Model
             self::ReviewStatusNoise => 'gray',
             self::ReviewStatusUnanswerable => 'warning',
             self::ReviewStatusNeedsHuman => 'info',
+            default => 'gray',
+        };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function faqRetrievalStatusOptions(): array
+    {
+        return [
+            self::FaqRetrievalStatusNotStarted => 'Not started',
+            self::FaqRetrievalStatusQueued => 'Queued',
+            self::FaqRetrievalStatusProcessing => 'Processing',
+            self::FaqRetrievalStatusCompleted => 'Completed',
+            self::FaqRetrievalStatusFailed => 'Failed',
+        ];
+    }
+
+    public static function faqRetrievalStatusColor(string $status): string
+    {
+        return match ($status) {
+            self::FaqRetrievalStatusQueued, self::FaqRetrievalStatusProcessing => 'info',
+            self::FaqRetrievalStatusCompleted => 'success',
+            self::FaqRetrievalStatusFailed => 'danger',
             default => 'gray',
         };
     }

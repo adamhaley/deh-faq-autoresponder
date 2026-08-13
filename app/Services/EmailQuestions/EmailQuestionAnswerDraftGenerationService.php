@@ -3,6 +3,7 @@
 namespace App\Services\EmailQuestions;
 
 use App\Ai\Agents\EmailQuestionAnswerGenerator;
+use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailQuestionFaqMatch;
@@ -19,13 +20,34 @@ class EmailQuestionAnswerDraftGenerationService
         EmailQuestion::query()
             ->where('review_status', EmailQuestion::ReviewStatusValid)
             ->whereHas('faqMatches')
-            ->whereDoesntHave('answerDraft')
+            ->where(function ($query): void {
+                $query
+                    ->whereDoesntHave('answerDraft')
+                    ->orWhereHas('answerDraft', fn ($drafts) => $drafts->where(
+                        'status',
+                        EmailQuestionAnswerDraft::StatusGenerationFailed,
+                    ));
+            })
             ->with(['faqMatches.faqEntry.approvedResponse', 'message:id,subject,from_email,snippet,text_body'])
             ->oldest('id')
             ->limit($limit)
             ->get()
             ->each(function (EmailQuestion $question) use (&$generatedDrafts): void {
-                $this->generate($question);
+                EmailQuestionAnswerDraft::query()->updateOrCreate(
+                    ['email_question_id' => $question->id],
+                    [
+                        'generated_answer' => EmailQuestionAnswerDraft::PendingGeneratedAnswer,
+                        'final_answer' => null,
+                        'status' => EmailQuestionAnswerDraft::StatusQueued,
+                        'generation_error' => null,
+                        'generation_failed_at' => null,
+                        'generated_at' => now(),
+                        'reviewed_by_user_id' => null,
+                        'reviewed_at' => null,
+                    ],
+                );
+
+                GenerateEmailQuestionAnswerDraft::dispatch($question->id);
                 $generatedDrafts++;
             });
 
@@ -73,7 +95,10 @@ class EmailQuestionAnswerDraftGenerationService
                         ])
                         ->all(),
                 ],
+                'generation_error' => null,
+                'generation_started_at' => $question->answerDraft?->generation_started_at,
                 'generated_at' => now(),
+                'generation_failed_at' => null,
                 'reviewed_by_user_id' => null,
                 'reviewed_at' => null,
             ],

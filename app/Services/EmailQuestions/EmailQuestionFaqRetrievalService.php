@@ -2,6 +2,7 @@
 
 namespace App\Services\EmailQuestions;
 
+use App\Jobs\RetrieveEmailQuestionFaqMatches;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionFaqMatch;
 use App\Models\FaqEntry;
@@ -22,11 +23,21 @@ class EmailQuestionFaqRetrievalService
             ->where('review_status', EmailQuestion::ReviewStatusValid)
             ->whereNotNull('reviewed_at')
             ->whereDoesntHave('faqMatches')
+            ->whereIn('faq_retrieval_status', [
+                EmailQuestion::FaqRetrievalStatusNotStarted,
+                EmailQuestion::FaqRetrievalStatusFailed,
+            ])
             ->oldest('id')
             ->limit($limit)
             ->get()
             ->each(function (EmailQuestion $question) use (&$retrievedQuestions): void {
-                $this->retrieve($question);
+                $question->update([
+                    'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusQueued,
+                    'faq_retrieval_error' => null,
+                    'faq_retrieval_failed_at' => null,
+                ]);
+
+                RetrieveEmailQuestionFaqMatches::dispatch($question->id);
                 $retrievedQuestions++;
             });
 

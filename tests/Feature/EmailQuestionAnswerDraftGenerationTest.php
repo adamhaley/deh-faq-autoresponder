@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Ai\Agents\EmailQuestionAnswerGenerator;
+use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailQuestionFaqMatch;
@@ -10,6 +11,7 @@ use App\Models\FaqApprovedResponse;
 use App\Models\FaqEntry;
 use App\Services\EmailQuestions\EmailQuestionAnswerDraftGenerationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Laravel\Ai\Prompts\AgentPrompt;
 use Tests\TestCase;
 
@@ -66,14 +68,9 @@ class EmailQuestionAnswerDraftGenerationTest extends TestCase
         );
     }
 
-    public function test_command_generates_only_ready_answer_drafts(): void
+    public function test_command_queues_only_ready_answer_drafts(): void
     {
-        EmailQuestionAnswerGenerator::fake([
-            [
-                'answer' => 'Das ist ein geprüfter Antwortentwurf.',
-                'reason' => 'Ready question with retrieved FAQ context.',
-            ],
-        ])->preventStrayPrompts();
+        Queue::fake();
 
         $readyQuestion = EmailQuestion::factory()
             ->reviewedAs(EmailQuestion::ReviewStatusValid)
@@ -94,10 +91,45 @@ class EmailQuestionAnswerDraftGenerationTest extends TestCase
         ]);
 
         $this->artisan('email-questions:generate-answer-drafts')
-            ->expectsOutput('Generated 1 answer draft(s).')
+            ->expectsOutput('Queued answer draft generation for 1 email question(s).')
             ->assertSuccessful();
 
         $this->assertSame(1, EmailQuestionAnswerDraft::query()->count());
-        $this->assertSame($readyQuestion->id, EmailQuestionAnswerDraft::query()->sole()->email_question_id);
+        $draft = EmailQuestionAnswerDraft::query()->sole();
+
+        $this->assertSame($readyQuestion->id, $draft->email_question_id);
+        $this->assertSame(EmailQuestionAnswerDraft::StatusQueued, $draft->status);
+
+        Queue::assertPushed(
+            GenerateEmailQuestionAnswerDraft::class,
+            fn (GenerateEmailQuestionAnswerDraft $job): bool => $job->emailQuestionId === $readyQuestion->id,
+        );
+    }
+
+    public function test_answer_draft_job_generates_draft_and_updates_status(): void
+    {
+        EmailQuestionAnswerGenerator::fake([
+            [
+                'answer' => 'Das ist ein geprüfter Antwortentwurf.',
+                'reason' => 'Ready question with retrieved FAQ context.',
+            ],
+        ])->preventStrayPrompts();
+
+        $question = EmailQuestion::factory()
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create();
+        EmailQuestionFaqMatch::factory()->create([
+            'email_question_id' => $question->id,
+        ]);
+
+        (new GenerateEmailQuestionAnswerDraft($question->id))
+            ->handle(app(EmailQuestionAnswerDraftGenerationService::class));
+
+        $draft = EmailQuestionAnswerDraft::query()->whereBelongsTo($question)->sole();
+
+        $this->assertSame(EmailQuestionAnswerDraft::StatusDraft, $draft->status);
+        $this->assertSame('Das ist ein geprüfter Antwortentwurf.', $draft->generated_answer);
+        $this->assertNotNull($draft->generation_started_at);
+        $this->assertNull($draft->generation_failed_at);
     }
 }

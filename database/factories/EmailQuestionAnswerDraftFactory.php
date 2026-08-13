@@ -25,7 +25,10 @@ class EmailQuestionAnswerDraftFactory extends Factory
             'status' => EmailQuestionAnswerDraft::StatusDraft,
             'generation_reason' => 'Factory generated draft.',
             'generation_metadata' => ['source' => 'factory'],
+            'generation_error' => null,
+            'generation_started_at' => null,
             'generated_at' => now(),
+            'generation_failed_at' => null,
             'reviewed_at' => null,
         ];
     }

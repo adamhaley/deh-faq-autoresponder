@@ -3,10 +3,10 @@
 namespace App\Filament\Resources\EmailQuestions;
 
 use App\Filament\Resources\EmailQuestions\Pages\ManageEmailQuestions;
+use App\Jobs\GenerateEmailQuestionAnswerDraft;
+use App\Jobs\RetrieveEmailQuestionFaqMatches;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
-use App\Services\EmailQuestions\EmailQuestionAnswerDraftGenerationService;
-use App\Services\EmailQuestions\EmailQuestionFaqRetrievalService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -20,6 +20,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -29,7 +30,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Log;
 
 class EmailQuestionResource extends Resource
 {
@@ -154,16 +154,32 @@ class EmailQuestionResource extends Resource
                             ->label('Retrieve FAQ matches')
                             ->icon(Heroicon::ArrowPath)
                             ->action(function (EmailQuestion $record): void {
-                                $startedAt = hrtime(true);
-                                app(EmailQuestionFaqRetrievalService::class)->retrieve($record);
-
-                                Log::info('Filament action retrieved FAQ matches.', [
-                                    'email_question_id' => $record->id,
-                                    'elapsed_ms' => self::elapsedMilliseconds($startedAt),
+                                $record->update([
+                                    'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusQueued,
+                                    'faq_retrieval_error' => null,
+                                    'faq_retrieval_failed_at' => null,
                                 ]);
+
+                                RetrieveEmailQuestionFaqMatches::dispatch($record->id);
+
+                                Notification::make()
+                                    ->title('FAQ retrieval queued')
+                                    ->body('Matches will appear here after the queue worker finishes.')
+                                    ->success()
+                                    ->send();
                             }),
                     ])
                     ->schema([
+                        TextEntry::make('faq_retrieval_status')
+                            ->label('Retrieval status')
+                            ->badge()
+                            ->color(fn (string $state): string => EmailQuestion::faqRetrievalStatusColor($state))
+                            ->formatStateUsing(fn (string $state): string => EmailQuestion::faqRetrievalStatusOptions()[$state] ?? $state),
+                        TextEntry::make('faq_retrieval_error')
+                            ->label('Retrieval error')
+                            ->color('danger')
+                            ->placeholder('No retrieval error')
+                            ->columnSpanFull(),
                         RepeatableEntry::make('faqMatches')
                             ->label('Retrieved FAQ matches')
                             ->placeholder('No FAQ matches retrieved yet.')
@@ -199,13 +215,27 @@ class EmailQuestionResource extends Resource
                                 ->icon(Heroicon::Sparkles)
                                 ->color('primary')
                                 ->action(function (EmailQuestion $record): void {
-                                    $startedAt = hrtime(true);
-                                    app(EmailQuestionAnswerDraftGenerationService::class)->generate($record);
+                                    EmailQuestionAnswerDraft::query()->updateOrCreate(
+                                        ['email_question_id' => $record->id],
+                                        [
+                                            'generated_answer' => EmailQuestionAnswerDraft::PendingGeneratedAnswer,
+                                            'final_answer' => null,
+                                            'status' => EmailQuestionAnswerDraft::StatusQueued,
+                                            'generation_error' => null,
+                                            'generation_failed_at' => null,
+                                            'generated_at' => now(),
+                                            'reviewed_by_user_id' => null,
+                                            'reviewed_at' => null,
+                                        ],
+                                    );
 
-                                    Log::info('Filament action generated answer draft.', [
-                                        'email_question_id' => $record->id,
-                                        'elapsed_ms' => self::elapsedMilliseconds($startedAt),
-                                    ]);
+                                    GenerateEmailQuestionAnswerDraft::dispatch($record->id);
+
+                                    Notification::make()
+                                        ->title('Draft generation queued')
+                                        ->body('The draft will appear here after the queue worker finishes.')
+                                        ->success()
+                                        ->send();
                                 }),
                             Action::make('editFinalAnswer')
                                 ->label('Edit final answer')
@@ -266,6 +296,19 @@ class EmailQuestionResource extends Resource
                             ->label('Generated at')
                             ->dateTime()
                             ->placeholder('No draft generated yet'),
+                        TextEntry::make('answerDraft.generation_started_at')
+                            ->label('Generation started at')
+                            ->dateTime()
+                            ->placeholder('Not started yet'),
+                        TextEntry::make('answerDraft.generation_failed_at')
+                            ->label('Generation failed at')
+                            ->dateTime()
+                            ->placeholder('No failure'),
+                        TextEntry::make('answerDraft.generation_error')
+                            ->label('Generation error')
+                            ->color('danger')
+                            ->placeholder('No generation error')
+                            ->columnSpanFull(),
                         TextEntry::make('answerDraft.generated_answer')
                             ->label('Generated answer')
                             ->placeholder('No draft generated yet')
@@ -383,10 +426,5 @@ class EmailQuestionResource extends Resource
         return [
             'index' => ManageEmailQuestions::route('/'),
         ];
-    }
-
-    private static function elapsedMilliseconds(int $startedAt): int
-    {
-        return (int) round((hrtime(true) - $startedAt) / 1_000_000);
     }
 }

@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\EmailQuestions\EmailQuestionResource;
+use App\Jobs\RetrieveEmailQuestionFaqMatches;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionFaqMatch;
 use App\Models\FaqApprovedResponse;
 use App\Models\FaqEntry;
 use App\Services\EmailQuestions\EmailQuestionFaqRetrievalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Laravel\Ai\Embeddings;
 use Laravel\Ai\Prompts\EmbeddingsPrompt;
 use Tests\TestCase;
@@ -65,15 +67,9 @@ class EmailQuestionFaqRetrievalTest extends TestCase
             && $prompt->model === 'text-embedding-3-small');
     }
 
-    public function test_command_retrieves_matches_for_reviewed_valid_questions(): void
+    public function test_command_queues_match_retrieval_for_reviewed_valid_questions(): void
     {
-        Embeddings::fake([[$this->embedding([1.0, 0.0])]]);
-
-        FaqEntry::factory()->create([
-            'question' => 'Wie funktioniert ein Edelstein-Investment?',
-            'answer' => 'Sie erwerben physische Edelsteine.',
-            'embedding' => $this->vector([1.0, 0.0]),
-        ]);
+        Queue::fake();
 
         $validQuestion = EmailQuestion::factory()
             ->reviewedAs(EmailQuestion::ReviewStatusValid)
@@ -88,10 +84,43 @@ class EmailQuestionFaqRetrievalTest extends TestCase
             ]);
 
         $this->artisan('email-questions:retrieve-faq-matches')
-            ->expectsOutput('Retrieved FAQ matches for 1 email question(s).')
+            ->expectsOutput('Queued FAQ match retrieval for 1 email question(s).')
             ->assertSuccessful();
 
-        $this->assertSame(1, $validQuestion->faqMatches()->count());
+        $this->assertSame(
+            EmailQuestion::FaqRetrievalStatusQueued,
+            $validQuestion->refresh()->faq_retrieval_status,
+        );
+
+        Queue::assertPushed(
+            RetrieveEmailQuestionFaqMatches::class,
+            fn (RetrieveEmailQuestionFaqMatches $job): bool => $job->emailQuestionId === $validQuestion->id,
+        );
+    }
+
+    public function test_retrieval_job_retrieves_matches_and_updates_status(): void
+    {
+        Embeddings::fake([[$this->embedding([1.0, 0.0])]]);
+
+        FaqEntry::factory()->create([
+            'question' => 'Wie funktioniert ein Edelstein-Investment?',
+            'answer' => 'Sie erwerben physische Edelsteine.',
+            'embedding' => $this->vector([1.0, 0.0]),
+        ]);
+
+        $question = EmailQuestion::factory()
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create([
+                'question_text' => 'Kann ich in Edelsteine investieren?',
+            ]);
+
+        (new RetrieveEmailQuestionFaqMatches($question->id))
+            ->handle(app(EmailQuestionFaqRetrievalService::class));
+
+        $this->assertSame(1, $question->faqMatches()->count());
+        $this->assertSame(EmailQuestion::FaqRetrievalStatusCompleted, $question->refresh()->faq_retrieval_status);
+        $this->assertNotNull($question->faq_retrieval_started_at);
+        $this->assertNotNull($question->faq_retrieval_completed_at);
     }
 
     public function test_email_question_resource_query_exposes_faq_match_count(): void
