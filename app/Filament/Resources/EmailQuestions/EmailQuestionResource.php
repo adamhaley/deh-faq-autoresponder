@@ -206,6 +206,7 @@ class EmailQuestionResource extends Resource
                             ->columns(2)
                             ->columnSpanFull(),
                     ])
+                    ->poll(fn (EmailQuestion $record): ?string => $record->hasActiveFaqRetrieval() ? '3s' : null)
                     ->columnSpanFull(),
                 Section::make('Answer Draft')
                     ->afterHeader([
@@ -217,16 +218,7 @@ class EmailQuestionResource extends Resource
                                 ->action(function (EmailQuestion $record): void {
                                     EmailQuestionAnswerDraft::query()->updateOrCreate(
                                         ['email_question_id' => $record->id],
-                                        [
-                                            'generated_answer' => EmailQuestionAnswerDraft::PendingGeneratedAnswer,
-                                            'final_answer' => null,
-                                            'status' => EmailQuestionAnswerDraft::StatusQueued,
-                                            'generation_error' => null,
-                                            'generation_failed_at' => null,
-                                            'generated_at' => now(),
-                                            'reviewed_by_user_id' => null,
-                                            'reviewed_at' => null,
-                                        ],
+                                        EmailQuestionAnswerDraft::queuedAttributes(),
                                     );
 
                                     GenerateEmailQuestionAnswerDraft::dispatch($record->id);
@@ -288,37 +280,45 @@ class EmailQuestionResource extends Resource
                     ->schema([
                         TextEntry::make('answerDraft.status')
                             ->label('Status')
+                            ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('status'))
                             ->badge()
                             ->placeholder('No draft generated yet')
                             ->color(fn (?string $state): string => $state === null ? 'gray' : EmailQuestionAnswerDraft::statusColor($state))
                             ->formatStateUsing(fn (?string $state): string => $state === null ? 'No draft' : EmailQuestionAnswerDraft::statusOptions()[$state] ?? $state),
                         TextEntry::make('answerDraft.generated_at')
                             ->label('Generated at')
+                            ->state(fn (EmailQuestion $record): mixed => $record->answerDraft()->value('generated_at'))
                             ->dateTime()
                             ->placeholder('No draft generated yet'),
                         TextEntry::make('answerDraft.generation_started_at')
                             ->label('Generation started at')
+                            ->state(fn (EmailQuestion $record): mixed => $record->answerDraft()->value('generation_started_at'))
                             ->dateTime()
                             ->placeholder('Not started yet'),
                         TextEntry::make('answerDraft.generation_failed_at')
                             ->label('Generation failed at')
+                            ->state(fn (EmailQuestion $record): mixed => $record->answerDraft()->value('generation_failed_at'))
                             ->dateTime()
                             ->placeholder('No failure'),
                         TextEntry::make('answerDraft.generation_error')
                             ->label('Generation error')
+                            ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('generation_error'))
                             ->color('danger')
                             ->placeholder('No generation error')
                             ->columnSpanFull(),
                         TextEntry::make('answerDraft.generated_answer')
                             ->label('Generated answer')
+                            ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('generated_answer'))
                             ->placeholder('No draft generated yet')
                             ->columnSpanFull(),
                         TextEntry::make('answerDraft.final_answer')
                             ->label('Final answer')
+                            ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('final_answer'))
                             ->placeholder('Not edited yet')
                             ->columnSpanFull(),
                         TextEntry::make('answerDraft.generation_reason')
                             ->label('Generation reason')
+                            ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('generation_reason'))
                             ->placeholder('No generation reason yet')
                             ->columnSpanFull(),
                         TextEntry::make('answerDraft.reviewer.name')
@@ -329,6 +329,7 @@ class EmailQuestionResource extends Resource
                             ->dateTime()
                             ->placeholder('Not reviewed yet'),
                     ])
+                    ->poll(fn (EmailQuestion $record): ?string => $record->hasActiveAnswerDraftGeneration() ? '3s' : null)
                     ->columnSpanFull(),
                 Section::make('Source email')
                     ->schema([
@@ -350,6 +351,7 @@ class EmailQuestionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->poll(fn (): ?string => EmailQuestion::query()->withActiveAsyncPipeline()->exists() ? '3s' : null)
             ->recordTitleAttribute('question_text')
             ->columns([
                 TextColumn::make('question_text')

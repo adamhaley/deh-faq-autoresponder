@@ -95,6 +95,26 @@ class EmailQuestionAnswerDraft extends Model
         };
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public static function queuedAttributes(): array
+    {
+        return [
+            'generated_answer' => self::PendingGeneratedAnswer,
+            'final_answer' => null,
+            'status' => self::StatusQueued,
+            'generation_reason' => null,
+            'generation_metadata' => null,
+            'generation_error' => null,
+            'generation_started_at' => null,
+            'generated_at' => null,
+            'generation_failed_at' => null,
+            'reviewed_by_user_id' => null,
+            'reviewed_at' => null,
+        ];
+    }
+
     public function markReviewed(string $status, ?int $reviewerId, ?string $finalAnswer = null): bool
     {
         return $this->update([

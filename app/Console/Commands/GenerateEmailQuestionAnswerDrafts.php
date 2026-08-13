@@ -38,16 +38,7 @@ class GenerateEmailQuestionAnswerDrafts extends Command
             ->each(function (EmailQuestion $question) use (&$queuedDrafts): void {
                 EmailQuestionAnswerDraft::query()->updateOrCreate(
                     ['email_question_id' => $question->id],
-                    [
-                        'generated_answer' => EmailQuestionAnswerDraft::PendingGeneratedAnswer,
-                        'final_answer' => null,
-                        'status' => EmailQuestionAnswerDraft::StatusQueued,
-                        'generation_error' => null,
-                        'generation_failed_at' => null,
-                        'generated_at' => now(),
-                        'reviewed_by_user_id' => null,
-                        'reviewed_at' => null,
-                    ],
+                    EmailQuestionAnswerDraft::queuedAttributes(),
                 );
 
                 GenerateEmailQuestionAnswerDraft::dispatch($question->id);

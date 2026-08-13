@@ -51,12 +51,7 @@ class GenerateEmailQuestionAnswerDraft implements ShouldQueue
     {
         return EmailQuestionAnswerDraft::query()->firstOrCreate(
             ['email_question_id' => $this->emailQuestionId],
-            [
-                'generated_answer' => EmailQuestionAnswerDraft::PendingGeneratedAnswer,
-                'final_answer' => null,
-                'status' => EmailQuestionAnswerDraft::StatusQueued,
-                'generated_at' => now(),
-            ],
+            EmailQuestionAnswerDraft::queuedAttributes(),
         )->load('emailQuestion');
     }
 }

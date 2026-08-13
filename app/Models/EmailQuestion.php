@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\EmailQuestionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -209,6 +210,45 @@ class EmailQuestion extends Model
             self::FaqRetrievalStatusFailed => 'danger',
             default => 'gray',
         };
+    }
+
+    public function hasActiveFaqRetrieval(): bool
+    {
+        return in_array($this->newQuery()->whereKey($this)->value('faq_retrieval_status'), [
+            self::FaqRetrievalStatusQueued,
+            self::FaqRetrievalStatusProcessing,
+        ], true);
+    }
+
+    public function hasActiveAnswerDraftGeneration(): bool
+    {
+        return in_array($this->answerDraft()->value('status'), [
+            EmailQuestionAnswerDraft::StatusQueued,
+            EmailQuestionAnswerDraft::StatusGenerating,
+        ], true);
+    }
+
+    public function hasActiveAsyncPipeline(): bool
+    {
+        return $this->hasActiveFaqRetrieval()
+            || $this->hasActiveAnswerDraftGeneration();
+    }
+
+    public function scopeWithActiveAsyncPipeline(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->whereIn('faq_retrieval_status', [
+                    self::FaqRetrievalStatusQueued,
+                    self::FaqRetrievalStatusProcessing,
+                ])
+                ->orWhereHas('answerDraft', function (Builder $query): void {
+                    $query->whereIn('status', [
+                        EmailQuestionAnswerDraft::StatusQueued,
+                        EmailQuestionAnswerDraft::StatusGenerating,
+                    ]);
+                });
+        });
     }
 
     public function markReviewed(string $status, ?int $reviewerId): bool

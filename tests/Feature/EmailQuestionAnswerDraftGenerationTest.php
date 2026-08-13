@@ -99,6 +99,8 @@ class EmailQuestionAnswerDraftGenerationTest extends TestCase
 
         $this->assertSame($readyQuestion->id, $draft->email_question_id);
         $this->assertSame(EmailQuestionAnswerDraft::StatusQueued, $draft->status);
+        $this->assertNull($draft->generated_at);
+        $this->assertNull($draft->generation_started_at);
 
         Queue::assertPushed(
             GenerateEmailQuestionAnswerDraft::class,
