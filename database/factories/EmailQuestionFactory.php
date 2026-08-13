@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\EmailQuestion;
 use App\Models\GmailMessage;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -43,6 +44,15 @@ class EmailQuestionFactory extends Factory
             'classification_confidence' => 92,
             'classification_reason' => 'This is a customer FAQ question.',
             'classified_at' => now(),
+        ]);
+    }
+
+    public function reviewedAs(string $status): static
+    {
+        return $this->state(fn (): array => [
+            'review_status' => $status,
+            'reviewed_by_user_id' => User::factory(),
+            'reviewed_at' => now(),
         ]);
     }
 }

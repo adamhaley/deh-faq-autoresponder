@@ -4,10 +4,14 @@ namespace App\Services\EmailQuestions;
 
 use App\Ai\Agents\EmailQuestionClassifier;
 use App\Models\EmailQuestion;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class EmailQuestionClassificationService
 {
+    private const MaxTrainingExamples = 8;
+
     public function classifyPendingQuestions(int $limit = 50): int
     {
         $classifiedQuestions = 0;
@@ -28,7 +32,8 @@ class EmailQuestionClassificationService
 
     public function classify(EmailQuestion $question): EmailQuestion
     {
-        $response = (new EmailQuestionClassifier)->prompt($this->prompt($question));
+        $trainingExamples = $this->reviewedExamplesFor($question);
+        $response = (new EmailQuestionClassifier)->prompt($this->prompt($question, $trainingExamples));
 
         $classification = $this->classification($response['classification'] ?? null);
         $confidence = $this->confidence($response['confidence'] ?? null);
@@ -43,6 +48,7 @@ class EmailQuestionClassificationService
             'review_status' => EmailQuestion::ReviewStatusPendingReview,
             'classification_metadata' => [
                 'classifier' => EmailQuestionClassifier::class,
+                'training_example_ids' => $trainingExamples->pluck('id')->values()->all(),
             ],
             'classified_at' => now(),
         ]);
@@ -50,13 +56,22 @@ class EmailQuestionClassificationService
         return $question->refresh();
     }
 
-    private function prompt(EmailQuestion $question): string
+    /**
+     * @param  Collection<int, EmailQuestion>  $trainingExamples
+     */
+    private function prompt(EmailQuestion $question, Collection $trainingExamples): string
     {
         $message = $question->message;
+        $examples = $this->formatTrainingExamples($trainingExamples);
 
         return sprintf(
             <<<'PROMPT'
 Classify this extracted email question for FAQ processing.
+
+Use the human-reviewed examples as guidance. The human classification is the correct classification for each example. Do not copy an example blindly; use it to calibrate what this client considers a valid question, noise, or unanswerable.
+
+Human-reviewed examples:
+%s
 
 Extracted question:
 %s
@@ -66,11 +81,133 @@ Subject: %s
 From: %s
 Snippet: %s
 PROMPT,
+            $examples,
             $question->question_text,
             $message?->subject ?? '',
             $message?->from_email ?? '',
             Str::limit($message?->snippet ?? '', 500),
         );
+    }
+
+    /**
+     * @return Collection<int, EmailQuestion>
+     */
+    private function reviewedExamplesFor(EmailQuestion $question): Collection
+    {
+        $examples = collect();
+
+        $disagreements = $this->reviewedExampleQuery($question)
+            ->whereNotNull('classification')
+            ->where(function (Builder $query): void {
+                $query
+                    ->where(function (Builder $query): void {
+                        $query
+                            ->where('classification', EmailQuestion::ClassificationValidFaqQuestion)
+                            ->where('review_status', '!=', EmailQuestion::ReviewStatusValid);
+                    })
+                    ->orWhere(function (Builder $query): void {
+                        $query
+                            ->where('classification', EmailQuestion::ClassificationNoise)
+                            ->where('review_status', '!=', EmailQuestion::ReviewStatusNoise);
+                    })
+                    ->orWhere(function (Builder $query): void {
+                        $query
+                            ->where('classification', EmailQuestion::ClassificationUnanswerable)
+                            ->where('review_status', '!=', EmailQuestion::ReviewStatusUnanswerable);
+                    })
+                    ->orWhere(function (Builder $query): void {
+                        $query
+                            ->where('classification', EmailQuestion::ClassificationNeedsHuman)
+                            ->where('review_status', '!=', EmailQuestion::ReviewStatusNeedsHuman);
+                    });
+            })
+            ->latest('reviewed_at')
+            ->limit(3)
+            ->get();
+
+        $examples = $examples->merge($disagreements);
+
+        foreach ([
+            EmailQuestion::ReviewStatusValid,
+            EmailQuestion::ReviewStatusNoise,
+            EmailQuestion::ReviewStatusUnanswerable,
+        ] as $status) {
+            $examples = $examples->merge(
+                $this->reviewedExampleQuery($question)
+                    ->where('review_status', $status)
+                    ->latest('reviewed_at')
+                    ->limit(2)
+                    ->get(),
+            );
+        }
+
+        return $examples
+            ->unique('id')
+            ->take(self::MaxTrainingExamples)
+            ->values();
+    }
+
+    /**
+     * @return Builder<EmailQuestion>
+     */
+    private function reviewedExampleQuery(EmailQuestion $question): Builder
+    {
+        return EmailQuestion::query()
+            ->select([
+                'id',
+                'gmail_message_id',
+                'question_text',
+                'classification',
+                'review_status',
+                'reviewed_at',
+                'reviewed_by_user_id',
+            ])
+            ->whereKeyNot($question->id)
+            ->whereNotNull('reviewed_at')
+            ->whereNotNull('reviewed_by_user_id')
+            ->whereNotNull('question_text')
+            ->where('review_status', '!=', EmailQuestion::ReviewStatusPendingReview)
+            ->with('message:id,subject,from_email');
+    }
+
+    /**
+     * @param  Collection<int, EmailQuestion>  $trainingExamples
+     */
+    private function formatTrainingExamples(Collection $trainingExamples): string
+    {
+        if ($trainingExamples->isEmpty()) {
+            return 'No human-reviewed examples are available yet.';
+        }
+
+        return $trainingExamples
+            ->map(function (EmailQuestion $example, int $index): string {
+                return sprintf(
+                    <<<'EXAMPLE'
+Example %d:
+Question: %s
+Original AI classification: %s
+Correct human classification: %s
+Subject: %s
+From: %s
+EXAMPLE,
+                    $index + 1,
+                    $example->question_text,
+                    $this->classificationLabel($example->classification),
+                    EmailQuestion::reviewStatusOptions()[$example->review_status] ?? $example->review_status,
+                    $example->message?->subject ?? '',
+                    $example->message?->from_email ?? '',
+                );
+            })
+            ->implode("\n\n");
+    }
+
+    private function classificationLabel(?string $classification): string
+    {
+        if ($classification === null || $classification === '') {
+            return 'Unclassified';
+        }
+
+        return EmailQuestion::classificationOptions()[$classification] ?? $classification;
     }
 
     private function classification(mixed $classification): string
