@@ -110,6 +110,29 @@ class EmailQuestion extends Model
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public static function humanReviewDecisionOptions(): array
+    {
+        return [
+            self::ReviewStatusValid => 'Valid question',
+            self::ReviewStatusNoise => 'Noise',
+            self::ReviewStatusUnanswerable => 'Unanswerable',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function humanReviewFilterOptions(): array
+    {
+        return [
+            self::ReviewStatusPendingReview => 'Pending review',
+            ...self::humanReviewDecisionOptions(),
+        ];
+    }
+
     public static function classificationColor(?string $classification): string
     {
         return match ($classification) {

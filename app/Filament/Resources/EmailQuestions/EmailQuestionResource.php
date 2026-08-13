@@ -49,7 +49,7 @@ class EmailQuestionResource extends Resource
                     ->columnSpanFull(),
                 Select::make('review_status')
                     ->label('Human Review')
-                    ->options(EmailQuestion::reviewStatusOptions())
+                    ->options(EmailQuestion::humanReviewDecisionOptions())
                     ->required(),
                 Select::make('classification')
                     ->label('AI Classification')
@@ -198,7 +198,7 @@ class EmailQuestionResource extends Resource
             ->filters([
                 SelectFilter::make('review_status')
                     ->label('Human classification')
-                    ->options(EmailQuestion::reviewStatusOptions()),
+                    ->options(EmailQuestion::humanReviewFilterOptions()),
                 SelectFilter::make('classification')
                     ->label('AI classification')
                     ->options(EmailQuestion::classificationOptions()),
