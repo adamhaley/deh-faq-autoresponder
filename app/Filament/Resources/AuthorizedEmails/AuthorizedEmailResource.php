@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\AuthorizedEmails;
 
 use App\Enums\UserRole;
-use App\Filament\Clusters\Settings\SettingsCluster;
 use App\Filament\Resources\AuthorizedEmails\Pages\ManageAuthorizedEmails;
 use App\Models\AuthorizedEmail;
 use Filament\Actions\CreateAction;
@@ -22,9 +21,9 @@ class AuthorizedEmailResource extends Resource
 {
     protected static ?string $model = AuthorizedEmail::class;
 
-    protected static ?string $cluster = SettingsCluster::class;
-
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shield-check';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
 
     protected static ?string $navigationLabel = 'Allowlist';
 
