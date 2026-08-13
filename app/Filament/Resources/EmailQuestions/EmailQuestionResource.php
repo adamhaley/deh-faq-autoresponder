@@ -22,8 +22,10 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Actions as SchemaActions;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -331,6 +333,58 @@ class EmailQuestionResource extends Resource
                             ->label('Reviewed at')
                             ->dateTime()
                             ->placeholder('Not reviewed yet'),
+                        SchemaActions::make([
+                            Action::make('quickEditFinalAnswer')
+                                ->label('Edit final answer')
+                                ->icon(Heroicon::PencilSquare)
+                                ->color('gray')
+                                ->outlined()
+                                ->schema([
+                                    Textarea::make('final_answer')
+                                        ->label('Final answer')
+                                        ->required()
+                                        ->rows(8),
+                                ])
+                                ->fillForm(fn (EmailQuestion $record): array => [
+                                    'final_answer' => $record->answerDraft?->final_answer
+                                        ?? $record->answerDraft?->generated_answer
+                                        ?? '',
+                                ])
+                                ->action(function (array $data, EmailQuestion $record): void {
+                                    $record->answerDraft?->update([
+                                        'final_answer' => $data['final_answer'],
+                                    ]);
+                                }),
+                            Action::make('quickApproveAnswerDraft')
+                                ->label('Approve')
+                                ->icon(Heroicon::CheckCircle)
+                                ->color('success')
+                                ->outlined()
+                                ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
+                                    EmailQuestionAnswerDraft::StatusApproved,
+                                    auth()->id(),
+                                )),
+                            Action::make('quickNeedsRevisionAnswerDraft')
+                                ->label('Needs revision')
+                                ->icon(Heroicon::ExclamationTriangle)
+                                ->color('warning')
+                                ->outlined()
+                                ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
+                                    EmailQuestionAnswerDraft::StatusNeedsRevision,
+                                    auth()->id(),
+                                )),
+                            Action::make('quickRejectAnswerDraft')
+                                ->label('Reject')
+                                ->icon(Heroicon::XCircle)
+                                ->color('danger')
+                                ->outlined()
+                                ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
+                                    EmailQuestionAnswerDraft::StatusRejected,
+                                    auth()->id(),
+                                )),
+                        ])
+                            ->alignment(Alignment::Start)
+                            ->columnSpanFull(),
                     ])
                     ->poll(fn (EmailQuestion $record): ?string => $record->hasActiveAnswerDraftGeneration() ? '3s' : null)
                     ->columnSpanFull(),
