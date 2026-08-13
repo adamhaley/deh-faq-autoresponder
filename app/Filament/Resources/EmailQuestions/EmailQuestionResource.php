@@ -30,6 +30,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 
 class EmailQuestionResource extends Resource
 {
@@ -173,6 +174,7 @@ class EmailQuestionResource extends Resource
                         TextEntry::make('faq_retrieval_status')
                             ->label('Retrieval status')
                             ->badge()
+                            ->icon(fn (string $state): Heroicon|HtmlString|null => self::isActiveFaqRetrievalStatus($state) ? self::spinningStatusIcon() : null)
                             ->color(fn (string $state): string => EmailQuestion::faqRetrievalStatusColor($state))
                             ->formatStateUsing(fn (string $state): string => EmailQuestion::faqRetrievalStatusOptions()[$state] ?? $state),
                         TextEntry::make('faq_retrieval_error')
@@ -282,6 +284,7 @@ class EmailQuestionResource extends Resource
                             ->label('Status')
                             ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('status'))
                             ->badge()
+                            ->icon(fn (?string $state): Heroicon|HtmlString|null => self::isActiveAnswerDraftStatus($state) ? self::spinningStatusIcon() : null)
                             ->placeholder('No draft generated yet')
                             ->color(fn (?string $state): string => $state === null ? 'gray' : EmailQuestionAnswerDraft::statusColor($state))
                             ->formatStateUsing(fn (?string $state): string => $state === null ? 'No draft' : EmailQuestionAnswerDraft::statusOptions()[$state] ?? $state),
@@ -421,6 +424,56 @@ class EmailQuestionResource extends Resource
             ->with(['answerDraft.reviewer', 'faqMatches.faqEntry.approvedResponse', 'message.mailbox', 'reviewer'])
             ->withCount('faqMatches')
             ->latest();
+    }
+
+    private static function isActiveFaqRetrievalStatus(string $status): bool
+    {
+        return in_array($status, [
+            EmailQuestion::FaqRetrievalStatusQueued,
+            EmailQuestion::FaqRetrievalStatusProcessing,
+        ], true);
+    }
+
+    private static function isActiveAnswerDraftStatus(?string $status): bool
+    {
+        return in_array($status, [
+            EmailQuestionAnswerDraft::StatusQueued,
+            EmailQuestionAnswerDraft::StatusGenerating,
+        ], true);
+    }
+
+    private static function spinningStatusIcon(): HtmlString
+    {
+        return new HtmlString(<<<'HTML'
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+                style="animation: deh-status-spin 1s linear infinite;"
+            >
+                <style>
+                    @keyframes deh-status-spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                </style>
+                <path
+                    d="M10 3a7 7 0 1 1-6.33 4.01"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+                <path
+                    d="M3.25 3.75v3.5h3.5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+            </svg>
+            HTML);
     }
 
     public static function getPages(): array
