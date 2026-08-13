@@ -42,7 +42,12 @@ class GmailMessageResource extends Resource
                     ->disabled()
                     ->columnSpanFull(),
                 Textarea::make('text_body')
-                    ->disabled()
+                    ->label('Text body')
+                    ->readOnly()
+                    ->columnSpanFull(),
+                Textarea::make('html_body')
+                    ->label('HTML body')
+                    ->readOnly()
                     ->columnSpanFull(),
             ]);
     }

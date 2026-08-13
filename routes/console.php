@@ -11,3 +11,11 @@ Artisan::command('inspire', function () {
 Schedule::command('gmail:sync-mailboxes')
     ->everyMinute()
     ->withoutOverlapping(10);
+
+Schedule::command('email-questions:extract')
+    ->everyMinute()
+    ->withoutOverlapping(10);
+
+Schedule::command('email-questions:classify')
+    ->everyMinute()
+    ->withoutOverlapping(10);
