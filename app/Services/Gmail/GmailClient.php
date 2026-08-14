@@ -86,6 +86,38 @@ class GmailClient
             ->json();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function createDraft(GmailMailbox $mailbox, string $rawMessage, ?string $threadId = null): array
+    {
+        return $this->request($mailbox)
+            ->post('users/me/drafts', [
+                'message' => array_filter([
+                    'raw' => $rawMessage,
+                    'threadId' => $threadId,
+                ], fn (mixed $value): bool => $value !== null),
+            ])
+            ->throw()
+            ->json();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function updateDraft(GmailMailbox $mailbox, string $draftId, string $rawMessage, ?string $threadId = null): array
+    {
+        return $this->request($mailbox)
+            ->put("users/me/drafts/{$draftId}", [
+                'message' => array_filter([
+                    'raw' => $rawMessage,
+                    'threadId' => $threadId,
+                ], fn (mixed $value): bool => $value !== null),
+            ])
+            ->throw()
+            ->json();
+    }
+
     private function refreshAccessToken(GmailMailbox $mailbox): string
     {
         if (! is_string($mailbox->refresh_token) || $mailbox->refresh_token === '') {
