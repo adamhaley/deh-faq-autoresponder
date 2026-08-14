@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
 
 #[Fillable([
     'email_question_id',
@@ -117,11 +118,56 @@ class EmailQuestionAnswerDraft extends Model
 
     public function markReviewed(string $status, ?int $reviewerId, ?string $finalAnswer = null): bool
     {
-        return $this->update([
+        $finalAnswer ??= $this->final_answer ?? $this->generated_answer;
+
+        $updated = $this->update([
             'status' => $status,
             'reviewed_by_user_id' => $reviewerId,
-            'final_answer' => $finalAnswer ?? $this->final_answer ?? $this->generated_answer,
+            'final_answer' => $finalAnswer,
             'reviewed_at' => now(),
+        ]);
+
+        if ($updated && $status === self::StatusApproved) {
+            $this->applyFinalAnswerAsFaqOverride($finalAnswer);
+        }
+
+        return $updated;
+    }
+
+    /**
+     * Feed the operator-approved final answer back into future retrieval
+     * prompts by saving it as the override for the best-matched FAQ. This is
+     * the only write path for FAQ overrides — deliberately automatic and
+     * scoped to the single best match, so the loop stays simple to reason
+     * about instead of fanning an email-specific answer out across every
+     * retrieved FAQ.
+     */
+    private function applyFinalAnswerAsFaqOverride(?string $finalAnswer): void
+    {
+        if ($finalAnswer === null || $finalAnswer === '') {
+            return;
+        }
+
+        $bestMatch = $this->emailQuestion
+            ?->faqMatches()
+            ->orderBy('rank')
+            ->first();
+
+        if ($bestMatch === null) {
+            return;
+        }
+
+        FaqApprovedResponse::query()->updateOrCreate(
+            ['faq_entry_id' => $bestMatch->faq_entry_id],
+            [
+                'approved_response' => $finalAnswer,
+                'match_similarity' => $bestMatch->similarity,
+            ],
+        );
+
+        Log::info('Applied approved final answer as FAQ override.', [
+            'email_question_answer_draft_id' => $this->id,
+            'faq_entry_id' => $bestMatch->faq_entry_id,
         ]);
     }
 }
