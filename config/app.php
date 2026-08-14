@@ -69,6 +69,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Panel Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Timestamps are stored and scheduled in UTC (see "timezone" above) so
+    | that cron scheduling and stored data stay unambiguous. This value only
+    | controls how dates/times are rendered in the Filament admin panel.
+    |
+    */
+
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'UTC'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

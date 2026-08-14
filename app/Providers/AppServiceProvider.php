@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Filament\Support\Facades\FilamentTimezone;
 use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Table;
 use Illuminate\Foundation\DevCommands;
@@ -25,6 +26,8 @@ class AppServiceProvider extends ServiceProvider
         Table::configureUsing(function (Table $table): void {
             $table->recordActionsPosition(RecordActionsPosition::BeforeColumns);
         });
+
+        FilamentTimezone::set(config('app.display_timezone'));
 
         DevCommands::artisan('schedule:work', 'schedule');
     }
