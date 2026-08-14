@@ -108,6 +108,87 @@ class GmailMailboxSyncTest extends TestCase
         $this->assertSame(['INBOX'], $message->label_ids);
     }
 
+    public function test_command_backfills_and_recovers_a_mailbox_needing_resync(): void
+    {
+        $this->configureGmail();
+
+        Http::preventStrayRequests();
+        Http::fake(function (Request $request) {
+            if ($request->url() === 'https://oauth2.googleapis.com/token') {
+                return Http::response([
+                    'access_token' => 'fresh-access-token',
+                    'expires_in' => 3600,
+                    'scope' => 'https://www.googleapis.com/auth/gmail.modify',
+                ]);
+            }
+
+            if (str_starts_with($request->url(), 'https://gmail.googleapis.com/gmail/v1/users/me/messages?')) {
+                parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+
+                $this->assertSame('INBOX', $query['labelIds']);
+                $this->assertStringStartsWith('after:', $query['q']);
+
+                return Http::response([
+                    'messages' => [
+                        ['id' => 'message-1'],
+                        ['id' => 'message-2'],
+                    ],
+                ]);
+            }
+
+            if (str_contains($request->url(), '/messages/message-1')) {
+                return Http::response($this->gmailMessage([
+                    'id' => 'message-1',
+                    'threadId' => 'thread-1',
+                    'historyId' => '190',
+                    'subject' => 'First question',
+                    'from' => 'Customer One <one@example.com>',
+                    'body' => 'How do I care for this stone?',
+                    'internalDate' => '1786530000000',
+                ]));
+            }
+
+            if (str_contains($request->url(), '/messages/message-2')) {
+                return Http::response($this->gmailMessage([
+                    'id' => 'message-2',
+                    'threadId' => 'thread-2',
+                    'historyId' => '191',
+                    'subject' => 'Second question',
+                    'from' => 'two@example.com',
+                    'body' => 'Do you ship internationally?',
+                    'internalDate' => '1786530060000',
+                ]));
+            }
+
+            if (str_starts_with($request->url(), 'https://gmail.googleapis.com/gmail/v1/users/me/profile')) {
+                return Http::response(['historyId' => '400']);
+            }
+
+            return Http::response(status: 404);
+        });
+
+        $mailbox = GmailMailbox::factory()->create([
+            'access_token' => 'stale-access-token',
+            'refresh_token' => 'refresh-token',
+            'token_expires_at' => now()->subDay(),
+            'last_history_id' => '100',
+            'sync_status' => GmailMailbox::SyncStatusResyncRequired,
+            'last_error' => 'HTTP request returned status code 404',
+        ]);
+
+        $this->artisan('gmail:sync-mailboxes')
+            ->expectsOutput('Imported 2 Gmail message(s).')
+            ->assertSuccessful();
+
+        $mailbox = $mailbox->fresh();
+
+        $this->assertInstanceOf(GmailMailbox::class, $mailbox);
+        $this->assertSame('400', $mailbox->last_history_id);
+        $this->assertSame(GmailMailbox::SyncStatusConnected, $mailbox->sync_status);
+        $this->assertNull($mailbox->last_error);
+        $this->assertSame(2, GmailMessage::query()->count());
+    }
+
     public function test_command_skips_inactive_mailboxes(): void
     {
         $this->configureGmail();

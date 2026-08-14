@@ -60,6 +60,24 @@ class GmailClient
     /**
      * @return array<string, mixed>
      */
+    public function listMessages(GmailMailbox $mailbox, ?string $pageToken = null, ?int $afterUnixTimestamp = null): array
+    {
+        $labelIds = $mailbox->syncLabelIds();
+
+        return $this->request($mailbox)
+            ->get('users/me/messages', array_filter([
+                'labelIds' => $labelIds[0] ?? null,
+                'q' => $afterUnixTimestamp !== null ? "after:{$afterUnixTimestamp}" : null,
+                'pageToken' => $pageToken,
+                'maxResults' => 100,
+            ], fn (mixed $value): bool => $value !== null))
+            ->throw()
+            ->json();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function message(GmailMailbox $mailbox, string $messageId): array
     {
         return $this->request($mailbox)

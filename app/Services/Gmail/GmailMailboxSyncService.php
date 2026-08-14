@@ -48,8 +48,20 @@ class GmailMailboxSyncService
         }
     }
 
+    /**
+     * How far back to backfill when recovering a mailbox stuck in
+     * resync_required. Gmail's history API only retains state for about a
+     * week, so recovery cannot rely on the (possibly stale) last_sync_at
+     * checkpoint alone.
+     */
+    private const ResyncBackfillDays = 3;
+
     private function syncMailboxOrFail(GmailMailbox $mailbox): int
     {
+        if ($mailbox->sync_status === GmailMailbox::SyncStatusResyncRequired) {
+            return $this->recoverFromResyncRequired($mailbox);
+        }
+
         if (! is_string($mailbox->last_history_id) || $mailbox->last_history_id === '') {
             $profile = $this->gmail->profile($mailbox);
 
@@ -93,6 +105,73 @@ class GmailMailboxSyncService
         ]);
 
         return $importedMessages;
+    }
+
+    /**
+     * Recover a mailbox whose history checkpoint has expired or gone
+     * invalid. Backfills any messages missed while the sync was stuck, then
+     * re-establishes a fresh history checkpoint.
+     */
+    private function recoverFromResyncRequired(GmailMailbox $mailbox): int
+    {
+        $importedMessages = $this->backfillRecentMessages($mailbox);
+
+        $profile = $this->gmail->profile($mailbox);
+
+        $mailbox->update([
+            'last_history_id' => $profile['historyId'] ?? null,
+            'last_sync_at' => now(),
+            'sync_status' => GmailMailbox::SyncStatusConnected,
+            'last_error' => null,
+        ]);
+
+        return $importedMessages;
+    }
+
+    private function backfillRecentMessages(GmailMailbox $mailbox): int
+    {
+        $importedMessages = 0;
+        $pageToken = null;
+        $afterUnixTimestamp = now()->subDays(self::ResyncBackfillDays)->timestamp;
+
+        do {
+            $list = $this->gmail->listMessages($mailbox, $pageToken, $afterUnixTimestamp);
+
+            foreach ($this->messageIdsFromList($list) as $messageId) {
+                $message = $this->gmail->message($mailbox, $messageId);
+                $this->storeMessage($mailbox, $message);
+                $importedMessages++;
+            }
+
+            $pageToken = isset($list['nextPageToken']) && is_string($list['nextPageToken'])
+                ? $list['nextPageToken']
+                : null;
+        } while ($pageToken !== null);
+
+        return $importedMessages;
+    }
+
+    /**
+     * @param  array<string, mixed>  $list
+     * @return list<string>
+     */
+    private function messageIdsFromList(array $list): array
+    {
+        $messageIds = [];
+
+        foreach ($list['messages'] ?? [] as $message) {
+            if (! is_array($message)) {
+                continue;
+            }
+
+            $messageId = $message['id'] ?? null;
+
+            if (is_string($messageId) && $messageId !== '') {
+                $messageIds[] = $messageId;
+            }
+        }
+
+        return array_values(array_unique($messageIds));
     }
 
     /**
