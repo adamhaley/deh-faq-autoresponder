@@ -150,7 +150,7 @@ class EmailThreadDraftComposerService
         return null;
     }
 
-    private function buildRawMessage(string $to, string $subject, string $htmlBody, ?string $inReplyTo): string
+    private function buildRawMessage(string $to, string $subject, string $bodyContent, ?string $inReplyTo): string
     {
         $headers = [
             'MIME-Version: 1.0',
@@ -165,6 +165,8 @@ class EmailThreadDraftComposerService
             $headers[] = "References: {$inReplyTo}";
         }
 
+        $htmlBody = $this->wrapHtmlDocument($bodyContent);
+
         $message = implode("\r\n", $headers)."\r\n\r\n".chunk_split(base64_encode($htmlBody), 76, "\r\n");
 
         return rtrim(strtr(base64_encode($message), '+/', '-_'), '=');
@@ -173,5 +175,22 @@ class EmailThreadDraftComposerService
     private function encodeHeader(string $value): string
     {
         return '=?UTF-8?B?'.base64_encode($value).'?=';
+    }
+
+    /**
+     * EmailTemplate::body is stored as an editable content fragment (what
+     * the rich editor can safely round-trip). This wraps it in the minimal
+     * boilerplate an HTML email part needs -- purely mechanical, so it
+     * lives in code rather than in the editable template content.
+     */
+    private function wrapHtmlDocument(string $content): string
+    {
+        return <<<HTML
+            <!DOCTYPE html>
+            <html>
+            <head><meta http-equiv="content-type" content="text/html; charset=UTF-8"></head>
+            <body>{$content}</body>
+            </html>
+            HTML;
     }
 }

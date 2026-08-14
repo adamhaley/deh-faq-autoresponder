@@ -20,7 +20,7 @@ class EmailTemplateFactory extends Factory
         return [
             'name' => 'Default',
             'subject' => fake()->sentence(),
-            'body' => '<p>{{greeting}}</p>{{questions}}',
+            'body' => '<p><span data-type="mergeTag" data-id="greeting">greeting</span></p><p><span data-type="mergeTag" data-id="questions">questions</span></p>',
         ];
     }
 }

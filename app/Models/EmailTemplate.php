@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Database\Factories\EmailTemplateFactory;
+use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HtmlString;
 
 #[Fillable(['name', 'subject', 'body'])]
 class EmailTemplate extends Model
@@ -15,9 +17,11 @@ class EmailTemplate extends Model
 
     public function renderBody(string $greeting, string $questionsHtml): string
     {
-        return strtr($this->body, [
-            '{{greeting}}' => $greeting,
-            '{{questions}}' => $questionsHtml,
-        ]);
+        return RichContentRenderer::make($this->body)
+            ->mergeTags([
+                'greeting' => new HtmlString(e($greeting)),
+                'questions' => new HtmlString($questionsHtml),
+            ])
+            ->toHtml();
     }
 }

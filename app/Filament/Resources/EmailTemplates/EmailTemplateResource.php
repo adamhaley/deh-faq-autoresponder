@@ -6,7 +6,7 @@ use App\Filament\Resources\EmailTemplates\Pages\ManageEmailTemplates;
 use App\Models\EmailTemplate;
 use BackedEnum;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -32,11 +32,13 @@ class EmailTemplateResource extends Resource
                 TextInput::make('subject')
                     ->required()
                     ->columnSpanFull(),
-                Textarea::make('body')
-                    ->label('Body (HTML)')
-                    ->helperText('Use {{greeting}} and {{questions}} as placeholders.')
+                RichEditor::make('body')
+                    ->label('Body')
                     ->required()
-                    ->rows(24)
+                    ->mergeTags([
+                        'greeting' => 'Greeting',
+                        'questions' => 'Questions & answers',
+                    ])
                     ->columnSpanFull(),
             ]);
     }

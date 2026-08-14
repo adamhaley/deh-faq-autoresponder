@@ -27,7 +27,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
 
         EmailTemplate::factory()->create([
             'subject' => 'Ihre Webinarfrage',
-            'body' => '<p>{{greeting}}</p><div>{{questions}}</div>',
+            'body' => '<p><span data-type="mergeTag" data-id="greeting">greeting</span></p><p><span data-type="mergeTag" data-id="questions">questions</span></p>',
         ]);
 
         $mailbox = GmailMailbox::factory()->create();
