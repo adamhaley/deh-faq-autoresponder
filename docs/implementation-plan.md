@@ -92,6 +92,10 @@ Purpose: let Laravel receive FAQ emails and create or send replies.
 Default send behavior should be conservative: create Gmail drafts first, unless
 we explicitly decide to allow direct send after approval.
 
+Steps 1–12 are done. Step 11 creates (and keeps updated) a Gmail draft, never
+sends directly -- see `.ai/rules/jobs.md` for how the thread-completion
+trigger and template assembly work.
+
 ## Filament Screens
 
 Initial resources/pages:
