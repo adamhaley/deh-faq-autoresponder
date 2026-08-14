@@ -16,17 +16,10 @@ The first implementation should be pragmatic and boring:
 
 ## Deployment Target
 
-For now, deploy as another app service in the existing Megyk Compose stack.
-
-Known Compose home:
-
-```text
-/opt/megyk/n8n-docker-caddy
-```
-
-The app should eventually become a dedicated service in that Compose file, with
-its own app directory, database connection, queue worker, scheduler, and Caddy
-route.
+Done. Deployed as four services in the existing Megyk Compose stack
+(`/opt/megyk/n8n-docker-caddy`), with its own database (isolated pgvector
+container, not shared with Supabase), queue worker, scheduler, and Caddy
+route. See `docs/deployment.md` for the full setup.
 
 ## Database Direction
 
