@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Table;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,5 +25,7 @@ class AppServiceProvider extends ServiceProvider
         Table::configureUsing(function (Table $table): void {
             $table->recordActionsPosition(RecordActionsPosition::BeforeColumns);
         });
+
+        DevCommands::artisan('schedule:work', 'schedule');
     }
 }
