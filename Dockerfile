@@ -7,7 +7,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM dunglas/frankenphp:php8.3 AS app
+FROM dunglas/frankenphp:php8.4 AS app
 WORKDIR /app
 
 RUN install-php-extensions \
