@@ -2,13 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ComposeEmailThreadDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailQuestionFaqMatch;
 use App\Models\FaqApprovedResponse;
 use App\Models\FaqEntry;
+use App\Models\GmailMessage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class EmailQuestionAnswerDraftReviewTest extends TestCase
@@ -120,5 +123,67 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
         $draft->markReviewed(EmailQuestionAnswerDraft::StatusApproved, reviewerId: User::factory()->create()->id);
 
         $this->assertSame(0, FaqApprovedResponse::query()->count());
+    }
+
+    public function test_approving_a_draft_dispatches_thread_draft_composition(): void
+    {
+        Queue::fake();
+
+        $message = GmailMessage::factory()->create(['thread_id' => 'thread-approve']);
+        $question = EmailQuestion::factory()->for($message, 'message')->create();
+
+        $draft = EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $question->id,
+            'final_answer' => 'Answer.',
+            'status' => EmailQuestionAnswerDraft::StatusDraft,
+        ]);
+
+        $draft->markReviewed(EmailQuestionAnswerDraft::StatusApproved, reviewerId: User::factory()->create()->id);
+
+        Queue::assertPushed(
+            ComposeEmailThreadDraft::class,
+            fn (ComposeEmailThreadDraft $job): bool => $job->threadId === 'thread-approve',
+        );
+    }
+
+    public function test_editing_final_answer_while_already_approved_redispatches_thread_draft_composition(): void
+    {
+        $message = GmailMessage::factory()->create(['thread_id' => 'thread-edit']);
+        $question = EmailQuestion::factory()->for($message, 'message')->create();
+
+        $draft = EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $question->id,
+            'final_answer' => 'Original.',
+            'status' => EmailQuestionAnswerDraft::StatusApproved,
+        ]);
+
+        Queue::fake();
+
+        $draft->update(['final_answer' => 'Edited after approval.']);
+        $draft->syncApprovedSideEffects();
+
+        Queue::assertPushed(
+            ComposeEmailThreadDraft::class,
+            fn (ComposeEmailThreadDraft $job): bool => $job->threadId === 'thread-edit',
+        );
+    }
+
+    public function test_editing_final_answer_while_not_approved_does_not_dispatch_thread_draft_composition(): void
+    {
+        Queue::fake();
+
+        $message = GmailMessage::factory()->create(['thread_id' => 'thread-draft-only']);
+        $question = EmailQuestion::factory()->for($message, 'message')->create();
+
+        $draft = EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $question->id,
+            'final_answer' => 'Original.',
+            'status' => EmailQuestionAnswerDraft::StatusDraft,
+        ]);
+
+        $draft->update(['final_answer' => 'Still just a draft.']);
+        $draft->syncApprovedSideEffects();
+
+        Queue::assertNotPushed(ComposeEmailThreadDraft::class);
     }
 }

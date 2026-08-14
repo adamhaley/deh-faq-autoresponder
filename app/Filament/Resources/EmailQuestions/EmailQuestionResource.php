@@ -251,6 +251,7 @@ class EmailQuestionResource extends Resource
                                     $record->answerDraft?->update([
                                         'final_answer' => $data['final_answer'],
                                     ]);
+                                    $record->answerDraft?->syncApprovedSideEffects();
                                 }),
                             Action::make('approveAnswerDraft')
                                 ->label('Approve answer')
@@ -354,6 +355,7 @@ class EmailQuestionResource extends Resource
                                     $record->answerDraft?->update([
                                         'final_answer' => $data['final_answer'],
                                     ]);
+                                    $record->answerDraft?->syncApprovedSideEffects();
                                 }),
                             Action::make('quickApproveAnswerDraft')
                                 ->label('Approve')
