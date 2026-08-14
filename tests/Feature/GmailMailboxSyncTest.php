@@ -108,6 +108,55 @@ class GmailMailboxSyncTest extends TestCase
         $this->assertSame(['INBOX'], $message->label_ids);
     }
 
+    public function test_command_extracts_participant_name_and_reply_email_from_message_body(): void
+    {
+        $this->configureGmail();
+
+        Http::preventStrayRequests();
+        Http::fake(function (Request $request) {
+            if ($request->url() === 'https://oauth2.googleapis.com/token') {
+                return Http::response([
+                    'access_token' => 'fresh-access-token',
+                    'expires_in' => 3600,
+                    'scope' => 'https://www.googleapis.com/auth/gmail.modify',
+                ]);
+            }
+
+            if (str_starts_with($request->url(), 'https://gmail.googleapis.com/gmail/v1/users/me/history')) {
+                return Http::response([
+                    'historyId' => '200',
+                    'history' => [
+                        ['messagesAdded' => [['message' => ['id' => 'message-1']]]],
+                    ],
+                ]);
+            }
+
+            if (str_contains($request->url(), '/messages/message-1')) {
+                return Http::response($this->gmailMessage([
+                    'id' => 'message-1',
+                    'threadId' => 'thread-1',
+                    'historyId' => '190',
+                    'subject' => 'Webinar question',
+                    'from' => 'webinar-platform@example.com',
+                    'body' => "Vorname: Maria\nNachname: Schmidt\nE-Mail: maria.schmidt@example.com\n\nChat:\n1: Maria (10:00): Wie funktioniert das Investment?",
+                    'internalDate' => '1786530000000',
+                ]));
+            }
+
+            return Http::response(status: 404);
+        });
+
+        $mailbox = GmailMailbox::factory()->create(['last_history_id' => '100']);
+
+        $this->artisan('gmail:sync-mailboxes')->assertSuccessful();
+
+        $message = GmailMessage::query()->where('gmail_message_id', 'message-1')->firstOrFail();
+
+        $this->assertSame('Maria Schmidt', $message->participant_name);
+        $this->assertSame('maria.schmidt@example.com', $message->reply_to_email);
+        $this->assertSame('webinar-platform@example.com', $message->from_email);
+    }
+
     public function test_command_backfills_and_recovers_a_mailbox_needing_resync(): void
     {
         $this->configureGmail();

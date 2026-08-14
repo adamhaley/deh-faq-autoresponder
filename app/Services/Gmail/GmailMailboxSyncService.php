@@ -212,6 +212,7 @@ class GmailMailboxSyncService
         $headers = $this->headers($payload);
         $body = $this->body($payload);
         $from = $this->parseAddress($headers['from'] ?? null);
+        $participant = $this->participantDetails($body['text'] ?? '');
 
         return GmailMessage::query()->updateOrCreate(
             [
@@ -224,6 +225,8 @@ class GmailMailboxSyncService
                 'subject' => $headers['subject'] ?? null,
                 'from_email' => $from['email'],
                 'from_name' => $from['name'],
+                'participant_name' => $participant['name'],
+                'reply_to_email' => $participant['email'],
                 'to_recipients' => $this->splitRecipients($headers['to'] ?? null),
                 'cc_recipients' => $this->splitRecipients($headers['cc'] ?? null),
                 'snippet' => $message['snippet'] ?? null,
@@ -235,6 +238,58 @@ class GmailMailboxSyncService
                 'imported_at' => now(),
             ],
         );
+    }
+
+    /**
+     * Extracts the webinar registrant's name and reply email from the
+     * message body's "Vorname"/"Nachname"/"E-Mail" fields. These are the
+     * customer's real details, distinct from the message's `From` header
+     * (which is typically the webinar platform's own sending address).
+     *
+     * @return array{name: ?string, email: ?string}
+     */
+    private function participantDetails(string $text): array
+    {
+        $firstname = null;
+
+        if (preg_match('/(?:Vorname|First name):\s*([^<\n\r]*)/iu', $text, $matches) === 1) {
+            $firstname = trim($matches[1]) ?: null;
+        }
+
+        $lastname = null;
+
+        if (preg_match('/(?:Nachname|Last name):\s*([^<\n\r]*)/iu', $text, $matches) === 1) {
+            $rawLastname = trim($matches[1]);
+
+            if ($rawLastname !== '' && preg_match('/^(E-Mail|Email|Phone|Telefon|Callback|Note|Hinweis)/iu', $rawLastname) !== 1) {
+                $lastname = $rawLastname;
+            }
+        }
+
+        $name = $firstname !== null && $lastname !== null
+            ? "{$firstname} {$lastname}"
+            : $firstname;
+
+        $email = $this->participantEmail($text);
+
+        return ['name' => $name, 'email' => $email];
+    }
+
+    private function participantEmail(string $text): ?string
+    {
+        if (preg_match('/(?:E-Mail|Email):\s*(?:<a[^>]*href=["\']mailto:)?([^\s<>"\']+@[^\s<>"\']+)/iu', $text, $matches) === 1) {
+            return strtolower($matches[1]);
+        }
+
+        if (preg_match('/mailto:([^\s<>"\']+@[^\s<>"\']+)/iu', $text, $matches) === 1) {
+            return strtolower($matches[1]);
+        }
+
+        if (preg_match('/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/iu', $text, $matches) === 1) {
+            return strtolower($matches[1]);
+        }
+
+        return null;
     }
 
     /**

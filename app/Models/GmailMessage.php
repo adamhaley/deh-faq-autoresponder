@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'subject',
     'from_email',
     'from_name',
+    'participant_name',
+    'reply_to_email',
     'to_recipients',
     'cc_recipients',
     'snippet',
