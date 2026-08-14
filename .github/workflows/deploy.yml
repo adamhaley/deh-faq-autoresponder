@@ -8,6 +8,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: deh_faq_autoresponder_test
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+
     services:
       postgres:
         image: pgvector/pgvector:pg17
@@ -42,10 +50,9 @@ jobs:
 
       - run: vendor/bin/pint --test
 
+      - run: php artisan migrate --force
+
       - run: php artisan test --compact
-        env:
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
 
   deploy:
     needs: test
