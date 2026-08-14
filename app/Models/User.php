@@ -45,4 +45,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->role->canReviewResponses();
     }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::Admin;
+    }
 }
