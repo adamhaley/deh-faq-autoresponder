@@ -1,0 +1,80 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_DB: deh_faq_autoresponder_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: pdo_pgsql, pgsql, bcmath, intl
+          coverage: none
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      - run: vendor/bin/pint --test
+
+      - run: php artisan test --compact
+        env:
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -euo pipefail
+
+            cd /opt/megyk/deh-faq-autoresponder
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+
+            docker build -t deh-faq-autoresponder:latest .
+            docker image prune -f
+
+            cd /opt/megyk/n8n-docker-caddy
+            docker compose run --rm deh-faq php artisan migrate --force
+            docker compose up -d deh-faq deh-faq-queue deh-faq-scheduler
+
+            sleep 10
+            docker compose ps deh-faq deh-faq-queue deh-faq-scheduler
+            curl -fsS https://ai.deutsches-edelsteinhaus.de/up > /dev/null \
+              && echo "Deploy verified: app responding"
