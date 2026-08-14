@@ -71,11 +71,14 @@ same actor as the Gmail mailbox used by the autoresponder workflow.
 - Prompt/settings
 - Processing logs
 
-## Open Questions
+## Decisions (Resolved Open Questions)
 
-- Should approval create Gmail drafts first or send directly?
-- Which Gmail labels/accounts define the inbound queue?
-- Which approved answers should be written back into the existing knowledge
-  tables?
-- Should new approved answers update existing FAQ rows, approved response rows,
-  or create new FAQ rows with embeddings?
+- Approval creates a Gmail draft; it does not send directly. Direct send stays
+  out of scope for now.
+- The inbound queue is defined by the single active mailbox's `INBOX` label.
+  Multiple mailboxes/labels are not needed yet.
+- Approving a draft automatically writes its `final_answer` as the override
+  for the best-matched FAQ (see `implementation-plan.md` "Self-Learning
+  Strategy"). It never touches canonical `faq_entries`, which stays
+  admin-only. New FAQ rows/embeddings are a separate, manual admin task, not
+  a per-email pipeline feature.

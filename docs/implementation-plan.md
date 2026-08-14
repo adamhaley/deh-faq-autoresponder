@@ -160,24 +160,24 @@ Use OpenAI directly for both:
 Note: Laravel Boost MCP is available and should be used for Laravel-specific
 documentation, schema inspection, and project rule recording.
 
-## Self-Learning Strategy To Iterate
+## Self-Learning Strategy
 
-This needs design iteration. Do not overbuild it in the first pass.
+Two roles, two answer surfaces, no automatic link between them at the
+canonical-content level:
 
-Possible mechanisms:
-
-1. Store approved final answers as review history only.
-2. Store one approved response override per matched FAQ, similar to the current
-   `faq_approved_responses` table.
-3. Promote approved Q/A pairs into new FAQ knowledge entries and embed them.
-4. Keep both canonical FAQ entries and approval examples, then retrieve both.
-
-Initial recommendation:
-
-- Keep approved drafts in Laravel workflow tables.
-- Also support curated promotion into the knowledge base.
-- Do not automatically pollute FAQ knowledge with every approved email until the
-  review UI makes that intent explicit.
+- **Operators** review email questions. Approving a draft's `final_answer`
+  automatically saves it as the override (`faq_approved_responses`) for the
+  single best-ranked matched FAQ. This is the only write path for overrides —
+  deliberately automatic (no separate "promote" action) and scoped to one
+  match, so it stays simple to reason about. Generation prompts read the
+  override when present, falling back to the FAQ's canonical `answer`.
+  Retrieval (embeddings) is never affected — only future generation prompts
+  see the updated text.
+- **Admins** maintain canonical `faq_entries` (question/answer/embedding)
+  directly through the `Faq Entries` resource, and can also view/correct
+  overrides through `Faq Approved Responses`. Both resources are admin-only
+  (`FaqEntryPolicy`, `FaqApprovedResponsePolicy`); operators cannot reach
+  either.
 
 ## Known Risks
 
