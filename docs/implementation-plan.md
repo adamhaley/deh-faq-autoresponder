@@ -98,43 +98,19 @@ trigger and template assembly work.
 
 ## Filament Screens
 
-Initial resources/pages:
+Done. Current resources live in `app/Filament/Resources/`: Email Questions
+(the main review workflow), FAQ Entries and FAQ Approved Responses
+(admin-only canonical content), Gmail Mailboxes and Gmail Messages, Email
+Templates (admin-only, the outgoing email template), and Authorized Emails
+(the allowlist). Google OAuth login is at `/auth/google` /
+`/auth/google/callback`; the Filament password login is the break-glass path.
+That resource directory is the authoritative list going forward — this doc
+won't be kept in sync with every new resource.
 
-- Inbound emails
-- Extracted questions
-- Draft replies
-- Review queue
-- FAQ knowledge entries
-- Approved responses
-- App users / allowlist
-- Processing runs or job logs
-- Settings for Gmail/OpenAI/retrieval thresholds
+## App-Owned Tables
 
-First scaffold pass includes:
-
-- Google OAuth login routes via Socialite at `/auth/google` and
-  `/auth/google/callback`
-- Filament password login retained as the break-glass path
-- deny-by-default team access through `authorized_emails`
-- simple Filament resources for allowlisted emails, FAQ entries, and approved
-  responses
-- app-owned FAQ tables that mirror the useful shape of the legacy Postgres
-  tables while using a discrete Laravel database
-
-## Likely App-Owned Tables
-
-These names are provisional and should be finalized during scaffolding.
-
-- `users`
-- `authorized_emails`
-- `gmail_mailboxes`
-- `gmail_messages`
-- `email_questions`
-- `faq_entries`
-- `faq_approved_responses`
-- `draft_replies`
-- `draft_reply_questions`
-- `processing_runs`
+See `database/migrations/` for the authoritative, current schema. Not
+duplicated here to avoid drifting out of sync with every new feature.
 
 ## AI Integration
 
