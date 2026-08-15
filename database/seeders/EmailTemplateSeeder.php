@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\File;
  * currently used in the legacy n8n "Generate Email from Approved" workflow.
  * Editable afterward via the Email Templates Filament resource.
  *
- * Idempotent: safe to re-run, keyed on name.
+ * Idempotent: safe to re-run, keyed on name. Existing templates are never
+ * overwritten, so production edits survive deploys.
  */
 class EmailTemplateSeeder extends Seeder
 {
@@ -21,7 +22,7 @@ class EmailTemplateSeeder extends Seeder
 
     public function run(): void
     {
-        EmailTemplate::query()->updateOrCreate(
+        EmailTemplate::query()->firstOrCreate(
             ['name' => 'Default'],
             [
                 'subject' => 'Deutsches Edelsteinhaus Sachwerte - Ihre Webinarfrage',

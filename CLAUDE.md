@@ -39,15 +39,15 @@ There are two independent Google integrations:
 2. Gmail mailbox integration
    - Laravel uses separate Google/Gmail API credentials for the operational
      mailbox.
-   - This account receives FAQ emails and creates or sends replies.
+   - This account receives FAQ emails and creates Gmail drafts.
    - It is not tied to the logged-in Filament user.
 
 ## Development Preferences
 
 - Use Laravel conventions and Eloquent models directly.
 - Add only the tables required for the Filament workflow.
-- Keep the first version human-reviewed: draft, edit, approve, then create a
-  Gmail draft or send after approval.
+- Keep the first version human-reviewed: draft, edit, approve, then create or
+  update a Gmail draft. Direct sending is out of scope for now.
 - Use OpenAI directly through Laravel's first-party AI SDK.
 - Use `text-embedding-3-small` and 1536-dimensional embeddings for continuity.
 - Keep diffs small and document deployment friction as it is discovered.
@@ -95,7 +95,7 @@ Editor.
 - Always use curly braces for control structures.
 - Prefer Laravel policies for authorization.
 - Prefer queues for Gmail polling, embedding generation, retrieval, AI drafting,
-  and send/draft actions.
+  and Gmail draft actions.
 - Write focused PHPUnit tests for workflow behavior and authorization.
 - Run the smallest relevant test target after changes.
 - Do not add dependencies without a clear reason.

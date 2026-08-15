@@ -36,7 +36,7 @@
 4. Search the existing knowledge store with pgvector.
 5. Generate a draft German reply.
 6. Review and edit the draft in Filament.
-7. Approve and send, or create a Gmail draft.
+7. Approve and create a Gmail draft.
 8. Store the final approved answer for future retrieval.
 
 See `implementation-plan.md` for the fuller current plan.
@@ -53,7 +53,7 @@ There are two independent Google/OAuth concerns:
    - Access is deny-by-default and restricted with Laravel authorization.
 
 2. Gmail mailbox integration
-   - Lets Laravel receive FAQ emails and create or send replies from the chosen
+   - Lets Laravel receive FAQ emails and create Gmail drafts from the chosen
      operational mailbox.
    - Uses Gmail API scopes and credentials for that mailbox/integration.
    - Is not tied to the currently logged-in Filament user.
@@ -73,8 +73,11 @@ list and `app/Filament/Resources/` for the authoritative source.
   out of scope for now.
 - The inbound queue is defined by the single active mailbox's `INBOX` label.
   Multiple mailboxes/labels are not needed yet.
+- `Webinar Responses` is the reviewer workflow. `Email Questions` is an
+  admin-only diagnostic surface for low-level pipeline details like RAG
+  retrieval, ranking, and manual troubleshooting.
 - Approving a draft automatically writes its `final_answer` as the override
   for the best-matched FAQ (see `implementation-plan.md` "Self-Learning
   Strategy"). It never touches canonical `faq_entries`, which stays
-  admin-only. New FAQ rows/embeddings are a separate, manual admin task, not
-  a per-email pipeline feature.
+  read-only in the app after one-time ingestion from the canonical source
+  document.

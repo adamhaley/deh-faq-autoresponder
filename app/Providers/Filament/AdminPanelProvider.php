@@ -6,6 +6,7 @@ use App\Filament\Pages\Auth\Login;
 use App\Filament\Widgets\EmailQuestionMisalignmentRateChart;
 use App\Filament\Widgets\EmailQuestionOverview;
 use App\Filament\Widgets\RecentEmailQuestionMisalignments;
+use App\Http\Middleware\SetLocaleFromBrowser;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -39,7 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->navigationGroups([
                 NavigationGroup::make()
-                    ->label('Settings')
+                    ->label(fn (): string => __('admin.navigation.settings'))
                     ->icon(Heroicon::OutlinedCog6Tooth)
                     ->collapsed(),
             ])
@@ -57,6 +58,7 @@ class AdminPanelProvider extends PanelProvider
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
                 AuthenticateSession::class,
+                SetLocaleFromBrowser::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,
                 SubstituteBindings::class,

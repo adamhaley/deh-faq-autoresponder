@@ -25,11 +25,27 @@ class GmailMailboxResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = null;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
-
-    protected static ?string $navigationLabel = 'Gmail Mailboxes';
-
     protected static ?int $navigationSort = 20;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('admin.navigation.settings');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('admin.navigation.gmail_mailboxes');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('admin.resources.gmail_mailbox.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('admin.resources.gmail_mailbox.plural');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -39,12 +55,12 @@ class GmailMailboxResource extends Resource
                     ->email()
                     ->disabled(),
                 Toggle::make('is_active')
-                    ->label('Active'),
+                    ->label(__('admin.fields.active')),
                 TagsInput::make('label_ids')
-                    ->label('Gmail labels')
-                    ->placeholder('INBOX'),
+                    ->label(__('admin.fields.gmail_labels'))
+                    ->placeholder(__('admin.placeholders.inbox')),
                 TextInput::make('import_query')
-                    ->label('Import query'),
+                    ->label(__('admin.fields.import_query')),
                 TextInput::make('sync_status')
                     ->disabled(),
                 TextInput::make('last_history_id')
@@ -62,14 +78,14 @@ class GmailMailboxResource extends Resource
                 TextColumn::make('email')->searchable()->sortable(),
                 TextColumn::make('sync_status')->badge()->sortable(),
                 TextColumn::make('label_ids')->badge(),
-                IconColumn::make('is_active')->boolean()->label('Active'),
+                IconColumn::make('is_active')->boolean()->label(__('admin.fields.active')),
                 TextColumn::make('last_history_id')->sortable(),
                 TextColumn::make('last_sync_at')->dateTime()->sortable(),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
             ->headerActions([
                 Action::make('connectGmail')
-                    ->label('Connect Gmail')
+                    ->label(__('admin.actions.connect_gmail'))
                     ->icon(Heroicon::OutlinedPlus)
                     ->url(route('integrations.gmail.redirect')),
             ])

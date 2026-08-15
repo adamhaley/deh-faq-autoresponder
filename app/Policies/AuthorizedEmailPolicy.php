@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Models\FaqEntry;
+use App\Models\AuthorizedEmail;
 use App\Models\User;
 
-class FaqEntryPolicy
+class AuthorizedEmailPolicy
 {
     /**
      * Determine whether the user can view any models.
@@ -18,7 +18,7 @@ class FaqEntryPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, FaqEntry $faqEntry): bool
+    public function view(User $user, AuthorizedEmail $authorizedEmail): bool
     {
         return $user->isAdmin();
     }
@@ -28,38 +28,38 @@ class FaqEntryPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, FaqEntry $faqEntry): bool
+    public function update(User $user, AuthorizedEmail $authorizedEmail): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, FaqEntry $faqEntry): bool
+    public function delete(User $user, AuthorizedEmail $authorizedEmail): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, FaqEntry $faqEntry): bool
+    public function restore(User $user, AuthorizedEmail $authorizedEmail): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, FaqEntry $faqEntry): bool
+    public function forceDelete(User $user, AuthorizedEmail $authorizedEmail): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 }

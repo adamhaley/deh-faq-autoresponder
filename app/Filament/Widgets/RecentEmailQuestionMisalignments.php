@@ -20,29 +20,29 @@ class RecentEmailQuestionMisalignments extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Delta')
+            ->heading(__('admin.dashboard.delta'))
             ->query(fn (): Builder => app(EmailQuestionDashboardMetrics::class)
                 ->recentMisalignmentsQuery()
                 ->limit(5))
             ->columns([
                 TextColumn::make('question_text')
-                    ->label('Question')
+                    ->label(__('admin.fields.question'))
                     ->limit(70),
                 TextColumn::make('message.from_email')
-                    ->label('From')
+                    ->label(__('admin.fields.from'))
                     ->limit(32),
                 TextColumn::make('classification')
-                    ->label('AI')
+                    ->label(__('admin.fields.ai'))
                     ->badge()
                     ->color(fn (?string $state): string => EmailQuestion::classificationColor($state))
-                    ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? 'Unclassified'),
+                    ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? __('admin.statuses.classification.unclassified')),
                 TextColumn::make('review_status')
-                    ->label('Human')
+                    ->label(__('admin.fields.human'))
                     ->badge()
                     ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
                     ->formatStateUsing(fn (string $state): string => EmailQuestion::reviewStatusOptions()[$state] ?? $state),
                 TextColumn::make('reviewed_at')
-                    ->label('Reviewed')
+                    ->label(__('admin.fields.reviewed'))
                     ->dateTime()
                     ->sortable(),
             ]);

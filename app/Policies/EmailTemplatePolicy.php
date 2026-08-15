@@ -12,7 +12,7 @@ class EmailTemplatePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->canReviewResponses();
     }
 
     /**
@@ -20,7 +20,7 @@ class EmailTemplatePolicy
      */
     public function view(User $user, EmailTemplate $emailTemplate): bool
     {
-        return $user->isAdmin();
+        return $user->canReviewResponses();
     }
 
     /**
@@ -36,7 +36,7 @@ class EmailTemplatePolicy
      */
     public function update(User $user, EmailTemplate $emailTemplate): bool
     {
-        return $user->isAdmin();
+        return $user->canReviewResponses();
     }
 
     /**

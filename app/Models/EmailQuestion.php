@@ -123,10 +123,10 @@ class EmailQuestion extends Model
     public static function classificationOptions(): array
     {
         return [
-            self::ClassificationValidFaqQuestion => 'Valid question',
-            self::ClassificationNoise => 'Noise',
-            self::ClassificationUnanswerable => 'Unanswerable',
-            self::ClassificationNeedsHuman => 'Needs human',
+            self::ClassificationValidFaqQuestion => __('admin.statuses.classification.valid_faq_question'),
+            self::ClassificationNoise => __('admin.statuses.classification.noise'),
+            self::ClassificationUnanswerable => __('admin.statuses.classification.unanswerable'),
+            self::ClassificationNeedsHuman => __('admin.statuses.classification.needs_human'),
         ];
     }
 
@@ -136,11 +136,11 @@ class EmailQuestion extends Model
     public static function reviewStatusOptions(): array
     {
         return [
-            self::ReviewStatusPendingReview => 'Pending review',
-            self::ReviewStatusValid => 'Valid question',
-            self::ReviewStatusNoise => 'Noise',
-            self::ReviewStatusUnanswerable => 'Unanswerable',
-            self::ReviewStatusNeedsHuman => 'Needs human',
+            self::ReviewStatusPendingReview => __('admin.statuses.review.pending_review'),
+            self::ReviewStatusValid => __('admin.statuses.review.valid'),
+            self::ReviewStatusNoise => __('admin.statuses.review.noise'),
+            self::ReviewStatusUnanswerable => __('admin.statuses.review.unanswerable'),
+            self::ReviewStatusNeedsHuman => __('admin.statuses.review.needs_human'),
         ];
     }
 
@@ -150,9 +150,9 @@ class EmailQuestion extends Model
     public static function humanReviewDecisionOptions(): array
     {
         return [
-            self::ReviewStatusValid => 'Valid question',
-            self::ReviewStatusNoise => 'Noise',
-            self::ReviewStatusUnanswerable => 'Unanswerable',
+            self::ReviewStatusValid => __('admin.statuses.review.valid'),
+            self::ReviewStatusNoise => __('admin.statuses.review.noise'),
+            self::ReviewStatusUnanswerable => __('admin.statuses.review.unanswerable'),
         ];
     }
 
@@ -195,11 +195,11 @@ class EmailQuestion extends Model
     public static function faqRetrievalStatusOptions(): array
     {
         return [
-            self::FaqRetrievalStatusNotStarted => 'Not started',
-            self::FaqRetrievalStatusQueued => 'Queued',
-            self::FaqRetrievalStatusProcessing => 'Processing',
-            self::FaqRetrievalStatusCompleted => 'Completed',
-            self::FaqRetrievalStatusFailed => 'Failed',
+            self::FaqRetrievalStatusNotStarted => __('admin.statuses.retrieval.not_started'),
+            self::FaqRetrievalStatusQueued => __('admin.statuses.retrieval.queued'),
+            self::FaqRetrievalStatusProcessing => __('admin.statuses.retrieval.processing'),
+            self::FaqRetrievalStatusCompleted => __('admin.statuses.retrieval.completed'),
+            self::FaqRetrievalStatusFailed => __('admin.statuses.retrieval.failed'),
         ];
     }
 

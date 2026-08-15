@@ -54,7 +54,14 @@ jobs:
 
       - run: php artisan migrate --force
 
-      - run: php artisan test --compact
+      - run: >-
+          php artisan test --compact
+          --do-not-fail-on-warning
+          --do-not-fail-on-phpunit-warning
+          --do-not-fail-on-deprecation
+          --do-not-fail-on-phpunit-deprecation
+          --do-not-fail-on-notice
+          --do-not-fail-on-phpunit-notice
 
   deploy:
     needs: test

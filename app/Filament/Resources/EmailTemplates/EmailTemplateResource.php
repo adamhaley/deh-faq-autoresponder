@@ -19,9 +19,27 @@ class EmailTemplateResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = null;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
-
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('admin.navigation.settings');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('admin.navigation.email_templates');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('admin.resources.email_template.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('admin.resources.email_template.plural');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -33,7 +51,7 @@ class EmailTemplateResource extends Resource
                     ->required()
                     ->columnSpanFull(),
                 RichEditor::make('body')
-                    ->label('Body')
+                    ->label(__('admin.fields.body'))
                     ->required()
                     ->mergeTags([
                         'greeting' => 'Greeting',

@@ -77,7 +77,27 @@ class GmailMessageReviewFlowTest extends TestCase
         Livewire::test(ManageGmailMessages::class)
             ->mountTableAction('view', $message)
             ->assertOk()
-            ->assertHasNoActionErrors();
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Please review it in your Gmail Drafts folder and send it from there when you\'re ready.');
+    }
+
+    public function test_the_composed_email_body_preview_preserves_whitespace(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create(['thread_id' => 'thread-preview']);
+        EmailThreadDraft::factory()->create([
+            'thread_id' => 'thread-preview',
+            'body' => "Sehr geehrte Frau Renate,\n\nVielen Dank fürs Zuhören.",
+        ]);
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSeeHtml('fi-prose');
     }
 
     public function test_the_view_action_hides_the_raw_message_body_and_faq_matches(): void
@@ -140,7 +160,103 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertOk()
             ->assertHasNoActionErrors()
             ->assertMountedActionModalDontSee('Regenerate draft answer')
-            ->assertMountedActionModalDontSee('No draft generated yet');
+            ->assertMountedActionModalDontSee('No draft yet')
+            ->assertMountedActionModalSee('No draft')
+            ->assertMountedActionModalDontSee('No draft generated yet')
+            ->assertMountedActionModalDontSee('approve or resolve every question above first')
+            ->assertMountedActionModalSee('No reply needed');
+    }
+
+    public function test_the_composed_email_section_prompts_for_review_while_a_question_is_pending(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        EmailQuestion::factory()->for($message, 'message')->create();
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalDontSee('No reply needed')
+            ->assertMountedActionModalSee('approve or resolve every question above first');
+    }
+
+    public function test_the_composed_email_section_updates_when_a_question_is_resolved_as_noise(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->classifiedAsValid()
+            ->create(['question_text' => 'ich sehe euch nicht, hore den Ton nicht']);
+
+        $this->actingAs($reviewer);
+
+        $component = Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertMountedActionModalSee('approve or resolve every question above first')
+            ->assertMountedActionModalDontSee('No reply needed');
+
+        $question->markReviewed(EmailQuestion::ReviewStatusNoise, $reviewer->id);
+
+        $component
+            ->call('$refresh')
+            ->assertMountedActionModalDontSee('approve or resolve every question above first')
+            ->assertMountedActionModalSee('No reply needed - no relevant questions to answer.');
+    }
+
+    public function test_the_view_action_shows_a_spinner_for_active_answer_draft_generation(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create(['question_text' => 'Wie funktioniert das Investment?']);
+        EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $question->id,
+            'status' => EmailQuestionAnswerDraft::StatusQueued,
+        ]);
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Queued')
+            ->assertMountedActionModalSeeHtml('deh-status-spin');
+    }
+
+    public function test_the_composed_email_section_shows_a_spinner_while_waiting_for_the_gmail_draft(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create(['thread_id' => 'thread-awaiting-draft']);
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create(['question_text' => 'Wie funktioniert das Investment?']);
+        EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $question->id,
+            'final_answer' => 'Sie investieren direkt.',
+            'status' => EmailQuestionAnswerDraft::StatusApproved,
+        ]);
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Composing draft')
+            ->assertMountedActionModalSeeHtml('deh-status-spin')
+            ->assertMountedActionModalDontSee('No reply needed');
     }
 
     public function test_the_processed_icon_distinguishes_pending_drafted_and_resolved_messages(): void
@@ -238,7 +354,7 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertMountedActionModalSee('Edit template');
     }
 
-    public function test_a_reviewer_does_not_see_the_edit_template_link(): void
+    public function test_a_reviewer_sees_the_edit_template_link(): void
     {
         EmailTemplate::factory()->create();
 
@@ -252,6 +368,6 @@ class GmailMessageReviewFlowTest extends TestCase
             ->mountTableAction('view', $message)
             ->assertOk()
             ->assertHasNoActionErrors()
-            ->assertMountedActionModalDontSee('Edit template');
+            ->assertMountedActionModalSee('Edit template');
     }
 }

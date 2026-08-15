@@ -4,10 +4,8 @@ namespace App\Filament\Resources\FaqEntries;
 
 use App\Filament\Resources\FaqEntries\Pages\ManageFaqEntries;
 use App\Models\FaqEntry;
-use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
-use Filament\Forms\Components\Textarea;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -21,18 +19,33 @@ class FaqEntryResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'question';
 
-    public static function form(Schema $schema): Schema
+    public static function getNavigationLabel(): string
+    {
+        return __('admin.navigation.faq_entries');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('admin.resources.faq_entry.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('admin.resources.faq_entry.plural');
+    }
+
+    public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
-            Textarea::make('question')
-                ->required()
-                ->rows(4),
-            Textarea::make('answer')
-                ->required()
-                ->rows(8),
-            Textarea::make('embedding')
-                ->rows(4)
-                ->helperText('Stored as vector(1536) on Postgres; leave blank for manual entries until embedding generation is wired.'),
+            TextEntry::make('question')
+                ->columnSpanFull(),
+            TextEntry::make('answer')
+                ->columnSpanFull(),
+            TextEntry::make('embedding')
+                ->label(__('admin.fields.embedding'))
+                ->placeholder(__('admin.placeholders.no_embedding_stored'))
+                ->limit(160)
+                ->columnSpanFull(),
         ]);
     }
 
@@ -44,12 +57,8 @@ class FaqEntryResource extends Resource
                 TextColumn::make('answer')->limit(120),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
-            ->headerActions([
-                CreateAction::make(),
-            ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                ViewAction::make(),
             ]);
     }
 

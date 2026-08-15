@@ -67,7 +67,7 @@ Purpose: authenticate DEH team members into the admin app.
 
 ### Gmail Mailbox Integration
 
-Purpose: let Laravel receive FAQ emails and create or send replies.
+Purpose: let Laravel receive FAQ emails and create Gmail drafts.
 
 - Separate from Filament user login.
 - Uses Gmail API credentials/scopes for the operational mailbox.
@@ -86,11 +86,8 @@ Purpose: let Laravel receive FAQ emails and create or send replies.
 8. Compile a final editable email draft in Laravel.
 9. Show the draft in Filament for human review.
 10. Reviewer edits and approves.
-11. Laravel creates a Gmail draft or sends after approval.
+11. Laravel creates a Gmail draft after approval.
 12. Store the final approved answer for future learning.
-
-Default send behavior should be conservative: create Gmail drafts first, unless
-we explicitly decide to allow direct send after approval.
 
 Steps 1–12 are done. Step 11 creates (and keeps updated) a Gmail draft, never
 sends directly -- see `.ai/rules/jobs.md` for how the thread-completion
@@ -98,11 +95,14 @@ trigger and template assembly work.
 
 ## Filament Screens
 
-Done. Current resources live in `app/Filament/Resources/`: Email Questions
-(the main review workflow), FAQ Entries and FAQ Approved Responses
-(admin-only canonical content), Gmail Mailboxes and Gmail Messages, Email
-Templates (admin-only, the outgoing email template), and Authorized Emails
-(the allowlist). Google OAuth login is at `/auth/google` /
+Done. Current resources live in `app/Filament/Resources/`: Gmail Messages /
+`Webinar Responses` is the reviewer workflow. Email Questions is an admin-only
+technical diagnostic surface for low-level pipeline details like RAG retrieval,
+ranking, and manual troubleshooting. FAQ Entries is admin-only and read-only
+after one-time canonical ingestion; FAQ Approved Responses is admin-only for
+override inspection/correction. Gmail Mailboxes, Email Templates (admin-only,
+the outgoing email template), and Authorized Emails (the allowlist) round out
+the admin surfaces. Google OAuth login is at `/auth/google` /
 `/auth/google/callback`; the Filament password login is the break-glass path.
 That resource directory is the authoritative list going forward — this doc
 won't be kept in sync with every new resource.
@@ -146,9 +146,11 @@ canonical-content level:
   override when present, falling back to the FAQ's canonical `answer`.
   Retrieval (embeddings) is never affected — only future generation prompts
   see the updated text.
-- **Admins** maintain canonical `faq_entries` (question/answer/embedding)
-  directly through the `Faq Entries` resource, and can also view/correct
-  overrides through `Faq Approved Responses`. Both resources are admin-only
+- **Admins** can inspect canonical `faq_entries` (question/answer/embedding)
+  through the `Faq Entries` resource, but the app does not support manual
+  canonical FAQ creation or editing. Those rows come from one-time ingestion of
+  the canonical source-of-truth document. Admins can view/correct overrides
+  through `Faq Approved Responses`. Both resources are admin-only
   (`FaqEntryPolicy`, `FaqApprovedResponsePolicy`); operators cannot reach
   either.
 
@@ -158,4 +160,4 @@ canonical-content level:
 - Gmail API auth must not be coupled to Filament login.
 - The new discrete Postgres database means we need a deliberate migration plan
   for FAQ rows and embeddings.
-- Direct send should stay gated until review flow and audit logging are solid.
+- Direct send is out of scope; the app creates and updates Gmail drafts only.
