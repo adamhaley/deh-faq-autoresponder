@@ -77,4 +77,26 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertOk()
             ->assertHasNoActionErrors();
     }
+
+    public function test_the_view_action_hides_the_raw_message_body_and_faq_matches(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create([
+            'text_body' => 'Geheimer Nachrichtentext',
+            'html_body' => '<p>Geheimer HTML-Text</p>',
+        ]);
+        EmailQuestion::factory()->for($message, 'message')->create();
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertDontSee('Geheimer Nachrichtentext')
+            ->assertDontSee('Geheimer HTML-Text')
+            ->assertDontSee('FAQ Matches')
+            ->assertDontSee('Retrieve FAQ matches');
+    }
 }

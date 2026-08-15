@@ -4,7 +4,6 @@ namespace App\Filament\Resources\GmailMessages;
 
 use App\Filament\Resources\GmailMessages\Pages\ManageGmailMessages;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
-use App\Jobs\RetrieveEmailQuestionFaqMatches;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailThreadDraft;
@@ -15,7 +14,6 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -74,15 +72,11 @@ class GmailMessageResource extends Resource
             ->components([
                 Section::make('Message')
                     ->schema([
-                        TextEntry::make('mailbox_email')->label('Mailbox'),
-                        TextEntry::make('from_email')->label('From'),
                         TextEntry::make('participant_name')->label('Participant')->placeholder('Unknown'),
+                        TextEntry::make('reply_to_email')->label('Email address'),
                         TextEntry::make('internal_date')->label('Received')->dateTime(),
-                        TextEntry::make('subject')->columnSpanFull(),
-                        TextEntry::make('snippet')->columnSpanFull(),
-                        TextEntry::make('text_body')->label('Text body')->columnSpanFull(),
-                        TextEntry::make('html_body')->label('HTML body')->columnSpanFull(),
                     ])
+                    ->columns(3)
                     ->columnSpanFull(),
                 Section::make('Questions')
                     ->schema(fn (GmailMessage $record): array => self::questionComponents($record))
@@ -180,56 +174,12 @@ class GmailMessageResource extends Resource
                             ->state(fn (): ?string => $question->fresh()->reviewer?->name)
                             ->placeholder('Not reviewed yet'),
                     ]),
-                Section::make('FAQ Matches')
-                    ->key("faq_matches_{$question->id}")
-                    ->afterHeader([
-                        Action::make("retrieveFaqMatches_{$question->id}")
-                            ->label('Retrieve FAQ matches')
-                            ->icon(Heroicon::ArrowPath)
-                            ->action(function () use ($question): void {
-                                $question->update([
-                                    'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusQueued,
-                                    'faq_retrieval_error' => null,
-                                    'faq_retrieval_failed_at' => null,
-                                ]);
-
-                                RetrieveEmailQuestionFaqMatches::dispatch($question->id);
-
-                                Notification::make()
-                                    ->title('FAQ retrieval queued')
-                                    ->success()
-                                    ->send();
-                            }),
-                    ])
-                    ->schema([
-                        TextEntry::make("faq_retrieval_status_{$question->id}")
-                            ->label('Retrieval status')
-                            ->state(fn (): string => $question->fresh()->faq_retrieval_status)
-                            ->badge()
-                            ->color(fn (string $state): string => EmailQuestion::faqRetrievalStatusColor($state))
-                            ->formatStateUsing(fn (string $state): string => EmailQuestion::faqRetrievalStatusOptions()[$state] ?? $state),
-                        RepeatableEntry::make("faq_matches_{$question->id}")
-                            ->label('Matches')
-                            ->state(fn (): array => $question->faqMatches()->with('faqEntry')->orderBy('rank')->get()->all())
-                            ->placeholder('No FAQ matches retrieved yet.')
-                            ->schema([
-                                TextEntry::make('similarity')
-                                    ->formatStateUsing(fn (float $state): string => number_format($state * 100, 1).'%')
-                                    ->badge()
-                                    ->color(fn (float $state): string => $state >= 0.8 ? 'success' : 'warning'),
-                                TextEntry::make('faqEntry.question')->label('FAQ question')->columnSpanFull(),
-                                TextEntry::make('faqEntry.answer')->label('FAQ answer')->columnSpanFull(),
-                            ])
-                            ->columns(2)
-                            ->columnSpanFull(),
-                    ])
-                    ->columnSpanFull(),
                 Section::make('Answer')
                     ->key("answer_{$question->id}")
                     ->afterHeader([
                         ActionGroup::make([
                             Action::make("generateAnswer_{$question->id}")
-                                ->label('Generate draft answer')
+                                ->label('Regenerate draft answer')
                                 ->icon(Heroicon::Sparkles)
                                 ->color('primary')
                                 ->action(function () use ($question): void {

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\EmailQuestions\EmailQuestionResource;
+use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Jobs\RetrieveEmailQuestionFaqMatches;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionFaqMatch;
@@ -67,6 +68,37 @@ class EmailQuestionFaqRetrievalTest extends TestCase
             && $prompt->model === 'text-embedding-3-small');
     }
 
+    public function test_marking_a_question_valid_automatically_queues_faq_retrieval(): void
+    {
+        Queue::fake();
+
+        $question = EmailQuestion::factory()->create([
+            'question_text' => 'Kann ich in Edelsteine investieren?',
+        ]);
+
+        $question->markReviewed(EmailQuestion::ReviewStatusValid, null);
+
+        $this->assertSame(EmailQuestion::FaqRetrievalStatusQueued, $question->refresh()->faq_retrieval_status);
+
+        Queue::assertPushed(
+            RetrieveEmailQuestionFaqMatches::class,
+            fn (RetrieveEmailQuestionFaqMatches $job): bool => $job->emailQuestionId === $question->id,
+        );
+    }
+
+    public function test_marking_a_question_noise_does_not_queue_faq_retrieval(): void
+    {
+        Queue::fake();
+
+        $question = EmailQuestion::factory()->create([
+            'question_text' => 'Hallo',
+        ]);
+
+        $question->markReviewed(EmailQuestion::ReviewStatusNoise, null);
+
+        Queue::assertNotPushed(RetrieveEmailQuestionFaqMatches::class);
+    }
+
     public function test_command_queues_match_retrieval_for_reviewed_valid_questions(): void
     {
         Queue::fake();
@@ -100,6 +132,7 @@ class EmailQuestionFaqRetrievalTest extends TestCase
 
     public function test_retrieval_job_retrieves_matches_and_updates_status(): void
     {
+        Queue::fake();
         Embeddings::fake([[$this->embedding([1.0, 0.0])]]);
 
         FaqEntry::factory()->create([
@@ -121,6 +154,49 @@ class EmailQuestionFaqRetrievalTest extends TestCase
         $this->assertSame(EmailQuestion::FaqRetrievalStatusCompleted, $question->refresh()->faq_retrieval_status);
         $this->assertNotNull($question->faq_retrieval_started_at);
         $this->assertNotNull($question->faq_retrieval_completed_at);
+    }
+
+    public function test_retrieval_job_chains_into_answer_draft_generation(): void
+    {
+        Queue::fake();
+        Embeddings::fake([[$this->embedding([1.0, 0.0])]]);
+
+        FaqEntry::factory()->create([
+            'question' => 'Wie funktioniert ein Edelstein-Investment?',
+            'answer' => 'Sie erwerben physische Edelsteine.',
+            'embedding' => $this->vector([1.0, 0.0]),
+        ]);
+
+        $question = EmailQuestion::factory()
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create([
+                'question_text' => 'Kann ich in Edelsteine investieren?',
+            ]);
+
+        (new RetrieveEmailQuestionFaqMatches($question->id))
+            ->handle(app(EmailQuestionFaqRetrievalService::class));
+
+        Queue::assertPushed(
+            GenerateEmailQuestionAnswerDraft::class,
+            fn (GenerateEmailQuestionAnswerDraft $job): bool => $job->emailQuestionId === $question->id,
+        );
+    }
+
+    public function test_retrieval_job_does_not_chain_when_no_matches_were_found(): void
+    {
+        Queue::fake();
+        Embeddings::fake([[$this->embedding([1.0, 0.0])]]);
+
+        $question = EmailQuestion::factory()
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create([
+                'question_text' => 'Kann ich in Edelsteine investieren?',
+            ]);
+
+        (new RetrieveEmailQuestionFaqMatches($question->id))
+            ->handle(app(EmailQuestionFaqRetrievalService::class));
+
+        Queue::assertNotPushed(GenerateEmailQuestionAnswerDraft::class);
     }
 
     public function test_email_question_resource_query_exposes_faq_match_count(): void
