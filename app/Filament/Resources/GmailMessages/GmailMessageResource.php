@@ -75,6 +75,10 @@ class GmailMessageResource extends Resource
                         TextEntry::make('participant_name')->label('Participant')->placeholder('Unknown'),
                         TextEntry::make('reply_to_email')->label('Email address'),
                         TextEntry::make('internal_date')->label('Received')->dateTime(),
+                        TextEntry::make('snippet')
+                            ->label('Preview')
+                            ->placeholder('No preview available.')
+                            ->columnSpanFull(),
                     ])
                     ->columns(3)
                     ->columnSpanFull(),
