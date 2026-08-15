@@ -10,6 +10,7 @@ use App\Models\EmailThreadDraft;
 use App\Models\GmailMessage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -139,6 +140,31 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertHasNoActionErrors()
             ->assertMountedActionModalDontSee('Regenerate draft answer')
             ->assertMountedActionModalDontSee('No draft generated yet');
+    }
+
+    public function test_the_answer_section_appears_as_soon_as_a_question_is_marked_valid(): void
+    {
+        Queue::fake();
+
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->classifiedAsValid()
+            ->create(['question_text' => 'ich sehe euch nicht, hore den Ton nicht']);
+
+        $this->actingAs($reviewer);
+
+        $component = Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertMountedActionModalDontSee('Regenerate draft answer');
+
+        $question->markReviewed(EmailQuestion::ReviewStatusValid, $reviewer->id);
+
+        $component
+            ->call('$refresh')
+            ->assertMountedActionModalSee('Regenerate draft answer');
     }
 
     public function test_the_view_action_shows_the_answer_section_for_a_valid_question(): void
