@@ -11,7 +11,7 @@ Replace the existing autoresponder workflow with a maintainable admin app that:
 - retrieves relevant knowledge from Postgres/pgvector,
 - drafts German replies,
 - lets a human review and edit replies in Filament,
-- creates Gmail drafts or sends replies after approval,
+- creates Gmail drafts after approval,
 - saves approved answers for future reuse.
 
 ## Current Approach

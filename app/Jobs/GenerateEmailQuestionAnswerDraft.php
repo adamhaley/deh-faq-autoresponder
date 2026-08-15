@@ -4,17 +4,49 @@ namespace App\Jobs;
 
 use App\Models\EmailQuestionAnswerDraft;
 use App\Services\EmailQuestions\EmailQuestionAnswerDraftGenerationService;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\RateLimited;
 use Throwable;
 
-class GenerateEmailQuestionAnswerDraft implements ShouldQueue
+class GenerateEmailQuestionAnswerDraft implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
-    public int $tries = 3;
+    public int $tries = 0;
 
     public int $timeout = 120;
+
+    public int $uniqueFor = 600;
+
+    /**
+     * @return array<int, int>
+     */
+    public function backoff(): array
+    {
+        return [5, 30, 120];
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [
+            (new RateLimited('openai'))->releaseAfter(30),
+        ];
+    }
+
+    public function retryUntil(): \DateTimeInterface
+    {
+        return now()->addMinutes(30);
+    }
+
+    public function uniqueId(): string
+    {
+        return (string) $this->emailQuestionId;
+    }
 
     /**
      * Create a new job instance.

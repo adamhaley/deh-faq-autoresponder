@@ -28,8 +28,8 @@ files aligned when changing project-level agent instructions.
 - Use Laravel conventions and Eloquent models directly over existing tables
   where practical.
 - Add only the new tables required for the Filament workflow.
-- Keep the first version human-reviewed: draft, edit, approve, then send or
-  create a Gmail draft.
+- Keep the first version human-reviewed: draft, edit, approve, then create or
+  update a Gmail draft. Direct sending is out of scope for now.
 - Use OpenAI directly through Laravel's first-party AI SDK.
 - Use `text-embedding-3-small` and 1536-dimensional embeddings for continuity.
 - Keep diffs small and document deployment friction as it is discovered.

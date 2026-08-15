@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\FaqEntry;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -16,6 +17,16 @@ class FaqCanonicalContentAuthorizationTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
 
         $this->actingAs($admin)->get('/admin/faq-entries')->assertOk();
+    }
+
+    public function test_admin_cannot_manually_mutate_faq_entries(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+        $faqEntry = FaqEntry::factory()->create();
+
+        $this->assertFalse($admin->can('create', FaqEntry::class));
+        $this->assertFalse($admin->can('update', $faqEntry));
+        $this->assertFalse($admin->can('delete', $faqEntry));
     }
 
     public function test_reviewer_cannot_view_faq_entries(): void
