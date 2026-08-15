@@ -140,7 +140,26 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertOk()
             ->assertHasNoActionErrors()
             ->assertMountedActionModalDontSee('Regenerate draft answer')
-            ->assertMountedActionModalDontSee('No draft generated yet');
+            ->assertMountedActionModalDontSee('No draft generated yet')
+            ->assertMountedActionModalDontSee('approve or resolve every question above first')
+            ->assertMountedActionModalSee('No reply needed');
+    }
+
+    public function test_the_composed_email_section_prompts_for_review_while_a_question_is_pending(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        EmailQuestion::factory()->for($message, 'message')->create();
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalDontSee('No reply needed')
+            ->assertMountedActionModalSee('approve or resolve every question above first');
     }
 
     public function test_the_processed_icon_distinguishes_pending_drafted_and_resolved_messages(): void

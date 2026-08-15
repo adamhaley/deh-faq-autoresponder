@@ -314,7 +314,9 @@ class GmailMessageResource extends Resource
             return [
                 TextEntry::make('no_draft')
                     ->label('')
-                    ->state('Not composed yet — approve or resolve every question above first.'),
+                    ->state($record->needsReview()
+                        ? 'Not composed yet — approve or resolve every question above first.'
+                        : 'No reply needed — every question resolved as noise, unanswerable, or rejected.'),
             ];
         }
 
