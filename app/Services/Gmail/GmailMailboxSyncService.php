@@ -84,6 +84,11 @@ class GmailMailboxSyncService
 
             foreach ($this->messageIdsFromHistory($history) as $messageId) {
                 $message = $this->gmail->message($mailbox, $messageId);
+
+                if ($this->isOwnOutgoingMessage($message)) {
+                    continue;
+                }
+
                 $this->storeMessage($mailbox, $message);
                 $importedMessages++;
             }
@@ -139,6 +144,11 @@ class GmailMailboxSyncService
 
             foreach ($this->messageIdsFromList($list) as $messageId) {
                 $message = $this->gmail->message($mailbox, $messageId);
+
+                if ($this->isOwnOutgoingMessage($message)) {
+                    continue;
+                }
+
                 $this->storeMessage($mailbox, $message);
                 $importedMessages++;
             }
@@ -201,6 +211,22 @@ class GmailMailboxSyncService
         }
 
         return array_values(array_unique($messageIds));
+    }
+
+    /**
+     * The mailbox's own drafts (created and updated by this app's compose
+     * pipeline) surface through Gmail's history/list API exactly like any
+     * other message once queued. Importing one as if it were a new inbound
+     * customer message leaves a phantom row with no extractable questions
+     * that already appears to have a composed reply.
+     *
+     * @param  array<string, mixed>  $message
+     */
+    private function isOwnOutgoingMessage(array $message): bool
+    {
+        $labels = is_array($message['labelIds'] ?? null) ? $message['labelIds'] : [];
+
+        return in_array('DRAFT', $labels, true) || in_array('SENT', $labels, true);
     }
 
     /**

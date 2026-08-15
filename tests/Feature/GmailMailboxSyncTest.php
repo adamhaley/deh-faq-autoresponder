@@ -108,6 +108,95 @@ class GmailMailboxSyncTest extends TestCase
         $this->assertSame(['INBOX'], $message->label_ids);
     }
 
+    public function test_command_skips_the_mailboxs_own_draft_and_sent_messages(): void
+    {
+        $this->configureGmail();
+
+        Http::preventStrayRequests();
+        Http::fake(function (Request $request) {
+            if ($request->url() === 'https://oauth2.googleapis.com/token') {
+                return Http::response([
+                    'access_token' => 'fresh-access-token',
+                    'expires_in' => 3600,
+                    'scope' => 'https://www.googleapis.com/auth/gmail.modify',
+                ]);
+            }
+
+            if (str_starts_with($request->url(), 'https://gmail.googleapis.com/gmail/v1/users/me/history')) {
+                return Http::response([
+                    'historyId' => '200',
+                    'history' => [
+                        [
+                            'messagesAdded' => [
+                                ['message' => ['id' => 'inbound-message']],
+                                ['message' => ['id' => 'own-draft']],
+                                ['message' => ['id' => 'own-sent-reply']],
+                            ],
+                        ],
+                    ],
+                ]);
+            }
+
+            if (str_contains($request->url(), '/messages/inbound-message')) {
+                return Http::response($this->gmailMessage([
+                    'id' => 'inbound-message',
+                    'threadId' => 'thread-1',
+                    'historyId' => '190',
+                    'subject' => 'A real question',
+                    'from' => 'Customer One <one@example.com>',
+                    'body' => 'How do I care for this stone?',
+                    'internalDate' => '1786530000000',
+                ]));
+            }
+
+            if (str_contains($request->url(), '/messages/own-draft')) {
+                $message = $this->gmailMessage([
+                    'id' => 'own-draft',
+                    'threadId' => 'thread-1',
+                    'historyId' => '191',
+                    'subject' => 'Re: A real question',
+                    'from' => 'deutschesedelsteinhaus@gmail.com',
+                    'body' => 'Composed reply body.',
+                    'internalDate' => '1786530060000',
+                ]);
+                $message['labelIds'] = ['DRAFT'];
+
+                return Http::response($message);
+            }
+
+            if (str_contains($request->url(), '/messages/own-sent-reply')) {
+                $message = $this->gmailMessage([
+                    'id' => 'own-sent-reply',
+                    'threadId' => 'thread-1',
+                    'historyId' => '192',
+                    'subject' => 'Re: A real question',
+                    'from' => 'deutschesedelsteinhaus@gmail.com',
+                    'body' => 'Sent reply body.',
+                    'internalDate' => '1786530120000',
+                ]);
+                $message['labelIds'] = ['SENT'];
+
+                return Http::response($message);
+            }
+
+            return Http::response(status: 404);
+        });
+
+        $mailbox = GmailMailbox::factory()->create([
+            'access_token' => 'stale-access-token',
+            'refresh_token' => 'refresh-token',
+            'token_expires_at' => now()->subDay(),
+            'last_history_id' => '100',
+        ]);
+
+        $this->artisan('gmail:sync-mailboxes')
+            ->expectsOutput('Imported 1 Gmail message(s).')
+            ->assertSuccessful();
+
+        $this->assertSame(1, GmailMessage::query()->count());
+        $this->assertTrue(GmailMessage::query()->where('gmail_message_id', 'inbound-message')->exists());
+    }
+
     public function test_command_extracts_participant_name_and_reply_email_from_message_body(): void
     {
         $this->configureGmail();
