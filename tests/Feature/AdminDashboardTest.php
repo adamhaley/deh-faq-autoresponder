@@ -21,8 +21,22 @@ class AdminDashboardTest extends TestCase
         $this->actingAs($user)
             ->get('/admin')
             ->assertOk()
+            ->assertSee('Recent Gmail Messages')
             ->assertSee('Pending review')
             ->assertSee('AI/Human Misalignment Rate')
             ->assertSee('Recent AI/Human Misalignments');
+    }
+
+    public function test_reviewer_dashboard_renders_recent_gmail_messages_widget(): void
+    {
+        $user = User::factory()->create([
+            'role' => UserRole::Reviewer,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/admin')
+            ->assertOk()
+            ->assertSee('Recent Gmail Messages');
     }
 }
