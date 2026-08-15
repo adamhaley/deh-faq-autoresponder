@@ -28,6 +28,7 @@ class EmailQuestionMisalignmentRateChart extends ChartWidget
                     'backgroundColor' => 'rgba(209, 96, 104, 0.16)',
                     'fill' => true,
                     'tension' => 0.35,
+                    'spanGaps' => true,
                 ],
             ],
             'labels' => $metrics['labels'],
