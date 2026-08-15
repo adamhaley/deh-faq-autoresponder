@@ -167,8 +167,25 @@ class GmailMessageResource extends Resource
                             ->button(),
                     ])
                     ->schema([
+                        TextEntry::make("ai_classification_{$question->id}")
+                            ->label('AI classification')
+                            ->state(fn (): ?string => $question->fresh()->classification)
+                            ->badge()
+                            ->placeholder('Not classified yet')
+                            ->color(fn (?string $state): string => $state === null ? 'gray' : EmailQuestion::classificationColor($state))
+                            ->formatStateUsing(fn (?string $state): string => $state === null ? 'Not classified' : EmailQuestion::classificationOptions()[$state] ?? $state),
+                        TextEntry::make("ai_classification_confidence_{$question->id}")
+                            ->label('AI confidence')
+                            ->state(fn (): ?int => $question->fresh()->classification_confidence)
+                            ->placeholder('—')
+                            ->formatStateUsing(fn (int $state): string => "{$state}%"),
+                        TextEntry::make("ai_classification_reason_{$question->id}")
+                            ->label('AI reasoning')
+                            ->state(fn (): ?string => $question->fresh()->classification_reason)
+                            ->placeholder('No reasoning recorded.')
+                            ->columnSpanFull(),
                         TextEntry::make("review_status_{$question->id}")
-                            ->label('Classification')
+                            ->label('Human decision')
                             ->state(fn (): string => $question->fresh()->review_status)
                             ->badge()
                             ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
@@ -177,7 +194,8 @@ class GmailMessageResource extends Resource
                             ->label('Reviewed by')
                             ->state(fn (): ?string => $question->fresh()->reviewer?->name)
                             ->placeholder('Not reviewed yet'),
-                    ]),
+                    ])
+                    ->columns(2),
                 Section::make('Answer')
                     ->key("answer_{$question->id}")
                     ->afterHeader([

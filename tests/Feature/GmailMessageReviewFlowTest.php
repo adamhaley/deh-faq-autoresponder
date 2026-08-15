@@ -94,9 +94,30 @@ class GmailMessageReviewFlowTest extends TestCase
             ->mountTableAction('view', $message)
             ->assertOk()
             ->assertHasNoActionErrors()
-            ->assertDontSee('Geheimer Nachrichtentext')
-            ->assertDontSee('Geheimer HTML-Text')
-            ->assertDontSee('FAQ Matches')
-            ->assertDontSee('Retrieve FAQ matches');
+            ->assertMountedActionModalDontSee('Geheimer Nachrichtentext')
+            ->assertMountedActionModalDontSee('Geheimer HTML-Text')
+            ->assertMountedActionModalDontSee('FAQ Matches')
+            ->assertMountedActionModalDontSee('Retrieve FAQ matches');
+    }
+
+    public function test_the_view_action_shows_the_ai_classification(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        EmailQuestion::factory()
+            ->for($message, 'message')
+            ->classifiedAsValid()
+            ->create(['question_text' => 'Wie funktioniert das Investment?']);
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Valid question')
+            ->assertMountedActionModalSee('92%')
+            ->assertMountedActionModalSee('This is a customer FAQ question.');
     }
 }
