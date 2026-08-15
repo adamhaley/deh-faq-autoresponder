@@ -43,4 +43,25 @@ class EmailThreadDraft extends Model
     {
         return $this->belongsTo(GmailMailbox::class, 'gmail_mailbox_id');
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function statusOptions(): array
+    {
+        return [
+            self::StatusCreated => 'Draft created',
+            self::StatusUpdated => 'Draft updated',
+            self::StatusFailed => 'Failed',
+        ];
+    }
+
+    public static function statusColor(string $status): string
+    {
+        return match ($status) {
+            self::StatusCreated, self::StatusUpdated => 'success',
+            self::StatusFailed => 'danger',
+            default => 'gray',
+        };
+    }
 }

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'gmail_mailbox_id',
@@ -72,5 +73,40 @@ class GmailMessage extends Model
     public function questions(): HasMany
     {
         return $this->hasMany(EmailQuestion::class);
+    }
+
+    /**
+     * Threads never span more than one message in this app (the mailbox
+     * only receives automated one-off webinar-question emails, never
+     * back-and-forth replies), so this is effectively 1:1 -- but the
+     * composed draft is genuinely keyed on thread_id, not message id.
+     */
+    public function threadDraft(): HasOne
+    {
+        return $this->hasOne(EmailThreadDraft::class, 'thread_id', 'thread_id');
+    }
+
+    /**
+     * Whether a reviewer still has something to do here: any extracted
+     * question that hasn't been assigned a review decision yet, or that
+     * was marked Valid but whose answer hasn't reached a terminal
+     * (approved/rejected) state. A message with no extracted questions, or
+     * where every question is resolved, needs no attention.
+     */
+    public function needsReview(): bool
+    {
+        return $this->questions->contains(function (EmailQuestion $question): bool {
+            if ($question->review_status === EmailQuestion::ReviewStatusValid) {
+                return ! in_array($question->answerDraft?->status, [
+                    EmailQuestionAnswerDraft::StatusApproved,
+                    EmailQuestionAnswerDraft::StatusRejected,
+                ], true);
+            }
+
+            return ! in_array($question->review_status, [
+                EmailQuestion::ReviewStatusNoise,
+                EmailQuestion::ReviewStatusUnanswerable,
+            ], true);
+        });
     }
 }
