@@ -434,10 +434,11 @@ class EmailQuestionResource extends Resource
                     ->formatStateUsing(fn (?int $state): string => (string) ($state ?? 0))
                     ->color(fn (?int $state): string => ($state ?? 0) > 0 ? 'success' : 'gray')
                     ->sortable(),
-                TextColumn::make('message.from_email')
-                    ->label('From')
-                    ->searchable()
-                    ->sortable(),
+                TextColumn::make('message.participant_name')
+                    ->label('Participant')
+                    ->formatStateUsing(fn (?string $state, EmailQuestion $record): ?string => $state ?? $record->message?->reply_to_email)
+                    ->placeholder('Unknown')
+                    ->searchable(['participant_name', 'reply_to_email']),
                 TextColumn::make('classification_confidence')
                     ->label('AI Confidence')
                     ->suffix('%')
