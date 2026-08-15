@@ -336,6 +336,15 @@ class GmailMessageResource extends Resource
                 ->label('Composed at')
                 ->state(fn (): mixed => $record->threadDraft()->value('composed_at'))
                 ->dateTime(),
+            TextEntry::make('draft_next_step')
+                ->label('')
+                ->state("The Gmail draft is ready. Please review it in your Gmail Drafts folder and send it from there when you're ready.")
+                ->color('info')
+                ->visible(fn (): bool => in_array($record->threadDraft()->value('status'), [
+                    EmailThreadDraft::StatusCreated,
+                    EmailThreadDraft::StatusUpdated,
+                ], true))
+                ->columnSpanFull(),
             TextEntry::make('draft_subject')
                 ->label('Subject')
                 ->state(fn (): ?string => $record->threadDraft()->value('subject'))

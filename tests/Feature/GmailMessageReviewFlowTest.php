@@ -77,7 +77,8 @@ class GmailMessageReviewFlowTest extends TestCase
         Livewire::test(ManageGmailMessages::class)
             ->mountTableAction('view', $message)
             ->assertOk()
-            ->assertHasNoActionErrors();
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Please review it in your Gmail Drafts folder and send it from there when you\'re ready.');
     }
 
     public function test_the_composed_email_body_preview_preserves_whitespace(): void
