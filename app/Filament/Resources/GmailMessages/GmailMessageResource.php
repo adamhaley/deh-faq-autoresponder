@@ -341,7 +341,7 @@ class GmailMessageResource extends Resource
                 IconColumn::make('processed')
                     ->label('')
                     ->state(fn (GmailMessage $record): string => match (true) {
-                        $record->needsReview() => 'pending',
+                        $record->questions->isEmpty(), $record->needsReview() => 'pending',
                         $record->hasComposedDraft() => 'drafted',
                         default => 'resolved',
                     })

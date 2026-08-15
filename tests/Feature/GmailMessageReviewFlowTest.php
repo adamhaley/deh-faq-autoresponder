@@ -149,6 +149,8 @@ class GmailMessageReviewFlowTest extends TestCase
         $pendingMessage = GmailMessage::factory()->create();
         EmailQuestion::factory()->for($pendingMessage, 'message')->create();
 
+        $notYetExtractedMessage = GmailMessage::factory()->create();
+
         $draftedMessage = GmailMessage::factory()->create(['thread_id' => 'thread-drafted']);
         $draftedQuestion = EmailQuestion::factory()
             ->for($draftedMessage, 'message')
@@ -169,6 +171,7 @@ class GmailMessageReviewFlowTest extends TestCase
 
         $component
             ->assertTableColumnStateSet('processed', 'pending', record: $pendingMessage->load('questions.answerDraft', 'threadDraft'))
+            ->assertTableColumnStateSet('processed', 'pending', record: $notYetExtractedMessage->load('questions.answerDraft', 'threadDraft'))
             ->assertTableColumnStateSet('processed', 'drafted', record: $draftedMessage->load('questions.answerDraft', 'threadDraft'))
             ->assertTableColumnStateSet('processed', 'resolved', record: $resolvedMessage->load('questions.answerDraft', 'threadDraft'));
     }
