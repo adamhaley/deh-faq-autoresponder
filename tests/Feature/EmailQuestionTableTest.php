@@ -39,7 +39,8 @@ class EmailQuestionTableTest extends TestCase
             ->assertTableColumnExists('message.participant_name')
             ->assertTableColumnDoesNotExist('message.from_email')
             ->assertTableColumnFormattedStateSet('message.participant_name', 'Helmut Kempf', record: $question)
-            ->assertTableActionsExistInOrder(['view', 'delete'])
+            ->assertTableActionsExistInOrder(['view'])
+            ->assertTableActionDoesNotExist('delete')
             ->assertTableActionDoesNotExist('edit');
 
         $columnNames = array_values(array_map(

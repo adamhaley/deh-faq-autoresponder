@@ -10,9 +10,6 @@ use App\Models\EmailQuestionAnswerDraft;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -463,12 +460,6 @@ class EmailQuestionResource extends Resource
                 ViewAction::make()
                     ->modalCancelActionLabel('Close')
                     ->slideOver(),
-                DeleteAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
             ]);
     }
 
