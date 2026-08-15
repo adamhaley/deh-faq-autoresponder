@@ -393,9 +393,8 @@ class GmailMessageResource extends Resource
             ])
             ->recordActions([
                 ViewAction::make()
-                    ->label(fn (GmailMessage $record): string => $record->hasComposedDraft() ? 'Processed' : 'Process')
-                    ->icon(fn (GmailMessage $record): BackedEnum => $record->hasComposedDraft() ? Heroicon::CheckCircle : Heroicon::ArrowPath)
-                    ->color(fn (GmailMessage $record): string => $record->hasComposedDraft() ? 'success' : 'gray')
+                    ->label('Process')
+                    ->icon(Heroicon::ArrowPath)
                     ->modalCancelActionLabel('Close')
                     ->slideOver(),
             ]);
