@@ -120,4 +120,43 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertMountedActionModalSee('92%')
             ->assertMountedActionModalSee('This is a customer FAQ question.');
     }
+
+    public function test_the_view_action_hides_the_answer_section_for_a_noise_question(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        EmailQuestion::factory()
+            ->for($message, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->create(['question_text' => 'ich sehe euch nicht, hore den Ton nicht']);
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalDontSee('Regenerate draft answer')
+            ->assertMountedActionModalDontSee('No draft generated yet');
+    }
+
+    public function test_the_view_action_shows_the_answer_section_for_a_valid_question(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        EmailQuestion::factory()
+            ->for($message, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create(['question_text' => 'Wie funktioniert das Investment?']);
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Regenerate draft answer');
+    }
 }

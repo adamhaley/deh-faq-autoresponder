@@ -198,6 +198,7 @@ class GmailMessageResource extends Resource
                     ->columns(2),
                 Section::make('Answer')
                     ->key("answer_{$question->id}")
+                    ->visible(fn (): bool => $question->fresh()->review_status === EmailQuestion::ReviewStatusValid)
                     ->afterHeader([
                         ActionGroup::make([
                             Action::make("generateAnswer_{$question->id}")
