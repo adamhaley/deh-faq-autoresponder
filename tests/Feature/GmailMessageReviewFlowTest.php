@@ -80,6 +80,25 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertHasNoActionErrors();
     }
 
+    public function test_the_composed_email_body_preview_preserves_whitespace(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create(['thread_id' => 'thread-preview']);
+        EmailThreadDraft::factory()->create([
+            'thread_id' => 'thread-preview',
+            'body' => "Sehr geehrte Frau Renate,\n\nVielen Dank fürs Zuhören.",
+        ]);
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSeeHtml('fi-prose');
+    }
+
     public function test_the_view_action_hides_the_raw_message_body_and_faq_matches(): void
     {
         $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);

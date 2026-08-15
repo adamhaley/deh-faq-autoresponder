@@ -337,6 +337,7 @@ class GmailMessageResource extends Resource
                 ->label('Body preview')
                 ->state(fn (): ?string => $record->threadDraft()->value('body'))
                 ->html()
+                ->prose()
                 ->columnSpanFull(),
             TextEntry::make('draft_error')
                 ->label('Error')
