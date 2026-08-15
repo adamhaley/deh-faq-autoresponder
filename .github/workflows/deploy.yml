@@ -81,6 +81,7 @@ jobs:
 
             cd /opt/megyk/n8n-docker-caddy
             docker compose run --rm deh-faq php artisan migrate --force
+            docker compose run --rm deh-faq php artisan db:seed --class=EmailTemplateSeeder --force
             docker compose up -d deh-faq deh-faq-queue deh-faq-scheduler
 
             sleep 10
