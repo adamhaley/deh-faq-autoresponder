@@ -393,8 +393,6 @@ class GmailMessageResource extends Resource
             ])
             ->recordActions([
                 ViewAction::make()
-                    ->label('Process')
-                    ->icon(Heroicon::ArrowPath)
                     ->modalCancelActionLabel('Close')
                     ->slideOver(),
             ]);

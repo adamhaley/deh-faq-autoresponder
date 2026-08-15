@@ -10,7 +10,6 @@ use App\Models\EmailTemplate;
 use App\Models\EmailThreadDraft;
 use App\Models\GmailMessage;
 use App\Models\User;
-use Filament\Support\Icons\Heroicon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
@@ -31,9 +30,7 @@ class GmailMessageReviewFlowTest extends TestCase
 
         Livewire::test(ManageGmailMessages::class)
             ->assertOk()
-            ->assertCanSeeTableRecords([$message])
-            ->assertTableActionHasLabel('view', 'Process')
-            ->assertTableActionHasIcon('view', Heroicon::ArrowPath);
+            ->assertCanSeeTableRecords([$message]);
     }
 
     public function test_the_view_action_mounts_without_error_for_a_message_with_no_questions(): void
