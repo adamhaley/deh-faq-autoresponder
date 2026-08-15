@@ -99,6 +99,7 @@ class GmailMessageResource extends Resource
                         Action::make('editTemplate')
                             ->label('Edit template')
                             ->icon(Heroicon::PencilSquare)
+                            ->color('gray')
                             ->link()
                             ->url(fn (): ?string => EmailTemplateResource::getUrl())
                             ->visible(fn (): bool => auth()->user()?->can('update', EmailTemplate::query()->first() ?? new EmailTemplate) ?? false),
