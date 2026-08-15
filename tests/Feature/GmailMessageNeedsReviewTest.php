@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
+use App\Models\EmailThreadDraft;
 use App\Models\GmailMessage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -72,5 +73,20 @@ class GmailMessageNeedsReviewTest extends TestCase
         ]);
 
         $this->assertFalse($message->load('questions.answerDraft')->needsReview());
+    }
+
+    public function test_a_message_has_no_composed_draft_when_none_exists(): void
+    {
+        $message = GmailMessage::factory()->create();
+
+        $this->assertFalse($message->load('threadDraft')->hasComposedDraft());
+    }
+
+    public function test_a_message_has_a_composed_draft_once_its_thread_is_composed(): void
+    {
+        $message = GmailMessage::factory()->create(['thread_id' => 'thread-composed']);
+        EmailThreadDraft::factory()->create(['thread_id' => 'thread-composed']);
+
+        $this->assertTrue($message->load('threadDraft')->hasComposedDraft());
     }
 }

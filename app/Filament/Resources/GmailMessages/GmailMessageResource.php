@@ -340,12 +340,22 @@ class GmailMessageResource extends Resource
             ->columns([
                 IconColumn::make('processed')
                     ->label('')
-                    ->state(fn (GmailMessage $record): bool => ! $record->needsReview())
-                    ->boolean()
-                    ->trueIcon(Heroicon::CheckCircle)
-                    ->falseIcon(Heroicon::Clock)
-                    ->trueColor('success')
-                    ->falseColor('warning'),
+                    ->state(fn (GmailMessage $record): string => match (true) {
+                        $record->needsReview() => 'pending',
+                        $record->hasComposedDraft() => 'drafted',
+                        default => 'resolved',
+                    })
+                    ->icon(fn (string $state): BackedEnum => $state === 'pending' ? Heroicon::Clock : Heroicon::CheckCircle)
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'drafted' => 'success',
+                        default => 'gray',
+                    })
+                    ->tooltip(fn (string $state): string => match ($state) {
+                        'pending' => 'Needs review',
+                        'drafted' => 'Draft composed',
+                        default => 'Resolved, no draft needed',
+                    }),
                 TextColumn::make('mailbox.email')->label('Mailbox')->searchable()->sortable(),
                 TextColumn::make('from_email')->label('From')->searchable()->sortable(),
                 TextColumn::make('participant_name')->label('Participant')->placeholder('Unknown')->searchable(),
@@ -365,7 +375,7 @@ class GmailMessageResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['mailbox', 'questions.answerDraft'])
+            ->with(['mailbox', 'questions.answerDraft', 'threadDraft'])
             ->withCount('questions');
     }
 

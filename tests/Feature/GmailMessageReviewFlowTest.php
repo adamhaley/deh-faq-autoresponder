@@ -142,6 +142,37 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertMountedActionModalDontSee('No draft generated yet');
     }
 
+    public function test_the_processed_icon_distinguishes_pending_drafted_and_resolved_messages(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $pendingMessage = GmailMessage::factory()->create();
+        EmailQuestion::factory()->for($pendingMessage, 'message')->create();
+
+        $draftedMessage = GmailMessage::factory()->create(['thread_id' => 'thread-drafted']);
+        $draftedQuestion = EmailQuestion::factory()
+            ->for($draftedMessage, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create();
+        EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $draftedQuestion->id,
+            'status' => EmailQuestionAnswerDraft::StatusApproved,
+        ]);
+        EmailThreadDraft::factory()->create(['thread_id' => 'thread-drafted']);
+
+        $resolvedMessage = GmailMessage::factory()->create();
+        EmailQuestion::factory()->for($resolvedMessage, 'message')->reviewedAs(EmailQuestion::ReviewStatusNoise)->create();
+
+        $this->actingAs($reviewer);
+
+        $component = Livewire::test(ManageGmailMessages::class)->assertOk();
+
+        $component
+            ->assertTableColumnStateSet('processed', 'pending', record: $pendingMessage->load('questions.answerDraft', 'threadDraft'))
+            ->assertTableColumnStateSet('processed', 'drafted', record: $draftedMessage->load('questions.answerDraft', 'threadDraft'))
+            ->assertTableColumnStateSet('processed', 'resolved', record: $resolvedMessage->load('questions.answerDraft', 'threadDraft'));
+    }
+
     public function test_the_answer_section_appears_as_soon_as_a_question_is_marked_valid(): void
     {
         Queue::fake();

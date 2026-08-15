@@ -109,4 +109,14 @@ class GmailMessage extends Model
             ], true);
         });
     }
+
+    /**
+     * Whether this message's review resulted in a Gmail draft actually going
+     * out, as opposed to resolving inert -- every question turned out to be
+     * noise, unanswerable, or rejected, so nothing was ever composed.
+     */
+    public function hasComposedDraft(): bool
+    {
+        return $this->threadDraft !== null;
+    }
 }
