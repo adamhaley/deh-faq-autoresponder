@@ -212,7 +212,13 @@ class GmailMailboxSyncService
         $headers = $this->headers($payload);
         $body = $this->body($payload);
         $from = $this->parseAddress($headers['from'] ?? null);
-        $participant = $this->participantDetails($body['text'] ?? '');
+        // Some senders (e.g. the Webinaris chat-notification format) only
+        // populate the HTML part, never text/plain. The regex is tolerant
+        // of raw HTML (it excludes `<` from captured values, so `<br>`
+        // tags act as natural line delimiters), so fall back to it.
+        $participant = $this->participantDetails(
+            ($body['text'] ?? '') !== '' ? $body['text'] : ($body['html'] ?? ''),
+        );
 
         return GmailMessage::query()->updateOrCreate(
             [

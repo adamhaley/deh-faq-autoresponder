@@ -157,6 +157,74 @@ class GmailMailboxSyncTest extends TestCase
         $this->assertSame('webinar-platform@example.com', $message->from_email);
     }
 
+    public function test_command_extracts_participant_details_from_an_html_only_message(): void
+    {
+        $this->configureGmail();
+
+        Http::preventStrayRequests();
+        Http::fake(function (Request $request) {
+            if ($request->url() === 'https://oauth2.googleapis.com/token') {
+                return Http::response([
+                    'access_token' => 'fresh-access-token',
+                    'expires_in' => 3600,
+                    'scope' => 'https://www.googleapis.com/auth/gmail.modify',
+                ]);
+            }
+
+            if (str_starts_with($request->url(), 'https://gmail.googleapis.com/gmail/v1/users/me/history')) {
+                return Http::response([
+                    'historyId' => '200',
+                    'history' => [
+                        ['messagesAdded' => [['message' => ['id' => 'message-1']]]],
+                    ],
+                ]);
+            }
+
+            if (str_contains($request->url(), '/messages/message-1')) {
+                return Http::response([
+                    'id' => 'message-1',
+                    'threadId' => 'thread-1',
+                    'historyId' => '190',
+                    'labelIds' => ['INBOX'],
+                    'snippet' => 'Chat notification',
+                    'internalDate' => '1786530000000',
+                    'payload' => [
+                        'mimeType' => 'text/html',
+                        'headers' => [
+                            ['name' => 'Subject', 'value' => 'Chat-Nachrichten: reiner.hall@web.de'],
+                            ['name' => 'From', 'value' => 'noreply-11551@webinaris.co'],
+                        ],
+                        // No text/plain part at all -- matches the real
+                        // Webinaris chat-notification format, which only
+                        // ever sends HTML.
+                        'body' => [
+                            'data' => $this->base64Url(
+                                "<p>Nachfolgend findest du die Chatnachrichten...<br><br>\r\n"
+                                ."Vorname: Reiner Hall<br>\r\n"
+                                ."Nachname: <br>\r\n"
+                                ."E-Mail: reiner.hall@web.de<br>\r\n"
+                                ."Chat:<br>\r\n"
+                                .'1: Reiner Hall (21:29): Wie liquide sind die Steine?<br></p>',
+                            ),
+                        ],
+                    ],
+                ]);
+            }
+
+            return Http::response(status: 404);
+        });
+
+        $mailbox = GmailMailbox::factory()->create(['last_history_id' => '100']);
+
+        $this->artisan('gmail:sync-mailboxes')->assertSuccessful();
+
+        $message = GmailMessage::query()->where('gmail_message_id', 'message-1')->firstOrFail();
+
+        $this->assertSame('Reiner Hall', $message->participant_name);
+        $this->assertSame('reiner.hall@web.de', $message->reply_to_email);
+        $this->assertSame('noreply-11551@webinaris.co', $message->from_email);
+    }
+
     public function test_command_backfills_and_recovers_a_mailbox_needing_resync(): void
     {
         $this->configureGmail();
