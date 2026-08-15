@@ -36,24 +36,33 @@ class GmailMessageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxArrowDown;
 
-    protected static ?string $navigationLabel = 'Webinar Responses';
-
-    protected static ?string $modelLabel = 'webinar response';
-
-    protected static ?string $pluralModelLabel = 'webinar responses';
-
     protected static ?int $navigationSort = -2;
+
+    public static function getNavigationLabel(): string
+    {
+        return __('admin.navigation.webinar_responses');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('admin.resources.webinar_response.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('admin.resources.webinar_response.plural');
+    }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 TextInput::make('mailbox_email')
-                    ->label('Mailbox')
+                    ->label(__('admin.fields.mailbox'))
                     ->disabled()
                     ->dehydrated(false),
                 TextInput::make('from_email')
-                    ->label('From')
+                    ->label(__('admin.fields.from'))
                     ->disabled(),
                 TextInput::make('subject')
                     ->disabled(),
@@ -63,11 +72,11 @@ class GmailMessageResource extends Resource
                     ->disabled()
                     ->columnSpanFull(),
                 Textarea::make('text_body')
-                    ->label('Text body')
+                    ->label(__('admin.fields.text_body'))
                     ->readOnly()
                     ->columnSpanFull(),
                 Textarea::make('html_body')
-                    ->label('HTML body')
+                    ->label(__('admin.fields.html_body'))
                     ->readOnly()
                     ->columnSpanFull(),
             ]);
@@ -77,28 +86,28 @@ class GmailMessageResource extends Resource
     {
         return $schema
             ->components([
-                Section::make('Message')
+                Section::make(__('admin.sections.message'))
                     ->schema([
-                        TextEntry::make('participant_name')->label('Participant')->placeholder('Unknown'),
-                        TextEntry::make('reply_to_email')->label('Email address'),
-                        TextEntry::make('internal_date')->label('Received')->dateTime(),
+                        TextEntry::make('participant_name')->label(__('admin.fields.participant'))->placeholder(__('admin.placeholders.unknown')),
+                        TextEntry::make('reply_to_email')->label(__('admin.fields.email_address')),
+                        TextEntry::make('internal_date')->label(__('admin.fields.received'))->dateTime(),
                         TextEntry::make('snippet')
-                            ->label('Preview')
-                            ->placeholder('No preview available.')
+                            ->label(__('admin.fields.preview'))
+                            ->placeholder(__('admin.placeholders.no_preview_available'))
                             ->columnSpanFull(),
                     ])
                     ->columns(3)
                     ->columnSpanFull(),
-                Section::make('Questions')
+                Section::make(__('admin.sections.questions'))
                     ->schema(fn (GmailMessage $record): array => self::questionComponents($record))
                     ->poll(fn (GmailMessage $record): ?string => $record->questions()->get()->contains(
                         fn (EmailQuestion $question): bool => $question->hasActiveAsyncPipeline(),
                     ) ? '3s' : null)
                     ->columnSpanFull(),
-                Section::make('Composed Email')
+                Section::make(__('admin.sections.composed_email'))
                     ->afterHeader([
                         Action::make('editTemplate')
-                            ->label('Edit template')
+                            ->label(__('admin.actions.edit_template'))
                             ->icon(Heroicon::PencilSquare)
                             ->color('gray')
                             ->link()
@@ -125,7 +134,7 @@ class GmailMessageResource extends Resource
             return [
                 TextEntry::make('no_questions')
                     ->label('')
-                    ->state('No questions have been extracted from this message yet.'),
+                    ->state(__('admin.placeholders.no_questions_extracted')),
             ];
         }
 
@@ -148,75 +157,75 @@ class GmailMessageResource extends Resource
                         EmailQuestion::reviewStatusOptions()[$question->fresh()->review_status] ?? $question->review_status,
                         $question->fresh()->answerDraft?->status
                             ? (EmailQuestionAnswerDraft::statusOptions()[$question->fresh()->answerDraft->status] ?? $question->fresh()->answerDraft->status)
-                            : 'No draft',
+                            : __('admin.placeholders.no_draft'),
                     ))
                     ->badge()
                     ->color(fn (): string => EmailQuestion::reviewStatusColor($question->fresh()->review_status)),
                 TextEntry::make("question_{$question->id}_text")
-                    ->label('Question')
+                    ->label(__('admin.fields.question'))
                     ->state($question->question_text)
                     ->columnSpanFull(),
-                Section::make('Review')
+                Section::make(__('admin.sections.review'))
                     ->key("review_{$question->id}")
                     ->afterHeader([
                         ActionGroup::make([
                             Action::make("markValid_{$question->id}")
-                                ->label('Valid question')
+                                ->label(__('admin.actions.valid_question'))
                                 ->icon(Heroicon::CheckCircle)
                                 ->color('success')
                                 ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusValid, auth()->id())),
                             Action::make("markNoise_{$question->id}")
-                                ->label('Noise')
+                                ->label(__('admin.actions.noise'))
                                 ->icon(Heroicon::XCircle)
                                 ->color('gray')
                                 ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusNoise, auth()->id())),
                             Action::make("markUnanswerable_{$question->id}")
-                                ->label('Unanswerable')
+                                ->label(__('admin.actions.unanswerable'))
                                 ->icon(Heroicon::ExclamationTriangle)
                                 ->color('warning')
                                 ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusUnanswerable, auth()->id())),
                         ])
-                            ->label('Classify')
+                            ->label(__('admin.actions.classify'))
                             ->icon(Heroicon::ChevronDown)
                             ->button(),
                     ])
                     ->schema([
                         TextEntry::make("ai_classification_{$question->id}")
-                            ->label('AI classification')
+                            ->label(__('admin.fields.ai_classification'))
                             ->state(fn (): ?string => $question->fresh()->classification)
                             ->badge()
-                            ->placeholder('Not classified yet')
+                            ->placeholder(__('admin.placeholders.not_classified_yet'))
                             ->color(fn (?string $state): string => $state === null ? 'gray' : EmailQuestion::classificationColor($state))
-                            ->formatStateUsing(fn (?string $state): string => $state === null ? 'Not classified' : EmailQuestion::classificationOptions()[$state] ?? $state),
+                            ->formatStateUsing(fn (?string $state): string => $state === null ? __('admin.statuses.classification.not_classified') : EmailQuestion::classificationOptions()[$state] ?? $state),
                         TextEntry::make("ai_classification_confidence_{$question->id}")
-                            ->label('AI confidence')
+                            ->label(__('admin.fields.ai_confidence'))
                             ->state(fn (): ?int => $question->fresh()->classification_confidence)
                             ->placeholder('—')
                             ->formatStateUsing(fn (int $state): string => "{$state}%"),
                         TextEntry::make("ai_classification_reason_{$question->id}")
-                            ->label('AI reasoning')
+                            ->label(__('admin.fields.ai_reasoning'))
                             ->state(fn (): ?string => $question->fresh()->classification_reason)
-                            ->placeholder('No reasoning recorded.')
+                            ->placeholder(__('admin.placeholders.no_reasoning_recorded'))
                             ->columnSpanFull(),
                         TextEntry::make("review_status_{$question->id}")
-                            ->label('Human decision')
+                            ->label(__('admin.fields.human_decision'))
                             ->state(fn (): string => $question->fresh()->review_status)
                             ->badge()
                             ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
                             ->formatStateUsing(fn (string $state): string => EmailQuestion::reviewStatusOptions()[$state] ?? $state),
                         TextEntry::make("reviewer_{$question->id}")
-                            ->label('Reviewed by')
+                            ->label(__('admin.fields.reviewed_by'))
                             ->state(fn (): ?string => $question->fresh()->reviewer?->name)
-                            ->placeholder('Not reviewed yet'),
+                            ->placeholder(__('admin.placeholders.not_reviewed_yet')),
                     ])
                     ->columns(2),
-                Section::make('Answer')
+                Section::make(__('admin.sections.answer'))
                     ->key("answer_{$question->id}")
                     ->visible(fn (): bool => $question->fresh()->review_status === EmailQuestion::ReviewStatusValid)
                     ->afterHeader([
                         ActionGroup::make([
                             Action::make("generateAnswer_{$question->id}")
-                                ->label('Regenerate draft answer')
+                                ->label(__('admin.actions.regenerate_draft_answer'))
                                 ->icon(Heroicon::Sparkles)
                                 ->color('primary')
                                 ->action(function () use ($question): void {
@@ -228,16 +237,16 @@ class GmailMessageResource extends Resource
                                     GenerateEmailQuestionAnswerDraft::dispatch($question->id);
 
                                     Notification::make()
-                                        ->title('Draft generation queued')
+                                        ->title(__('admin.notifications.draft_generation_queued_title'))
                                         ->success()
                                         ->send();
                                 }),
                             Action::make("editAnswer_{$question->id}")
-                                ->label('Edit final answer')
+                                ->label(__('admin.actions.edit_final_answer'))
                                 ->icon(Heroicon::PencilSquare)
                                 ->schema([
                                     Textarea::make('final_answer')
-                                        ->label('Final answer')
+                                        ->label(__('admin.fields.final_answer'))
                                         ->required()
                                         ->rows(8),
                                 ])
@@ -251,7 +260,7 @@ class GmailMessageResource extends Resource
                                     $question->fresh()->answerDraft?->syncApprovedSideEffects();
                                 }),
                             Action::make("approveAnswer_{$question->id}")
-                                ->label('Approve')
+                                ->label(__('admin.actions.approve'))
                                 ->icon(Heroicon::CheckCircle)
                                 ->color('success')
                                 ->action(fn () => $question->fresh()->answerDraft?->markReviewed(
@@ -259,7 +268,7 @@ class GmailMessageResource extends Resource
                                     auth()->id(),
                                 )),
                             Action::make("needsRevisionAnswer_{$question->id}")
-                                ->label('Needs revision')
+                                ->label(__('admin.actions.needs_revision'))
                                 ->icon(Heroicon::ExclamationTriangle)
                                 ->color('warning')
                                 ->action(fn () => $question->fresh()->answerDraft?->markReviewed(
@@ -267,7 +276,7 @@ class GmailMessageResource extends Resource
                                     auth()->id(),
                                 )),
                             Action::make("rejectAnswer_{$question->id}")
-                                ->label('Reject')
+                                ->label(__('admin.actions.reject'))
                                 ->icon(Heroicon::XCircle)
                                 ->color('danger')
                                 ->action(fn () => $question->fresh()->answerDraft?->markReviewed(
@@ -275,28 +284,28 @@ class GmailMessageResource extends Resource
                                     auth()->id(),
                                 )),
                         ])
-                            ->label('Draft actions')
+                            ->label(__('admin.actions.draft_actions'))
                             ->icon(Heroicon::ChevronDown)
                             ->button(),
                     ])
                     ->schema([
                         TextEntry::make("answer_status_{$question->id}")
-                            ->label('Status')
+                            ->label(__('admin.fields.status'))
                             ->state(fn (): ?string => $question->answerDraft()->value('status'))
                             ->badge()
                             ->icon(fn (?string $state): Heroicon|HtmlString|null => self::isActiveAnswerDraftStatus($state) ? self::spinningStatusIcon() : null)
-                            ->placeholder('No draft generated yet')
+                            ->placeholder(__('admin.placeholders.no_draft_generated_yet'))
                             ->color(fn (?string $state): string => $state === null ? 'gray' : EmailQuestionAnswerDraft::statusColor($state))
-                            ->formatStateUsing(fn (?string $state): string => $state === null ? 'No draft' : EmailQuestionAnswerDraft::statusOptions()[$state] ?? $state),
+                            ->formatStateUsing(fn (?string $state): string => $state === null ? __('admin.placeholders.no_draft') : EmailQuestionAnswerDraft::statusOptions()[$state] ?? $state),
                         TextEntry::make("answer_generated_{$question->id}")
-                            ->label('Generated answer')
+                            ->label(__('admin.fields.generated_answer'))
                             ->state(fn (): ?string => $question->answerDraft()->value('generated_answer'))
-                            ->placeholder('No draft generated yet')
+                            ->placeholder(__('admin.placeholders.no_draft_generated_yet'))
                             ->columnSpanFull(),
                         TextEntry::make("answer_final_{$question->id}")
-                            ->label('Final answer')
+                            ->label(__('admin.fields.final_answer'))
                             ->state(fn (): ?string => $question->answerDraft()->value('final_answer'))
-                            ->placeholder('Not edited yet')
+                            ->placeholder(__('admin.placeholders.not_edited_yet'))
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
@@ -315,9 +324,9 @@ class GmailMessageResource extends Resource
                 TextEntry::make('no_draft')
                     ->label('')
                     ->state(fn (): string => match (true) {
-                        self::freshMessageNeedsReview($record) => 'Not composed yet - approve or resolve every question above first.',
-                        self::freshMessageAwaitingThreadDraft($record) => 'Composing draft',
-                        default => 'No reply needed - no relevant questions to answer.',
+                        self::freshMessageNeedsReview($record) => __('admin.placeholders.not_composed_review'),
+                        self::freshMessageAwaitingThreadDraft($record) => __('admin.placeholders.composing_draft'),
+                        default => __('admin.placeholders.no_reply_needed'),
                     })
                     ->badge(fn (): bool => self::freshMessageAwaitingThreadDraft($record))
                     ->icon(fn (): Heroicon|HtmlString|null => self::freshMessageAwaitingThreadDraft($record) ? self::spinningStatusIcon() : null)
@@ -327,18 +336,18 @@ class GmailMessageResource extends Resource
 
         return [
             TextEntry::make('draft_status')
-                ->label('Status')
+                ->label(__('admin.fields.status'))
                 ->state(fn (): ?string => $record->threadDraft()->value('status'))
                 ->badge()
                 ->color(fn (?string $state): string => $state === null ? 'gray' : EmailThreadDraft::statusColor($state))
-                ->formatStateUsing(fn (?string $state): string => $state === null ? 'No draft' : EmailThreadDraft::statusOptions()[$state] ?? $state),
+                ->formatStateUsing(fn (?string $state): string => $state === null ? __('admin.placeholders.no_draft') : EmailThreadDraft::statusOptions()[$state] ?? $state),
             TextEntry::make('draft_composed_at')
-                ->label('Composed at')
+                ->label(__('admin.fields.composed_at'))
                 ->state(fn (): mixed => $record->threadDraft()->value('composed_at'))
                 ->dateTime(),
             TextEntry::make('draft_next_step')
                 ->label('')
-                ->state("The Gmail draft is ready. Please review it in your Gmail Drafts folder and send it from there when you're ready.")
+                ->state(__('admin.placeholders.gmail_draft_ready'))
                 ->color('info')
                 ->visible(fn (): bool => in_array($record->threadDraft()->value('status'), [
                     EmailThreadDraft::StatusCreated,
@@ -346,20 +355,20 @@ class GmailMessageResource extends Resource
                 ], true))
                 ->columnSpanFull(),
             TextEntry::make('draft_subject')
-                ->label('Subject')
+                ->label(__('admin.fields.subject'))
                 ->state(fn (): ?string => $record->threadDraft()->value('subject'))
                 ->columnSpanFull(),
             TextEntry::make('draft_body')
-                ->label('Body preview')
+                ->label(__('admin.fields.body_preview'))
                 ->state(fn (): ?string => $record->threadDraft()->value('body'))
                 ->html()
                 ->prose()
                 ->columnSpanFull(),
             TextEntry::make('draft_error')
-                ->label('Error')
+                ->label(__('admin.fields.error'))
                 ->state(fn (): ?string => $record->threadDraft()->value('last_error'))
                 ->color('danger')
-                ->placeholder('No error')
+                ->placeholder(__('admin.placeholders.no_error'))
                 ->visible(fn (): bool => $record->threadDraft()->value('status') === EmailThreadDraft::StatusFailed)
                 ->columnSpanFull(),
         ];
@@ -450,22 +459,22 @@ class GmailMessageResource extends Resource
                         default => 'gray',
                     })
                     ->tooltip(fn (string $state): string => match ($state) {
-                        'pending' => 'Needs review',
-                        'drafted' => 'Draft composed',
-                        default => 'Resolved, no draft needed',
+                        'pending' => __('admin.statuses.review.pending_review'),
+                        'drafted' => __('admin.statuses.thread_draft.created'),
+                        default => __('admin.placeholders.no_reply_needed'),
                     }),
-                TextColumn::make('participant_name')->label('Participant')->placeholder('Unknown')->searchable(),
-                TextColumn::make('mailbox.email')->label('Mailbox')->searchable()->sortable(),
-                TextColumn::make('from_email')->label('From')->searchable()->sortable(),
+                TextColumn::make('participant_name')->label(__('admin.fields.participant'))->placeholder(__('admin.placeholders.unknown'))->searchable(),
+                TextColumn::make('mailbox.email')->label(__('admin.fields.mailbox'))->searchable()->sortable(),
+                TextColumn::make('from_email')->label(__('admin.fields.from'))->searchable()->sortable(),
                 TextColumn::make('subject')->searchable()->limit(60),
                 TextColumn::make('snippet')->limit(80),
-                TextColumn::make('questions_count')->label('Questions')->badge(),
-                TextColumn::make('internal_date')->label('Received')->dateTime()->sortable(),
+                TextColumn::make('questions_count')->label(__('admin.fields.questions'))->badge(),
+                TextColumn::make('internal_date')->label(__('admin.fields.received'))->dateTime()->sortable(),
                 TextColumn::make('imported_at')->dateTime()->sortable(),
             ])
             ->recordActions([
                 ViewAction::make()
-                    ->modalCancelActionLabel('Close')
+                    ->modalCancelActionLabel(__('admin.actions.close'))
                     ->slideOver(),
             ]);
     }

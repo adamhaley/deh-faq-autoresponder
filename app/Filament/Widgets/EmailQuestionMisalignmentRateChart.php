@@ -13,7 +13,10 @@ class EmailQuestionMisalignmentRateChart extends ChartWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $heading = 'AI/Human Misalignment Rate';
+    public function getHeading(): string
+    {
+        return __('admin.dashboard.misalignment_rate');
+    }
 
     protected function getData(): array
     {
@@ -22,7 +25,7 @@ class EmailQuestionMisalignmentRateChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Misalignment rate',
+                    'label' => __('admin.dashboard.misalignment_rate_dataset'),
                     'data' => $metrics['misalignment_rates'],
                     'borderColor' => '#d16068',
                     'backgroundColor' => 'rgba(209, 96, 104, 0.16)',

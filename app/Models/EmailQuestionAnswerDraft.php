@@ -75,13 +75,13 @@ class EmailQuestionAnswerDraft extends Model
     public static function statusOptions(): array
     {
         return [
-            self::StatusQueued => 'Queued',
-            self::StatusGenerating => 'Generating',
-            self::StatusGenerationFailed => 'Generation failed',
-            self::StatusDraft => 'Draft',
-            self::StatusApproved => 'Approved',
-            self::StatusRejected => 'Rejected',
-            self::StatusNeedsRevision => 'Needs revision',
+            self::StatusQueued => __('admin.statuses.answer_draft.queued'),
+            self::StatusGenerating => __('admin.statuses.answer_draft.generating'),
+            self::StatusGenerationFailed => __('admin.statuses.answer_draft.generation_failed'),
+            self::StatusDraft => __('admin.statuses.answer_draft.draft'),
+            self::StatusApproved => __('admin.statuses.answer_draft.approved'),
+            self::StatusRejected => __('admin.statuses.answer_draft.rejected'),
+            self::StatusNeedsRevision => __('admin.statuses.answer_draft.needs_revision'),
         ];
     }
 

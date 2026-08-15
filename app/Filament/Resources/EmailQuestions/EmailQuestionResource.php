@@ -36,9 +36,12 @@ class EmailQuestionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQuestionMarkCircle;
 
-    protected static ?string $navigationLabel = 'Email Questions';
-
     protected static ?string $recordTitleAttribute = 'question_text';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('admin.navigation.email_questions');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -52,21 +55,21 @@ class EmailQuestionResource extends Resource
                     ->rows(4)
                     ->columnSpanFull(),
                 Select::make('review_status')
-                    ->label('Human Review')
+                    ->label(__('admin.fields.human_review'))
                     ->options(EmailQuestion::humanReviewDecisionOptions())
                     ->required(),
                 Select::make('classification')
-                    ->label('AI Classification')
+                    ->label(__('admin.fields.ai_classification'))
                     ->options(EmailQuestion::classificationOptions())
                     ->disabled()
                     ->dehydrated(false),
                 TextInput::make('classification_confidence')
-                    ->label('AI Confidence')
+                    ->label(__('admin.fields.ai_confidence'))
                     ->numeric()
                     ->disabled()
                     ->dehydrated(false),
                 Textarea::make('classification_reason')
-                    ->label('AI Reason')
+                    ->label(__('admin.fields.ai_reason'))
                     ->disabled()
                     ->dehydrated(false)
                     ->columnSpanFull(),
@@ -77,21 +80,21 @@ class EmailQuestionResource extends Resource
     {
         return $schema
             ->components([
-                Section::make('Question')
+                Section::make(__('admin.sections.question'))
                     ->schema([
                         TextEntry::make('question_text')
-                            ->label('Extracted question')
+                            ->label(__('admin.fields.extracted_question'))
                             ->columnSpanFull(),
                         TextEntry::make('normalized_question')
-                            ->placeholder('Not normalized yet')
+                            ->placeholder(__('admin.placeholders.not_normalized_yet'))
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
-                Section::make('Human Review')
+                Section::make(__('admin.sections.human_review'))
                     ->afterHeader([
                         ActionGroup::make([
                             Action::make('markValid')
-                                ->label('Valid question')
+                                ->label(__('admin.actions.valid_question'))
                                 ->icon(Heroicon::CheckCircle)
                                 ->color('success')
                                 ->action(fn (EmailQuestion $record): bool => $record->markReviewed(
@@ -99,7 +102,7 @@ class EmailQuestionResource extends Resource
                                     auth()->id(),
                                 )),
                             Action::make('markNoise')
-                                ->label('noise')
+                                ->label(__('admin.actions.noise'))
                                 ->icon(Heroicon::XCircle)
                                 ->color('gray')
                                 ->action(fn (EmailQuestion $record): bool => $record->markReviewed(
@@ -107,7 +110,7 @@ class EmailQuestionResource extends Resource
                                     auth()->id(),
                                 )),
                             Action::make('markUnanswerable')
-                                ->label('unanswerable')
+                                ->label(__('admin.actions.unanswerable'))
                                 ->icon(Heroicon::ExclamationTriangle)
                                 ->color('warning')
                                 ->action(fn (EmailQuestion $record): bool => $record->markReviewed(
@@ -115,42 +118,42 @@ class EmailQuestionResource extends Resource
                                     auth()->id(),
                                 )),
                         ])
-                            ->label('Classification')
+                            ->label(__('admin.actions.classification'))
                             ->icon(Heroicon::ChevronDown)
                             ->button(),
                     ])
                     ->schema([
                         TextEntry::make('review_status')
-                            ->label('Classification')
+                            ->label(__('admin.fields.classification'))
                             ->badge()
                             ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
                             ->formatStateUsing(fn (string $state): string => EmailQuestion::reviewStatusOptions()[$state] ?? $state),
                         TextEntry::make('reviewer.name')
-                            ->label('Reviewed by')
-                            ->placeholder('Not reviewed yet'),
+                            ->label(__('admin.fields.reviewed_by'))
+                            ->placeholder(__('admin.placeholders.not_reviewed_yet')),
                         TextEntry::make('reviewed_at')
                             ->dateTime()
-                            ->placeholder('Not reviewed yet'),
+                            ->placeholder(__('admin.placeholders.not_reviewed_yet')),
                     ]),
-                Section::make('AI Prediction')
+                Section::make(__('admin.sections.ai_prediction'))
                     ->schema([
                         TextEntry::make('classification')
-                            ->label('AI Classification')
+                            ->label(__('admin.fields.ai_classification'))
                             ->badge()
                             ->color(fn (?string $state): string => EmailQuestion::classificationColor($state))
-                            ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? 'Unclassified'),
+                            ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? __('admin.statuses.classification.unclassified')),
                         TextEntry::make('classification_confidence')
-                            ->label('AI Confidence')
+                            ->label(__('admin.fields.ai_confidence'))
                             ->suffix('%')
-                            ->placeholder('Not classified yet'),
+                            ->placeholder(__('admin.placeholders.not_classified_yet')),
                         TextEntry::make('classification_reason')
-                            ->label('AI Reason')
+                            ->label(__('admin.fields.ai_reason'))
                             ->columnSpanFull(),
                     ]),
-                Section::make('RAG Context')
+                Section::make(__('admin.sections.rag_context'))
                     ->afterHeader([
                         Action::make('retrieveFaqMatches')
-                            ->label('Retrieve FAQ matches')
+                            ->label(__('admin.actions.retrieve_faq_matches'))
                             ->icon(Heroicon::ArrowPath)
                             ->action(function (EmailQuestion $record): void {
                                 $record->update([
@@ -162,45 +165,45 @@ class EmailQuestionResource extends Resource
                                 RetrieveEmailQuestionFaqMatches::dispatch($record->id);
 
                                 Notification::make()
-                                    ->title('FAQ retrieval queued')
-                                    ->body('Matches will appear here after the queue worker finishes.')
+                                    ->title(__('admin.notifications.faq_retrieval_queued_title'))
+                                    ->body(__('admin.notifications.faq_retrieval_queued_body'))
                                     ->success()
                                     ->send();
                             }),
                     ])
                     ->schema([
                         TextEntry::make('faq_retrieval_status')
-                            ->label('Retrieval status')
+                            ->label(__('admin.fields.retrieval_status'))
                             ->badge()
                             ->icon(fn (string $state): Heroicon|HtmlString|null => self::isActiveFaqRetrievalStatus($state) ? self::spinningStatusIcon() : null)
                             ->color(fn (string $state): string => EmailQuestion::faqRetrievalStatusColor($state))
                             ->formatStateUsing(fn (string $state): string => EmailQuestion::faqRetrievalStatusOptions()[$state] ?? $state),
                         TextEntry::make('faq_retrieval_error')
-                            ->label('Retrieval error')
+                            ->label(__('admin.fields.retrieval_error'))
                             ->color('danger')
-                            ->placeholder('No retrieval error')
+                            ->placeholder(__('admin.placeholders.no_retrieval_error'))
                             ->columnSpanFull(),
                         RepeatableEntry::make('faqMatches')
-                            ->label('Retrieved FAQ matches')
-                            ->placeholder('No FAQ matches retrieved yet.')
+                            ->label(__('admin.fields.rag'))
+                            ->placeholder(__('admin.placeholders.no_faq_matches'))
                             ->schema([
                                 TextEntry::make('rank')
-                                    ->label('Rank')
+                                    ->label(__('admin.fields.rank'))
                                     ->badge(),
                                 TextEntry::make('similarity')
-                                    ->label('Similarity')
+                                    ->label(__('admin.fields.similarity'))
                                     ->formatStateUsing(fn (float $state): string => number_format($state * 100, 1).'%')
                                     ->badge()
                                     ->color(fn (float $state): string => $state >= 0.8 ? 'success' : 'warning'),
                                 TextEntry::make('faqEntry.question')
-                                    ->label('FAQ question')
+                                    ->label(__('admin.fields.faq_question'))
                                     ->columnSpanFull(),
                                 TextEntry::make('faqEntry.answer')
-                                    ->label('FAQ answer')
+                                    ->label(__('admin.fields.faq_answer'))
                                     ->columnSpanFull(),
                                 TextEntry::make('faqEntry.approvedResponse.approved_response')
-                                    ->label('Approved response override')
-                                    ->placeholder('No approved response override')
+                                    ->label(__('admin.fields.approved_response_override'))
+                                    ->placeholder(__('admin.placeholders.no_approved_response_override'))
                                     ->columnSpanFull(),
                             ])
                             ->columns(2)
@@ -208,11 +211,11 @@ class EmailQuestionResource extends Resource
                     ])
                     ->poll(fn (EmailQuestion $record): ?string => $record->hasActiveFaqRetrieval() ? '3s' : null)
                     ->columnSpanFull(),
-                Section::make('Answer Draft')
+                Section::make(__('admin.sections.answer_draft'))
                     ->afterHeader([
                         ActionGroup::make([
                             Action::make('generateAnswerDraft')
-                                ->label('Generate draft answer')
+                                ->label(__('admin.actions.generate_draft_answer'))
                                 ->icon(Heroicon::Sparkles)
                                 ->color('primary')
                                 ->action(function (EmailQuestion $record): void {
@@ -224,17 +227,17 @@ class EmailQuestionResource extends Resource
                                     GenerateEmailQuestionAnswerDraft::dispatch($record->id);
 
                                     Notification::make()
-                                        ->title('Draft generation queued')
-                                        ->body('The draft will appear here after the queue worker finishes.')
+                                        ->title(__('admin.notifications.draft_generation_queued_title'))
+                                        ->body(__('admin.notifications.draft_generation_queued_body'))
                                         ->success()
                                         ->send();
                                 }),
                             Action::make('editFinalAnswer')
-                                ->label('Edit final answer')
+                                ->label(__('admin.actions.edit_final_answer'))
                                 ->icon(Heroicon::PencilSquare)
                                 ->schema([
                                     Textarea::make('final_answer')
-                                        ->label('Final answer')
+                                        ->label(__('admin.fields.final_answer'))
                                         ->required()
                                         ->rows(8),
                                 ])
@@ -250,7 +253,7 @@ class EmailQuestionResource extends Resource
                                     $record->answerDraft?->syncApprovedSideEffects();
                                 }),
                             Action::make('approveAnswerDraft')
-                                ->label('Approve answer')
+                                ->label(__('admin.actions.approve_answer'))
                                 ->icon(Heroicon::CheckCircle)
                                 ->color('success')
                                 ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
@@ -258,7 +261,7 @@ class EmailQuestionResource extends Resource
                                     auth()->id(),
                                 )),
                             Action::make('needsRevisionAnswerDraft')
-                                ->label('Needs revision')
+                                ->label(__('admin.actions.needs_revision'))
                                 ->icon(Heroicon::ExclamationTriangle)
                                 ->color('warning')
                                 ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
@@ -266,7 +269,7 @@ class EmailQuestionResource extends Resource
                                     auth()->id(),
                                 )),
                             Action::make('rejectAnswerDraft')
-                                ->label('Reject answer')
+                                ->label(__('admin.actions.reject_answer'))
                                 ->icon(Heroicon::XCircle)
                                 ->color('danger')
                                 ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
@@ -274,71 +277,71 @@ class EmailQuestionResource extends Resource
                                     auth()->id(),
                                 )),
                         ])
-                            ->label('Draft actions')
+                            ->label(__('admin.actions.draft_actions'))
                             ->icon(Heroicon::ChevronDown)
                             ->button(),
                     ])
                     ->schema([
                         TextEntry::make('answerDraft.status')
-                            ->label('Status')
+                            ->label(__('admin.fields.status'))
                             ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('status'))
                             ->badge()
                             ->icon(fn (?string $state): Heroicon|HtmlString|null => self::isActiveAnswerDraftStatus($state) ? self::spinningStatusIcon() : null)
-                            ->placeholder('No draft generated yet')
+                            ->placeholder(__('admin.placeholders.no_draft_generated_yet'))
                             ->color(fn (?string $state): string => $state === null ? 'gray' : EmailQuestionAnswerDraft::statusColor($state))
-                            ->formatStateUsing(fn (?string $state): string => $state === null ? 'No draft' : EmailQuestionAnswerDraft::statusOptions()[$state] ?? $state),
+                            ->formatStateUsing(fn (?string $state): string => $state === null ? __('admin.placeholders.no_draft') : EmailQuestionAnswerDraft::statusOptions()[$state] ?? $state),
                         TextEntry::make('answerDraft.generated_at')
-                            ->label('Generated at')
+                            ->label(__('admin.fields.generated_at'))
                             ->state(fn (EmailQuestion $record): mixed => $record->answerDraft()->value('generated_at'))
                             ->dateTime()
-                            ->placeholder('No draft generated yet'),
+                            ->placeholder(__('admin.placeholders.no_draft_generated_yet')),
                         TextEntry::make('answerDraft.generation_started_at')
-                            ->label('Generation started at')
+                            ->label(__('admin.fields.generation_started_at'))
                             ->state(fn (EmailQuestion $record): mixed => $record->answerDraft()->value('generation_started_at'))
                             ->dateTime()
-                            ->placeholder('Not started yet'),
+                            ->placeholder(__('admin.placeholders.not_started_yet')),
                         TextEntry::make('answerDraft.generation_failed_at')
-                            ->label('Generation failed at')
+                            ->label(__('admin.fields.generation_failed_at'))
                             ->state(fn (EmailQuestion $record): mixed => $record->answerDraft()->value('generation_failed_at'))
                             ->dateTime()
-                            ->placeholder('No failure'),
+                            ->placeholder(__('admin.placeholders.no_failure')),
                         TextEntry::make('answerDraft.generation_error')
-                            ->label('Generation error')
+                            ->label(__('admin.fields.generation_error'))
                             ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('generation_error'))
                             ->color('danger')
-                            ->placeholder('No generation error')
+                            ->placeholder(__('admin.placeholders.no_generation_error'))
                             ->columnSpanFull(),
                         TextEntry::make('answerDraft.generated_answer')
-                            ->label('Generated answer')
+                            ->label(__('admin.fields.generated_answer'))
                             ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('generated_answer'))
-                            ->placeholder('No draft generated yet')
+                            ->placeholder(__('admin.placeholders.no_draft_generated_yet'))
                             ->columnSpanFull(),
                         TextEntry::make('answerDraft.final_answer')
-                            ->label('Final answer')
+                            ->label(__('admin.fields.final_answer'))
                             ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('final_answer'))
-                            ->placeholder('Not edited yet')
+                            ->placeholder(__('admin.placeholders.not_edited_yet'))
                             ->columnSpanFull(),
                         TextEntry::make('answerDraft.generation_reason')
-                            ->label('Generation reason')
+                            ->label(__('admin.fields.generation_reason'))
                             ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('generation_reason'))
-                            ->placeholder('No generation reason yet')
+                            ->placeholder(__('admin.placeholders.no_generation_reason'))
                             ->columnSpanFull(),
                         TextEntry::make('answerDraft.reviewer.name')
-                            ->label('Reviewed by')
-                            ->placeholder('Not reviewed yet'),
+                            ->label(__('admin.fields.reviewed_by'))
+                            ->placeholder(__('admin.placeholders.not_reviewed_yet')),
                         TextEntry::make('answerDraft.reviewed_at')
-                            ->label('Reviewed at')
+                            ->label(__('admin.fields.reviewed_at'))
                             ->dateTime()
-                            ->placeholder('Not reviewed yet'),
+                            ->placeholder(__('admin.placeholders.not_reviewed_yet')),
                         SchemaActions::make([
                             Action::make('quickEditFinalAnswer')
-                                ->label('Edit final answer')
+                                ->label(__('admin.actions.edit_final_answer'))
                                 ->icon(Heroicon::PencilSquare)
                                 ->color('gray')
                                 ->outlined()
                                 ->schema([
                                     Textarea::make('final_answer')
-                                        ->label('Final answer')
+                                        ->label(__('admin.fields.final_answer'))
                                         ->required()
                                         ->rows(8),
                                 ])
@@ -354,7 +357,7 @@ class EmailQuestionResource extends Resource
                                     $record->answerDraft?->syncApprovedSideEffects();
                                 }),
                             Action::make('quickApproveAnswerDraft')
-                                ->label('Approve')
+                                ->label(__('admin.actions.approve'))
                                 ->icon(Heroicon::CheckCircle)
                                 ->color('success')
                                 ->outlined()
@@ -363,7 +366,7 @@ class EmailQuestionResource extends Resource
                                     auth()->id(),
                                 )),
                             Action::make('quickNeedsRevisionAnswerDraft')
-                                ->label('Needs revision')
+                                ->label(__('admin.actions.needs_revision'))
                                 ->icon(Heroicon::ExclamationTriangle)
                                 ->color('warning')
                                 ->outlined()
@@ -372,7 +375,7 @@ class EmailQuestionResource extends Resource
                                     auth()->id(),
                                 )),
                             Action::make('quickRejectAnswerDraft')
-                                ->label('Reject')
+                                ->label(__('admin.actions.reject'))
                                 ->icon(Heroicon::XCircle)
                                 ->color('danger')
                                 ->outlined()
@@ -386,17 +389,17 @@ class EmailQuestionResource extends Resource
                     ])
                     ->poll(fn (EmailQuestion $record): ?string => $record->hasActiveAnswerDraftGeneration() ? '3s' : null)
                     ->columnSpanFull(),
-                Section::make('Source email')
+                Section::make(__('admin.sections.source_email'))
                     ->schema([
                         TextEntry::make('message.mailbox.email')
-                            ->label('Mailbox'),
+                            ->label(__('admin.fields.mailbox')),
                         TextEntry::make('message.from_email')
-                            ->label('From'),
+                            ->label(__('admin.fields.from')),
                         TextEntry::make('message.subject')
-                            ->label('Subject')
+                            ->label(__('admin.fields.subject'))
                             ->columnSpanFull(),
                         TextEntry::make('message.snippet')
-                            ->label('Snippet')
+                            ->label(__('admin.fields.snippet'))
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
@@ -410,38 +413,38 @@ class EmailQuestionResource extends Resource
             ->recordTitleAttribute('question_text')
             ->columns([
                 TextColumn::make('review_status')
-                    ->label('Human Review')
+                    ->label(__('admin.fields.human_review'))
                     ->badge()
                     ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
                     ->formatStateUsing(fn (string $state): string => EmailQuestion::reviewStatusOptions()[$state] ?? $state)
                     ->sortable(),
                 TextColumn::make('classification')
-                    ->label('AI Classification')
+                    ->label(__('admin.fields.ai_classification'))
                     ->badge()
                     ->color(fn (?string $state): string => EmailQuestion::classificationColor($state))
-                    ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? 'Unclassified')
+                    ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? __('admin.statuses.classification.unclassified'))
                     ->sortable(),
                 TextColumn::make('question_text')
-                    ->label('Question')
+                    ->label(__('admin.fields.question'))
                     ->searchable()
                     ->limit(80),
                 TextColumn::make('faq_matches_count')
-                    ->label('RAG')
+                    ->label(__('admin.fields.rag'))
                     ->badge()
                     ->formatStateUsing(fn (?int $state): string => (string) ($state ?? 0))
                     ->color(fn (?int $state): string => ($state ?? 0) > 0 ? 'success' : 'gray')
                     ->sortable(),
                 TextColumn::make('message.participant_name')
-                    ->label('Participant')
+                    ->label(__('admin.fields.participant'))
                     ->formatStateUsing(fn (?string $state, EmailQuestion $record): ?string => $state ?? $record->message?->reply_to_email)
-                    ->placeholder('Unknown')
+                    ->placeholder(__('admin.placeholders.unknown'))
                     ->searchable(['participant_name', 'reply_to_email']),
                 TextColumn::make('classification_confidence')
-                    ->label('AI Confidence')
+                    ->label(__('admin.fields.ai_confidence'))
                     ->suffix('%')
                     ->sortable(),
                 IconColumn::make('reviewed_at')
-                    ->label('Reviewed')
+                    ->label(__('admin.fields.reviewed'))
                     ->boolean()
                     ->state(fn (EmailQuestion $record): bool => $record->reviewed_at !== null),
                 TextColumn::make('created_at')
@@ -450,15 +453,15 @@ class EmailQuestionResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('review_status')
-                    ->label('Human classification')
+                    ->label(__('admin.fields.human_review'))
                     ->options(EmailQuestion::humanReviewFilterOptions()),
                 SelectFilter::make('classification')
-                    ->label('AI classification')
+                    ->label(__('admin.fields.ai_classification'))
                     ->options(EmailQuestion::classificationOptions()),
             ])
             ->recordActions([
                 ViewAction::make()
-                    ->modalCancelActionLabel('Close')
+                    ->modalCancelActionLabel(__('admin.actions.close'))
                     ->slideOver(),
             ]);
     }

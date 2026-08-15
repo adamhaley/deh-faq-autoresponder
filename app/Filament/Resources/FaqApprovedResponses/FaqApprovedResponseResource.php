@@ -23,6 +23,11 @@ class FaqApprovedResponseResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'approved_response';
 
+    public static function getNavigationLabel(): string
+    {
+        return __('admin.navigation.faq_approved_responses');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
@@ -43,7 +48,7 @@ class FaqApprovedResponseResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('faqEntry.question')->label('FAQ')->searchable()->limit(80),
+                TextColumn::make('faqEntry.question')->label(__('admin.fields.faq'))->searchable()->limit(80),
                 TextColumn::make('approved_response')->limit(120),
                 TextColumn::make('match_similarity')->numeric(),
                 TextColumn::make('updated_at')->dateTime()->sortable(),

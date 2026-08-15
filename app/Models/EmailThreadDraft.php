@@ -50,9 +50,9 @@ class EmailThreadDraft extends Model
     public static function statusOptions(): array
     {
         return [
-            self::StatusCreated => 'Draft created',
-            self::StatusUpdated => 'Draft updated',
-            self::StatusFailed => 'Failed',
+            self::StatusCreated => __('admin.statuses.thread_draft.created'),
+            self::StatusUpdated => __('admin.statuses.thread_draft.updated'),
+            self::StatusFailed => __('admin.statuses.thread_draft.failed'),
         ];
     }
 

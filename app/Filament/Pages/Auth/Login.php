@@ -11,7 +11,7 @@ class Login extends BaseLogin
     {
         return [
             Action::make('google')
-                ->label('Continue with Google')
+                ->label(__('admin.actions.continue_with_google'))
                 ->url(route('auth.google.redirect'))
                 ->color('gray'),
             ...parent::getFormActions(),

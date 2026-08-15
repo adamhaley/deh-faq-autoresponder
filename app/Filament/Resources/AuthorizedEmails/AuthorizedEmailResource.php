@@ -23,11 +23,17 @@ class AuthorizedEmailResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = null;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
-
-    protected static ?string $navigationLabel = 'Allowlist';
-
     protected static ?int $navigationSort = 10;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('admin.navigation.settings');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('admin.navigation.allowlist');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -43,7 +49,7 @@ class AuthorizedEmailResource extends Resource
                 ->required()
                 ->default(UserRole::Viewer->value),
             Toggle::make('is_active')
-                ->label('Active')
+                ->label(__('admin.fields.active'))
                 ->default(true),
         ]);
     }
@@ -54,7 +60,7 @@ class AuthorizedEmailResource extends Resource
             ->columns([
                 TextColumn::make('email')->searchable()->sortable(),
                 TextColumn::make('role')->badge()->sortable(),
-                IconColumn::make('is_active')->boolean()->label('Active'),
+                IconColumn::make('is_active')->boolean()->label(__('admin.fields.active')),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
             ->headerActions([

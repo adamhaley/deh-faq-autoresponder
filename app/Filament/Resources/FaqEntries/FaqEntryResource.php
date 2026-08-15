@@ -19,6 +19,11 @@ class FaqEntryResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'question';
 
+    public static function getNavigationLabel(): string
+    {
+        return __('admin.navigation.faq_entries');
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
@@ -27,8 +32,8 @@ class FaqEntryResource extends Resource
             TextEntry::make('answer')
                 ->columnSpanFull(),
             TextEntry::make('embedding')
-                ->label('Embedding')
-                ->placeholder('No embedding stored')
+                ->label(__('admin.fields.embedding'))
+                ->placeholder(__('admin.placeholders.no_embedding_stored'))
                 ->limit(160)
                 ->columnSpanFull(),
         ]);

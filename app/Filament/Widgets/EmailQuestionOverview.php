@@ -22,17 +22,17 @@ class EmailQuestionOverview extends StatsOverviewWidget
         $misalignments = $metrics->misalignmentCountSince($since);
 
         return [
-            Stat::make('Pending review', number_format($metrics->pendingReviewCount()))
-                ->description('Questions waiting on human classification')
+            Stat::make(__('admin.dashboard.pending_review'), number_format($metrics->pendingReviewCount()))
+                ->description(__('admin.dashboard.pending_review_description'))
                 ->color('warning'),
-            Stat::make('Reviewed last 7 days', number_format($reviewed))
-                ->description('Human-reviewed question classifications')
+            Stat::make(__('admin.dashboard.reviewed_last_7_days'), number_format($reviewed))
+                ->description(__('admin.dashboard.reviewed_last_7_days_description'))
                 ->color('info'),
-            Stat::make('AI/Human alignment', $alignmentRate === null ? 'N/A' : "{$alignmentRate}%")
-                ->description($reviewed === 0 ? 'No reviewed data yet' : 'Last 7 days')
+            Stat::make(__('admin.dashboard.ai_human_alignment'), $alignmentRate === null ? 'N/A' : "{$alignmentRate}%")
+                ->description($reviewed === 0 ? __('admin.dashboard.no_reviewed_data_yet') : __('admin.dashboard.last_7_days'))
                 ->color($alignmentRate === null || $alignmentRate < 70 ? 'warning' : 'success'),
-            Stat::make('Misalignments last 7 days', number_format($misalignments))
-                ->description('Human review was not aligned with AI classification')
+            Stat::make(__('admin.dashboard.misalignments_last_7_days'), number_format($misalignments))
+                ->description(__('admin.dashboard.misalignments_last_7_days_description'))
                 ->color($misalignments > 0 ? 'danger' : 'success'),
         ];
     }
