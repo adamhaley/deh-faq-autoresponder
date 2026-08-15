@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Filament\Resources\GmailMessages\Pages\ManageGmailMessages;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
+use App\Models\EmailTemplate;
 use App\Models\EmailThreadDraft;
 use App\Models\GmailMessage;
 use App\Models\User;
@@ -218,5 +219,39 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertOk()
             ->assertHasNoActionErrors()
             ->assertMountedActionModalSee('Regenerate draft answer');
+    }
+
+    public function test_an_admin_sees_the_edit_template_link_in_the_composed_email_section(): void
+    {
+        EmailTemplate::factory()->create();
+
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+        $message = GmailMessage::factory()->create();
+        EmailQuestion::factory()->for($message, 'message')->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Edit template');
+    }
+
+    public function test_a_reviewer_does_not_see_the_edit_template_link(): void
+    {
+        EmailTemplate::factory()->create();
+
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+        $message = GmailMessage::factory()->create();
+        EmailQuestion::factory()->for($message, 'message')->create();
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalDontSee('Edit template');
     }
 }

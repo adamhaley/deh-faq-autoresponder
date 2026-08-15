@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources\GmailMessages;
 
+use App\Filament\Resources\EmailTemplates\EmailTemplateResource;
 use App\Filament\Resources\GmailMessages\Pages\ManageGmailMessages;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
+use App\Models\EmailTemplate;
 use App\Models\EmailThreadDraft;
 use App\Models\GmailMessage;
 use BackedEnum;
@@ -93,6 +95,14 @@ class GmailMessageResource extends Resource
                     ) ? '3s' : null)
                     ->columnSpanFull(),
                 Section::make('Composed Email')
+                    ->afterHeader([
+                        Action::make('editTemplate')
+                            ->label('Edit template')
+                            ->icon(Heroicon::PencilSquare)
+                            ->link()
+                            ->url(fn (): ?string => EmailTemplateResource::getUrl())
+                            ->visible(fn (): bool => auth()->user()?->can('update', EmailTemplate::query()->first() ?? new EmailTemplate) ?? false),
+                    ])
                     ->schema(fn (GmailMessage $record): array => self::threadDraftComponents($record))
                     ->poll(fn (GmailMessage $record): ?string => (! $record->needsReview()) && $record->threadDraft()->doesntExist()
                         ? '3s'
