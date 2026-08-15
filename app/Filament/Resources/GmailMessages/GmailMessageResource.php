@@ -147,7 +147,7 @@ class GmailMessageResource extends Resource
                         EmailQuestion::reviewStatusOptions()[$question->fresh()->review_status] ?? $question->review_status,
                         $question->fresh()->answerDraft?->status
                             ? (EmailQuestionAnswerDraft::statusOptions()[$question->fresh()->answerDraft->status] ?? $question->fresh()->answerDraft->status)
-                            : 'No draft yet',
+                            : 'No draft',
                     ))
                     ->badge()
                     ->color(fn (): string => EmailQuestion::reviewStatusColor($question->fresh()->review_status)),

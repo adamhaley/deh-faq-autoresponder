@@ -181,6 +181,8 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertOk()
             ->assertHasNoActionErrors()
             ->assertMountedActionModalDontSee('Regenerate draft answer')
+            ->assertMountedActionModalDontSee('No draft yet')
+            ->assertMountedActionModalSee('No draft')
             ->assertMountedActionModalDontSee('No draft generated yet')
             ->assertMountedActionModalDontSee('approve or resolve every question above first')
             ->assertMountedActionModalSee('No reply needed');
