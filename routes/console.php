@@ -19,3 +19,7 @@ Schedule::command('email-questions:extract')
 Schedule::command('email-questions:classify')
     ->everyMinute()
     ->withoutOverlapping(10);
+
+Schedule::command('email-questions:compose-pending-drafts')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(10);
