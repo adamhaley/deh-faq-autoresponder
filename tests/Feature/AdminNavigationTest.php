@@ -30,4 +30,16 @@ class AdminNavigationTest extends TestCase
 
         $this->assertSame(['Dashboard', 'Webinar Responses'], array_slice($labels, 0, 2));
     }
+
+    public function test_reviewer_settings_navigation_only_shows_email_templates(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $this->actingAs($reviewer)
+            ->get('/admin')
+            ->assertOk()
+            ->assertSee('Email Templates')
+            ->assertDontSee('Allowlist')
+            ->assertDontSee('Gmail Mailboxes');
+    }
 }
