@@ -20,7 +20,7 @@ class RecentEmailQuestionMisalignments extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Recent AI/Human Misalignments')
+            ->heading('Delta')
             ->query(fn (): Builder => app(EmailQuestionDashboardMetrics::class)
                 ->recentMisalignmentsQuery()
                 ->limit(5))
