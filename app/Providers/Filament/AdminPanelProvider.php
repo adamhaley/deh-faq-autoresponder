@@ -6,7 +6,6 @@ use App\Filament\Pages\Auth\Login;
 use App\Filament\Widgets\EmailQuestionMisalignmentRateChart;
 use App\Filament\Widgets\EmailQuestionOverview;
 use App\Filament\Widgets\RecentEmailQuestionMisalignments;
-use App\Filament\Widgets\RecentGmailMessages;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -49,7 +48,6 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                RecentGmailMessages::class,
                 EmailQuestionOverview::class,
                 EmailQuestionMisalignmentRateChart::class,
                 RecentEmailQuestionMisalignments::class,
