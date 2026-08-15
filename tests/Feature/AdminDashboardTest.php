@@ -22,6 +22,7 @@ class AdminDashboardTest extends TestCase
             ->get('/admin')
             ->assertOk()
             ->assertSee('Pending review')
+            ->assertSee('AI and human classifications differed')
             ->assertSee('AI/Human Misalignment Rate')
             ->assertSee('Delta');
     }

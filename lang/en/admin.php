@@ -223,7 +223,7 @@ return [
         'reviewed_last_7_days_description' => 'Human-reviewed question classifications',
         'ai_human_alignment' => 'AI/Human alignment',
         'misalignments_last_7_days' => 'Misalignments last 7 days',
-        'misalignments_last_7_days_description' => 'Human review was not aligned with AI classification',
+        'misalignments_last_7_days_description' => 'AI and human classifications differed',
         'no_reviewed_data_yet' => 'No reviewed data yet',
         'last_7_days' => 'Last 7 days',
         'misalignment_rate' => 'AI/Human Misalignment Rate',
