@@ -13,7 +13,6 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -413,6 +412,18 @@ class EmailQuestionResource extends Resource
             ->poll(fn (): ?string => EmailQuestion::query()->withActiveAsyncPipeline()->exists() ? '3s' : null)
             ->recordTitleAttribute('question_text')
             ->columns([
+                TextColumn::make('review_status')
+                    ->label('Human Review')
+                    ->badge()
+                    ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
+                    ->formatStateUsing(fn (string $state): string => EmailQuestion::reviewStatusOptions()[$state] ?? $state)
+                    ->sortable(),
+                TextColumn::make('classification')
+                    ->label('AI Classification')
+                    ->badge()
+                    ->color(fn (?string $state): string => EmailQuestion::classificationColor($state))
+                    ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? 'Unclassified')
+                    ->sortable(),
                 TextColumn::make('question_text')
                     ->label('Question')
                     ->searchable()
@@ -426,18 +437,6 @@ class EmailQuestionResource extends Resource
                 TextColumn::make('message.from_email')
                     ->label('From')
                     ->searchable()
-                    ->sortable(),
-                TextColumn::make('review_status')
-                    ->label('Human Review')
-                    ->badge()
-                    ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
-                    ->formatStateUsing(fn (string $state): string => EmailQuestion::reviewStatusOptions()[$state] ?? $state)
-                    ->sortable(),
-                TextColumn::make('classification')
-                    ->label('AI Classification')
-                    ->badge()
-                    ->color(fn (?string $state): string => EmailQuestion::classificationColor($state))
-                    ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? 'Unclassified')
                     ->sortable(),
                 TextColumn::make('classification_confidence')
                     ->label('AI Confidence')
@@ -462,8 +461,6 @@ class EmailQuestionResource extends Resource
             ->recordActions([
                 ViewAction::make()
                     ->modalCancelActionLabel('Close')
-                    ->slideOver(),
-                EditAction::make()
                     ->slideOver(),
                 DeleteAction::make(),
             ])
