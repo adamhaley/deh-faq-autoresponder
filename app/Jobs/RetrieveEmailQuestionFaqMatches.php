@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\EmailQuestion;
+use App\Models\EmailQuestionAnswerDraft;
 use App\Services\EmailQuestions\EmailQuestionFaqRetrievalService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -41,6 +42,39 @@ class RetrieveEmailQuestionFaqMatches implements ShouldQueue
             'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusCompleted,
             'faq_retrieval_completed_at' => now(),
         ]);
+
+        $this->dispatchAnswerGeneration($question->fresh());
+    }
+
+    /**
+     * Chains straight into answer generation once matches are in, so the
+     * whole pipeline runs automatically after a reviewer marks a question
+     * Valid. Skipped for questions whose answer already reached a terminal
+     * (approved/rejected) human decision, so this never clobbers a review.
+     */
+    private function dispatchAnswerGeneration(EmailQuestion $question): void
+    {
+        if ($question->review_status !== EmailQuestion::ReviewStatusValid) {
+            return;
+        }
+
+        if ($question->faqMatches()->doesntExist()) {
+            return;
+        }
+
+        if (in_array($question->answerDraft?->status, [
+            EmailQuestionAnswerDraft::StatusApproved,
+            EmailQuestionAnswerDraft::StatusRejected,
+        ], true)) {
+            return;
+        }
+
+        EmailQuestionAnswerDraft::query()->updateOrCreate(
+            ['email_question_id' => $question->id],
+            EmailQuestionAnswerDraft::queuedAttributes(),
+        );
+
+        GenerateEmailQuestionAnswerDraft::dispatch($question->id);
     }
 
     public function failed(?Throwable $exception): void

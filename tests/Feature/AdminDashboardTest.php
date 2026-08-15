@@ -23,6 +23,6 @@ class AdminDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Pending review')
             ->assertSee('AI/Human Misalignment Rate')
-            ->assertSee('Recent AI/Human Misalignments');
+            ->assertSee('Delta');
     }
 }

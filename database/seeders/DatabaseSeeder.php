@@ -23,5 +23,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(FaqEntrySeeder::class);
+        $this->call(EmailTemplateSeeder::class);
     }
 }

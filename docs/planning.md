@@ -62,14 +62,10 @@ There are two independent Google/OAuth concerns:
 Do not conflate these. A reviewer logging into Filament with Google is not the
 same actor as the Gmail mailbox used by the autoresponder workflow.
 
-## Likely Filament Screens
+## Filament Screens
 
-- Inbox queue
-- Draft reply review
-- Knowledge entries
-- Approved answers
-- Prompt/settings
-- Processing logs
+Done — see `docs/implementation-plan.md` "Filament Screens" for the current
+list and `app/Filament/Resources/` for the authoritative source.
 
 ## Decisions (Resolved Open Questions)
 

@@ -103,12 +103,17 @@ account is active in that browser tab.
 Two data-loading steps, neither part of routine deploys:
 
 1. **Migrations** run automatically on every deploy (`migrate --force`).
-2. **Canonical FAQ corpus** is a one-time/as-needed load:
-   `docker compose run --rm deh-faq php artisan db:seed
-   --class=FaqEntrySeeder`. Idempotent (keyed on the original FAQ UUID),
-   seeds from the committed fixture
-   `database/seeders/data/faq_entries.json` — no OpenAI re-embedding cost.
-   Only needs re-running if that fixture changes.
+2. **Seeders are one-time/as-needed, run manually**:
+   `docker compose run --rm deh-faq php artisan db:seed --class=<Name>`.
+   Both are idempotent (safe to re-run) and only need re-running if their
+   source content changes:
+   - `FaqEntrySeeder` — the canonical FAQ corpus, from the committed fixture
+     `database/seeders/data/faq_entries.json` (with existing embeddings, no
+     OpenAI re-embedding cost).
+   - `EmailTemplateSeeder` — the default outgoing email template, from
+     `database/seeders/data/email_template_body.html`. Only needed once;
+     after that it's edited directly in the `Email Templates` resource, and
+     re-running the seeder would overwrite those edits.
 
 Production data survives redeploys because `deh-faq-db` is excluded from the
 deploy script's container recreation, and even if it weren't, Compose only

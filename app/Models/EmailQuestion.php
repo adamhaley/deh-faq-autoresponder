@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\RetrieveEmailQuestionFaqMatches;
 use Database\Factories\EmailQuestionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -251,12 +252,29 @@ class EmailQuestion extends Model
         });
     }
 
+    /**
+     * Marking a question Valid immediately queues automatic FAQ retrieval
+     * (which, on completion, chains into automatic answer generation) so
+     * reviewers never have to trigger the pipeline by hand.
+     */
     public function markReviewed(string $status, ?int $reviewerId): bool
     {
-        return $this->update([
+        $updated = $this->update([
             'review_status' => $status,
             'reviewed_by_user_id' => $reviewerId,
             'reviewed_at' => now(),
         ]);
+
+        if ($updated && $status === self::ReviewStatusValid) {
+            $this->update([
+                'faq_retrieval_status' => self::FaqRetrievalStatusQueued,
+                'faq_retrieval_error' => null,
+                'faq_retrieval_failed_at' => null,
+            ]);
+
+            RetrieveEmailQuestionFaqMatches::dispatch($this->id);
+        }
+
+        return $updated;
     }
 }

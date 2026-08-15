@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\ComposeEmailThreadDraft;
 use Database\Factories\EmailQuestionAnswerDraftFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -127,11 +128,34 @@ class EmailQuestionAnswerDraft extends Model
             'reviewed_at' => now(),
         ]);
 
-        if ($updated && $status === self::StatusApproved) {
-            $this->applyFinalAnswerAsFaqOverride($finalAnswer);
+        if ($updated) {
+            $this->syncApprovedSideEffects();
         }
 
         return $updated;
+    }
+
+    /**
+     * Keep the FAQ override and the thread's Gmail draft in sync with this
+     * draft's current final_answer whenever it is (or remains) approved.
+     * The approved answer is the source of truth: re-approving, or simply
+     * editing final_answer while already approved, re-runs both side
+     * effects automatically -- callers must invoke this after any save
+     * that could change final_answer or status.
+     */
+    public function syncApprovedSideEffects(): void
+    {
+        if ($this->status !== self::StatusApproved) {
+            return;
+        }
+
+        $this->applyFinalAnswerAsFaqOverride($this->final_answer);
+
+        $threadId = $this->emailQuestion?->message?->thread_id;
+
+        if ($threadId !== null) {
+            ComposeEmailThreadDraft::dispatch($threadId);
+        }
     }
 
     /**
