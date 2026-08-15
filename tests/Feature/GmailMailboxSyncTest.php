@@ -53,7 +53,7 @@ class GmailMailboxSyncTest extends TestCase
                     'threadId' => 'thread-1',
                     'historyId' => '190',
                     'subject' => 'First question',
-                    'from' => 'Customer One <one@example.com>',
+                    'from' => 'Webinaris <noreply-1@webinaris.co>',
                     'body' => 'How do I care for this stone?',
                     'internalDate' => '1786530000000',
                 ]));
@@ -65,7 +65,7 @@ class GmailMailboxSyncTest extends TestCase
                     'threadId' => 'thread-2',
                     'historyId' => '191',
                     'subject' => 'Second question',
-                    'from' => 'two@example.com',
+                    'from' => 'noreply-2@webinaris.co',
                     'body' => 'Do you ship internationally?',
                     'internalDate' => '1786530060000',
                 ]));
@@ -101,8 +101,8 @@ class GmailMailboxSyncTest extends TestCase
 
         $this->assertSame($mailbox->id, $message->gmail_mailbox_id);
         $this->assertSame('First question', $message->subject);
-        $this->assertSame('one@example.com', $message->from_email);
-        $this->assertSame('Customer One', $message->from_name);
+        $this->assertSame('noreply-1@webinaris.co', $message->from_email);
+        $this->assertSame('Webinaris', $message->from_name);
         $this->assertSame('How do I care for this stone?', $message->text_body);
         $this->assertSame(['customer@example.com'], $message->to_recipients);
         $this->assertSame(['INBOX'], $message->label_ids);
@@ -143,7 +143,7 @@ class GmailMailboxSyncTest extends TestCase
                     'threadId' => 'thread-1',
                     'historyId' => '190',
                     'subject' => 'A real question',
-                    'from' => 'Customer One <one@example.com>',
+                    'from' => 'noreply-1@webinaris.co',
                     'body' => 'How do I care for this stone?',
                     'internalDate' => '1786530000000',
                 ]));
@@ -197,6 +197,89 @@ class GmailMailboxSyncTest extends TestCase
         $this->assertTrue(GmailMessage::query()->where('gmail_message_id', 'inbound-message')->exists());
     }
 
+    public function test_command_only_imports_webinar_notification_senders(): void
+    {
+        $this->configureGmail();
+
+        Http::preventStrayRequests();
+        Http::fake(function (Request $request) {
+            if ($request->url() === 'https://oauth2.googleapis.com/token') {
+                return Http::response([
+                    'access_token' => 'fresh-access-token',
+                    'expires_in' => 3600,
+                    'scope' => 'https://www.googleapis.com/auth/gmail.modify',
+                ]);
+            }
+
+            if (str_starts_with($request->url(), 'https://gmail.googleapis.com/gmail/v1/users/me/history')) {
+                return Http::response([
+                    'historyId' => '200',
+                    'history' => [
+                        [
+                            'messagesAdded' => [
+                                ['message' => ['id' => 'webinar-question']],
+                                ['message' => ['id' => 'security-alert']],
+                                ['message' => ['id' => 'job-digest']],
+                            ],
+                        ],
+                    ],
+                ]);
+            }
+
+            if (str_contains($request->url(), '/messages/webinar-question')) {
+                return Http::response($this->gmailMessage([
+                    'id' => 'webinar-question',
+                    'threadId' => 'thread-1',
+                    'historyId' => '190',
+                    'subject' => 'Webinar question',
+                    'from' => 'noreply-11551@webinaris.co',
+                    'body' => 'Wie funktioniert das Investment?',
+                    'internalDate' => '1786530000000',
+                ]));
+            }
+
+            if (str_contains($request->url(), '/messages/security-alert')) {
+                return Http::response($this->gmailMessage([
+                    'id' => 'security-alert',
+                    'threadId' => 'thread-2',
+                    'historyId' => '191',
+                    'subject' => 'Sicherheitswarnung',
+                    'from' => 'no-reply@accounts.google.com',
+                    'body' => 'Sie haben Zugriff gewährt.',
+                    'internalDate' => '1786530060000',
+                ]));
+            }
+
+            if (str_contains($request->url(), '/messages/job-digest')) {
+                return Http::response($this->gmailMessage([
+                    'id' => 'job-digest',
+                    'threadId' => 'thread-3',
+                    'historyId' => '192',
+                    'subject' => 'New jobs for you',
+                    'from' => 'jobs-noreply@linkedin.com',
+                    'body' => 'Senior Engineer roles near you.',
+                    'internalDate' => '1786530120000',
+                ]));
+            }
+
+            return Http::response(status: 404);
+        });
+
+        $mailbox = GmailMailbox::factory()->create([
+            'access_token' => 'stale-access-token',
+            'refresh_token' => 'refresh-token',
+            'token_expires_at' => now()->subDay(),
+            'last_history_id' => '100',
+        ]);
+
+        $this->artisan('gmail:sync-mailboxes')
+            ->expectsOutput('Imported 1 Gmail message(s).')
+            ->assertSuccessful();
+
+        $this->assertSame(1, GmailMessage::query()->count());
+        $this->assertTrue(GmailMessage::query()->where('gmail_message_id', 'webinar-question')->exists());
+    }
+
     public function test_command_extracts_participant_name_and_reply_email_from_message_body(): void
     {
         $this->configureGmail();
@@ -226,7 +309,7 @@ class GmailMailboxSyncTest extends TestCase
                     'threadId' => 'thread-1',
                     'historyId' => '190',
                     'subject' => 'Webinar question',
-                    'from' => 'webinar-platform@example.com',
+                    'from' => 'noreply-11551@webinaris.co',
                     'body' => "Vorname: Maria\nNachname: Schmidt\nE-Mail: maria.schmidt@example.com\n\nChat:\n1: Maria (10:00): Wie funktioniert das Investment?",
                     'internalDate' => '1786530000000',
                 ]));
@@ -243,7 +326,7 @@ class GmailMailboxSyncTest extends TestCase
 
         $this->assertSame('Maria Schmidt', $message->participant_name);
         $this->assertSame('maria.schmidt@example.com', $message->reply_to_email);
-        $this->assertSame('webinar-platform@example.com', $message->from_email);
+        $this->assertSame('noreply-11551@webinaris.co', $message->from_email);
     }
 
     public function test_command_extracts_participant_details_from_an_html_only_message(): void
@@ -348,7 +431,7 @@ class GmailMailboxSyncTest extends TestCase
                     'threadId' => 'thread-1',
                     'historyId' => '190',
                     'subject' => 'First question',
-                    'from' => 'Customer One <one@example.com>',
+                    'from' => 'Webinaris <noreply-1@webinaris.co>',
                     'body' => 'How do I care for this stone?',
                     'internalDate' => '1786530000000',
                 ]));
@@ -360,7 +443,7 @@ class GmailMailboxSyncTest extends TestCase
                     'threadId' => 'thread-2',
                     'historyId' => '191',
                     'subject' => 'Second question',
-                    'from' => 'two@example.com',
+                    'from' => 'noreply-2@webinaris.co',
                     'body' => 'Do you ship internationally?',
                     'internalDate' => '1786530060000',
                 ]));

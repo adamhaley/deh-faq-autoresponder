@@ -85,7 +85,7 @@ class GmailMailboxSyncService
             foreach ($this->messageIdsFromHistory($history) as $messageId) {
                 $message = $this->gmail->message($mailbox, $messageId);
 
-                if ($this->isOwnOutgoingMessage($message)) {
+                if ($this->isOwnOutgoingMessage($message) || ! $this->isFromWebinarNotifications($message)) {
                     continue;
                 }
 
@@ -145,7 +145,7 @@ class GmailMailboxSyncService
             foreach ($this->messageIdsFromList($list) as $messageId) {
                 $message = $this->gmail->message($mailbox, $messageId);
 
-                if ($this->isOwnOutgoingMessage($message)) {
+                if ($this->isOwnOutgoingMessage($message) || ! $this->isFromWebinarNotifications($message)) {
                     continue;
                 }
 
@@ -227,6 +227,22 @@ class GmailMailboxSyncService
         $labels = is_array($message['labelIds'] ?? null) ? $message['labelIds'] : [];
 
         return in_array('DRAFT', $labels, true) || in_array('SENT', $labels, true);
+    }
+
+    /**
+     * The mailbox only ever needs to act on the webinar platform's own
+     * question-notification emails -- everything else (security alerts,
+     * job-board digests, marketing notices) is noise that would otherwise
+     * flood the reviewer queue with nothing to review.
+     *
+     * @param  array<string, mixed>  $message
+     */
+    private function isFromWebinarNotifications(array $message): bool
+    {
+        $payload = is_array($message['payload'] ?? null) ? $message['payload'] : [];
+        $from = $this->parseAddress($this->headers($payload)['from'] ?? null);
+
+        return $from['email'] !== null && str_ends_with($from['email'], '@webinaris.co');
     }
 
     /**
