@@ -208,6 +208,56 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertMountedActionModalSee('No reply needed - no relevant questions to answer.');
     }
 
+    public function test_the_view_action_shows_a_spinner_for_active_answer_draft_generation(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create(['question_text' => 'Wie funktioniert das Investment?']);
+        EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $question->id,
+            'status' => EmailQuestionAnswerDraft::StatusQueued,
+        ]);
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Queued')
+            ->assertMountedActionModalSeeHtml('deh-status-spin');
+    }
+
+    public function test_the_composed_email_section_shows_a_spinner_while_waiting_for_the_gmail_draft(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create(['thread_id' => 'thread-awaiting-draft']);
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create(['question_text' => 'Wie funktioniert das Investment?']);
+        EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $question->id,
+            'final_answer' => 'Sie investieren direkt.',
+            'status' => EmailQuestionAnswerDraft::StatusApproved,
+        ]);
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Composing draft')
+            ->assertMountedActionModalSeeHtml('deh-status-spin')
+            ->assertMountedActionModalDontSee('No reply needed');
+    }
+
     public function test_the_processed_icon_distinguishes_pending_drafted_and_resolved_messages(): void
     {
         $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);

@@ -27,6 +27,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class GmailMessageResource extends Resource
@@ -283,6 +284,7 @@ class GmailMessageResource extends Resource
                             ->label('Status')
                             ->state(fn (): ?string => $question->answerDraft()->value('status'))
                             ->badge()
+                            ->icon(fn (?string $state): Heroicon|HtmlString|null => self::isActiveAnswerDraftStatus($state) ? self::spinningStatusIcon() : null)
                             ->placeholder('No draft generated yet')
                             ->color(fn (?string $state): string => $state === null ? 'gray' : EmailQuestionAnswerDraft::statusColor($state))
                             ->formatStateUsing(fn (?string $state): string => $state === null ? 'No draft' : EmailQuestionAnswerDraft::statusOptions()[$state] ?? $state),
@@ -312,9 +314,14 @@ class GmailMessageResource extends Resource
             return [
                 TextEntry::make('no_draft')
                     ->label('')
-                    ->state(fn (): string => self::freshMessageNeedsReview($record)
-                        ? 'Not composed yet - approve or resolve every question above first.'
-                        : 'No reply needed - no relevant questions to answer.'),
+                    ->state(fn (): string => match (true) {
+                        self::freshMessageNeedsReview($record) => 'Not composed yet - approve or resolve every question above first.',
+                        self::freshMessageAwaitingThreadDraft($record) => 'Composing draft',
+                        default => 'No reply needed - no relevant questions to answer.',
+                    })
+                    ->badge(fn (): bool => self::freshMessageAwaitingThreadDraft($record))
+                    ->icon(fn (): Heroicon|HtmlString|null => self::freshMessageAwaitingThreadDraft($record) ? self::spinningStatusIcon() : null)
+                    ->color(fn (): string => self::freshMessageAwaitingThreadDraft($record) ? 'info' : 'gray'),
             ];
         }
 
@@ -351,12 +358,68 @@ class GmailMessageResource extends Resource
 
     private static function composedEmailNeedsPolling(GmailMessage $record): bool
     {
-        return (! self::freshMessageNeedsReview($record)) && $record->threadDraft()->doesntExist();
+        return self::freshMessageAwaitingThreadDraft($record);
     }
 
     private static function freshMessageNeedsReview(GmailMessage $record): bool
     {
         return ($record->fresh(['questions.answerDraft']) ?? $record)->needsReview();
+    }
+
+    private static function freshMessageAwaitingThreadDraft(GmailMessage $record): bool
+    {
+        $freshRecord = $record->fresh(['questions.answerDraft', 'threadDraft']) ?? $record;
+
+        if ($freshRecord->needsReview() || $freshRecord->threadDraft !== null) {
+            return false;
+        }
+
+        return $freshRecord->questions->contains(
+            fn (EmailQuestion $question): bool => $question->review_status === EmailQuestion::ReviewStatusValid
+                && $question->answerDraft?->status === EmailQuestionAnswerDraft::StatusApproved,
+        );
+    }
+
+    private static function isActiveAnswerDraftStatus(?string $status): bool
+    {
+        return in_array($status, [
+            EmailQuestionAnswerDraft::StatusQueued,
+            EmailQuestionAnswerDraft::StatusGenerating,
+        ], true);
+    }
+
+    private static function spinningStatusIcon(): HtmlString
+    {
+        return new HtmlString(<<<'HTML'
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+                style="animation: deh-status-spin 1s linear infinite;"
+            >
+                <style>
+                    @keyframes deh-status-spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                </style>
+                <path
+                    d="M10 3a7 7 0 1 1-6.33 4.01"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+                <path
+                    d="M3.25 3.75v3.5h3.5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+            </svg>
+            HTML);
     }
 
     public static function table(Table $table): Table
