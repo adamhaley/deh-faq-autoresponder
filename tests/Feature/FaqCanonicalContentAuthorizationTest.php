@@ -52,4 +52,18 @@ class FaqCanonicalContentAuthorizationTest extends TestCase
 
         $this->actingAs($reviewer)->get('/admin/email-templates')->assertForbidden();
     }
+
+    public function test_admin_can_view_email_questions(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+
+        $this->actingAs($admin)->get('/admin/email-questions')->assertOk();
+    }
+
+    public function test_reviewer_cannot_view_email_questions(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $this->actingAs($reviewer)->get('/admin/email-questions')->assertForbidden();
+    }
 }
