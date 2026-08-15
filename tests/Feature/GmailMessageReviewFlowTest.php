@@ -354,7 +354,7 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertMountedActionModalSee('Edit template');
     }
 
-    public function test_a_reviewer_does_not_see_the_edit_template_link(): void
+    public function test_a_reviewer_sees_the_edit_template_link(): void
     {
         EmailTemplate::factory()->create();
 
@@ -368,6 +368,6 @@ class GmailMessageReviewFlowTest extends TestCase
             ->mountTableAction('view', $message)
             ->assertOk()
             ->assertHasNoActionErrors()
-            ->assertMountedActionModalDontSee('Edit template');
+            ->assertMountedActionModalSee('Edit template');
     }
 }
