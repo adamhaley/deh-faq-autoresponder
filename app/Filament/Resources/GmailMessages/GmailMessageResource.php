@@ -33,7 +33,11 @@ class GmailMessageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxArrowDown;
 
-    protected static ?string $navigationLabel = 'Gmail Messages';
+    protected static ?string $navigationLabel = 'Webinar Responses';
+
+    protected static ?string $modelLabel = 'webinar response';
+
+    protected static ?string $pluralModelLabel = 'webinar responses';
 
     protected static ?int $navigationSort = -2;
 
