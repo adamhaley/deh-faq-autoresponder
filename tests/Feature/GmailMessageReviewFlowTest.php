@@ -27,13 +27,18 @@ class GmailMessageReviewFlowTest extends TestCase
         $message = GmailMessage::factory()->create(['thread_id' => 'thread-list']);
         EmailQuestion::factory()->for($message, 'message')->create();
 
+        $draftedMessage = GmailMessage::factory()->create(['thread_id' => 'thread-list-drafted']);
+        EmailThreadDraft::factory()->create(['thread_id' => 'thread-list-drafted']);
+
         $this->actingAs($reviewer);
 
         Livewire::test(ManageGmailMessages::class)
             ->assertOk()
-            ->assertCanSeeTableRecords([$message])
-            ->assertTableActionHasLabel('view', 'Process')
-            ->assertTableActionHasIcon('view', Heroicon::ArrowPath);
+            ->assertCanSeeTableRecords([$message, $draftedMessage])
+            ->assertTableActionHasLabel('view', 'Process', record: $message)
+            ->assertTableActionHasIcon('view', Heroicon::ArrowPath, record: $message)
+            ->assertTableActionHasLabel('view', 'Processed', record: $draftedMessage)
+            ->assertTableActionHasIcon('view', Heroicon::CheckCircle, record: $draftedMessage);
     }
 
     public function test_the_view_action_mounts_without_error_for_a_message_with_no_questions(): void
