@@ -37,7 +37,7 @@ class GmailMessageResource extends Resource
 
     protected static ?string $navigationLabel = 'Gmail Messages';
 
-    protected static ?int $navigationSort = -10;
+    protected static ?int $navigationSort = -2;
 
     public static function form(Schema $schema): Schema
     {
