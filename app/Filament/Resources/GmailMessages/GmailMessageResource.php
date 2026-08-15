@@ -158,26 +158,24 @@ class GmailMessageResource extends Resource
                 Section::make('Review')
                     ->key("review_{$question->id}")
                     ->afterHeader([
-                        ActionGroup::make([
-                            Action::make("markValid_{$question->id}")
-                                ->label('Valid question')
-                                ->icon(Heroicon::CheckCircle)
-                                ->color('success')
-                                ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusValid, auth()->id())),
-                            Action::make("markNoise_{$question->id}")
-                                ->label('Noise')
-                                ->icon(Heroicon::XCircle)
-                                ->color('gray')
-                                ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusNoise, auth()->id())),
-                            Action::make("markUnanswerable_{$question->id}")
-                                ->label('Unanswerable')
-                                ->icon(Heroicon::ExclamationTriangle)
-                                ->color('warning')
-                                ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusUnanswerable, auth()->id())),
-                        ])
-                            ->label('Classify')
-                            ->icon(Heroicon::ChevronDown)
-                            ->button(),
+                        Action::make("markValid_{$question->id}")
+                            ->label('Valid question')
+                            ->icon(Heroicon::CheckCircle)
+                            ->color('success')
+                            ->outlined()
+                            ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusValid, auth()->id())),
+                        Action::make("markNoise_{$question->id}")
+                            ->label('Noise')
+                            ->icon(Heroicon::XCircle)
+                            ->color('gray')
+                            ->outlined()
+                            ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusNoise, auth()->id())),
+                        Action::make("markUnanswerable_{$question->id}")
+                            ->label('Unanswerable')
+                            ->icon(Heroicon::ExclamationTriangle)
+                            ->color('warning')
+                            ->outlined()
+                            ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusUnanswerable, auth()->id())),
                     ])
                     ->schema([
                         TextEntry::make("ai_classification_{$question->id}")
