@@ -2,12 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserRole;
 use App\Models\EmailQuestion;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
 class AdminLocalizationTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_admin_login_uses_german_labels_for_german_browser_language(): void
     {
         $this->withHeader('Accept-Language', 'de-DE,de;q=0.9,en;q=0.8')
@@ -41,5 +46,20 @@ class AdminLocalizationTest extends TestCase
             'Valid question',
             EmailQuestion::reviewStatusOptions()[EmailQuestion::ReviewStatusValid],
         );
+    }
+
+    public function test_resource_page_heading_uses_german_browser_language(): void
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::Admin,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->withHeader('Accept-Language', 'de-DE,de;q=0.9,en;q=0.8')
+            ->get('/admin/email-questions')
+            ->assertOk()
+            ->assertSee('E-Mail-Fragen')
+            ->assertDontSee('Email Questions');
     }
 }

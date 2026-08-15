@@ -43,6 +43,16 @@ class EmailQuestionResource extends Resource
         return __('admin.navigation.email_questions');
     }
 
+    public static function getModelLabel(): string
+    {
+        return __('admin.resources.email_question.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('admin.resources.email_question.plural');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

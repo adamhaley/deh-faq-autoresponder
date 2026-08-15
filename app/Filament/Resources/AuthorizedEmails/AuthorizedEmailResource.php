@@ -35,6 +35,16 @@ class AuthorizedEmailResource extends Resource
         return __('admin.navigation.allowlist');
     }
 
+    public static function getModelLabel(): string
+    {
+        return __('admin.resources.authorized_email.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('admin.resources.authorized_email.plural');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([

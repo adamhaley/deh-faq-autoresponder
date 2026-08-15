@@ -13,6 +13,30 @@ return [
     ],
 
     'resources' => [
+        'authorized_email' => [
+            'singular' => 'allowlist entry',
+            'plural' => 'allowlist',
+        ],
+        'email_question' => [
+            'singular' => 'email question',
+            'plural' => 'email questions',
+        ],
+        'email_template' => [
+            'singular' => 'email template',
+            'plural' => 'email templates',
+        ],
+        'faq_approved_response' => [
+            'singular' => 'FAQ approved response',
+            'plural' => 'FAQ approved responses',
+        ],
+        'faq_entry' => [
+            'singular' => 'FAQ entry',
+            'plural' => 'FAQ entries',
+        ],
+        'gmail_mailbox' => [
+            'singular' => 'Gmail mailbox',
+            'plural' => 'Gmail mailboxes',
+        ],
         'webinar_response' => [
             'singular' => 'webinar response',
             'plural' => 'webinar responses',

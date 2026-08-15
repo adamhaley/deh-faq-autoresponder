@@ -37,6 +37,16 @@ class GmailMailboxResource extends Resource
         return __('admin.navigation.gmail_mailboxes');
     }
 
+    public static function getModelLabel(): string
+    {
+        return __('admin.resources.gmail_mailbox.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('admin.resources.gmail_mailbox.plural');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

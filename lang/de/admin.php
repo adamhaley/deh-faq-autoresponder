@@ -13,6 +13,30 @@ return [
     ],
 
     'resources' => [
+        'authorized_email' => [
+            'singular' => 'Erlaubter Benutzer',
+            'plural' => 'Erlaubte Benutzer',
+        ],
+        'email_question' => [
+            'singular' => 'E-Mail-Frage',
+            'plural' => 'E-Mail-Fragen',
+        ],
+        'email_template' => [
+            'singular' => 'E-Mail-Vorlage',
+            'plural' => 'E-Mail-Vorlagen',
+        ],
+        'faq_approved_response' => [
+            'singular' => 'Freigegebene FAQ-Antwort',
+            'plural' => 'Freigegebene FAQ-Antworten',
+        ],
+        'faq_entry' => [
+            'singular' => 'FAQ-Eintrag',
+            'plural' => 'FAQ-Einträge',
+        ],
+        'gmail_mailbox' => [
+            'singular' => 'Gmail-Postfach',
+            'plural' => 'Gmail-Postfächer',
+        ],
         'webinar_response' => [
             'singular' => 'Webinar-Antwort',
             'plural' => 'Webinar-Antworten',

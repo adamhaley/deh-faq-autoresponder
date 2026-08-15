@@ -31,6 +31,16 @@ class EmailTemplateResource extends Resource
         return __('admin.navigation.email_templates');
     }
 
+    public static function getModelLabel(): string
+    {
+        return __('admin.resources.email_template.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('admin.resources.email_template.plural');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

@@ -28,6 +28,16 @@ class FaqApprovedResponseResource extends Resource
         return __('admin.navigation.faq_approved_responses');
     }
 
+    public static function getModelLabel(): string
+    {
+        return __('admin.resources.faq_approved_response.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('admin.resources.faq_approved_response.plural');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([

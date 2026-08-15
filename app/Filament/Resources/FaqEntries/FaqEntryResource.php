@@ -24,6 +24,16 @@ class FaqEntryResource extends Resource
         return __('admin.navigation.faq_entries');
     }
 
+    public static function getModelLabel(): string
+    {
+        return __('admin.resources.faq_entry.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('admin.resources.faq_entry.plural');
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
