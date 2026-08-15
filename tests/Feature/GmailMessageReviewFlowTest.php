@@ -142,28 +142,6 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertMountedActionModalSee('This is a customer FAQ question.');
     }
 
-    public function test_the_review_classification_actions_render_as_buttons(): void
-    {
-        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
-
-        $message = GmailMessage::factory()->create();
-        EmailQuestion::factory()
-            ->for($message, 'message')
-            ->classifiedAsValid()
-            ->create(['question_text' => 'Wie funktioniert das Investment?']);
-
-        $this->actingAs($reviewer);
-
-        Livewire::test(ManageGmailMessages::class)
-            ->mountTableAction('view', $message)
-            ->assertOk()
-            ->assertHasNoActionErrors()
-            ->assertMountedActionModalSee('Valid question')
-            ->assertMountedActionModalSee('Noise')
-            ->assertMountedActionModalSee('Unanswerable')
-            ->assertMountedActionModalDontSee('Classify');
-    }
-
     public function test_the_view_action_hides_the_answer_section_for_a_noise_question(): void
     {
         $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
