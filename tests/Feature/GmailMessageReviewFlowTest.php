@@ -162,6 +162,31 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertMountedActionModalSee('approve or resolve every question above first');
     }
 
+    public function test_the_composed_email_section_updates_when_a_question_is_resolved_as_noise(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->classifiedAsValid()
+            ->create(['question_text' => 'ich sehe euch nicht, hore den Ton nicht']);
+
+        $this->actingAs($reviewer);
+
+        $component = Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertMountedActionModalSee('approve or resolve every question above first')
+            ->assertMountedActionModalDontSee('No reply needed');
+
+        $question->markReviewed(EmailQuestion::ReviewStatusNoise, $reviewer->id);
+
+        $component
+            ->call('$refresh')
+            ->assertMountedActionModalDontSee('approve or resolve every question above first')
+            ->assertMountedActionModalSee('No reply needed - no relevant questions to answer.');
+    }
+
     public function test_the_processed_icon_distinguishes_pending_drafted_and_resolved_messages(): void
     {
         $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);

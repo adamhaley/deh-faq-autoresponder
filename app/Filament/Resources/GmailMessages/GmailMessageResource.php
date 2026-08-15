@@ -105,9 +105,7 @@ class GmailMessageResource extends Resource
                             ->visible(fn (): bool => auth()->user()?->can('update', EmailTemplate::query()->first() ?? new EmailTemplate) ?? false),
                     ])
                     ->schema(fn (GmailMessage $record): array => self::threadDraftComponents($record))
-                    ->poll(fn (GmailMessage $record): ?string => (! $record->needsReview()) && $record->threadDraft()->doesntExist()
-                        ? '3s'
-                        : null)
+                    ->poll(fn (GmailMessage $record): ?string => self::composedEmailNeedsPolling($record) ? '3s' : null)
                     ->columnSpanFull(),
             ]);
     }
@@ -314,7 +312,7 @@ class GmailMessageResource extends Resource
             return [
                 TextEntry::make('no_draft')
                     ->label('')
-                    ->state($record->needsReview()
+                    ->state(fn (): string => self::freshMessageNeedsReview($record)
                         ? 'Not composed yet - approve or resolve every question above first.'
                         : 'No reply needed - no relevant questions to answer.'),
             ];
@@ -323,31 +321,41 @@ class GmailMessageResource extends Resource
         return [
             TextEntry::make('draft_status')
                 ->label('Status')
-                ->state($draft->status)
+                ->state(fn (): ?string => $record->threadDraft()->value('status'))
                 ->badge()
-                ->color(fn (): string => EmailThreadDraft::statusColor($draft->status))
-                ->formatStateUsing(fn (string $state): string => EmailThreadDraft::statusOptions()[$state] ?? $state),
+                ->color(fn (?string $state): string => $state === null ? 'gray' : EmailThreadDraft::statusColor($state))
+                ->formatStateUsing(fn (?string $state): string => $state === null ? 'No draft' : EmailThreadDraft::statusOptions()[$state] ?? $state),
             TextEntry::make('draft_composed_at')
                 ->label('Composed at')
-                ->state($draft->composed_at)
+                ->state(fn (): mixed => $record->threadDraft()->value('composed_at'))
                 ->dateTime(),
             TextEntry::make('draft_subject')
                 ->label('Subject')
-                ->state($draft->subject)
+                ->state(fn (): ?string => $record->threadDraft()->value('subject'))
                 ->columnSpanFull(),
             TextEntry::make('draft_body')
                 ->label('Body preview')
-                ->state($draft->body)
+                ->state(fn (): ?string => $record->threadDraft()->value('body'))
                 ->html()
                 ->columnSpanFull(),
             TextEntry::make('draft_error')
                 ->label('Error')
-                ->state($draft->last_error)
+                ->state(fn (): ?string => $record->threadDraft()->value('last_error'))
                 ->color('danger')
                 ->placeholder('No error')
-                ->visible($draft->status === EmailThreadDraft::StatusFailed)
+                ->visible(fn (): bool => $record->threadDraft()->value('status') === EmailThreadDraft::StatusFailed)
                 ->columnSpanFull(),
         ];
+    }
+
+    private static function composedEmailNeedsPolling(GmailMessage $record): bool
+    {
+        return (! self::freshMessageNeedsReview($record)) && $record->threadDraft()->doesntExist();
+    }
+
+    private static function freshMessageNeedsReview(GmailMessage $record): bool
+    {
+        return ($record->fresh(['questions.answerDraft']) ?? $record)->needsReview();
     }
 
     public static function table(Table $table): Table
