@@ -510,6 +510,8 @@ class GmailMessageResource extends Resource
     {
         return $table
             ->defaultSort(fn (Builder $query): Builder => self::applyDefaultTableSort($query))
+            ->persistFiltersInSession()
+            ->deferFilters(false)
             ->columns([
                 IconColumn::make('processed')
                     ->label('')
