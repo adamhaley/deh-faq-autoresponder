@@ -28,7 +28,7 @@ class FaqApprovedResponsePolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return false;
     }
 
     /**
@@ -36,7 +36,7 @@ class FaqApprovedResponsePolicy
      */
     public function update(User $user, FaqApprovedResponse $faqApprovedResponse): bool
     {
-        return $user->isAdmin();
+        return false;
     }
 
     /**
@@ -44,7 +44,7 @@ class FaqApprovedResponsePolicy
      */
     public function delete(User $user, FaqApprovedResponse $faqApprovedResponse): bool
     {
-        return $user->isAdmin();
+        return false;
     }
 
     /**
@@ -52,7 +52,7 @@ class FaqApprovedResponsePolicy
      */
     public function restore(User $user, FaqApprovedResponse $faqApprovedResponse): bool
     {
-        return $user->isAdmin();
+        return false;
     }
 
     /**
@@ -60,6 +60,6 @@ class FaqApprovedResponsePolicy
      */
     public function forceDelete(User $user, FaqApprovedResponse $faqApprovedResponse): bool
     {
-        return $user->isAdmin();
+        return false;
     }
 }

@@ -21,3 +21,4 @@ Postgres database. Existing FAQ data from the legacy Supabase database will be
 migrated or re-ingested.
 
 See `docs/planning.md` and `docs/implementation-plan.md` for the working plan.
+See `docs/git-workflow.md` for the local `develop` / `main` branch workflow.

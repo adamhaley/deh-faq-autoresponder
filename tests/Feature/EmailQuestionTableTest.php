@@ -41,7 +41,11 @@ class EmailQuestionTableTest extends TestCase
             ->assertTableColumnFormattedStateSet('message.participant_name', 'Helmut Kempf', record: $question)
             ->assertTableActionsExistInOrder(['view'])
             ->assertTableActionDoesNotExist('delete')
-            ->assertTableActionDoesNotExist('edit');
+            ->assertTableActionDoesNotExist('edit')
+            ->mountTableAction('view', $question)
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Helmut Kempf')
+            ->assertMountedActionModalSee('kempf-helmut@example.com');
 
         $columnNames = array_values(array_map(
             fn ($column): string => $column->getName(),
@@ -49,5 +53,29 @@ class EmailQuestionTableTest extends TestCase
         ));
 
         $this->assertSame(['review_status', 'classification', 'question_text'], array_slice($columnNames, 0, 3));
+    }
+
+    public function test_invalid_reviewed_questions_hide_downstream_pipeline_sections(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+
+        $this->actingAs($admin);
+
+        foreach ([EmailQuestion::ReviewStatusNoise, EmailQuestion::ReviewStatusUnanswerable] as $reviewStatus) {
+            $question = EmailQuestion::factory()
+                ->for(GmailMessage::factory(), 'message')
+                ->reviewedAs($reviewStatus)
+                ->create();
+
+            Livewire::test(ManageEmailQuestions::class)
+                ->mountTableAction('view', $question)
+                ->assertOk()
+                ->assertHasNoActionErrors()
+                ->assertMountedActionModalSee('Human Review')
+                ->assertMountedActionModalDontSee('RAG Context')
+                ->assertMountedActionModalDontSee('Retrieve FAQ matches')
+                ->assertMountedActionModalDontSee('Answer Draft')
+                ->assertMountedActionModalDontSee('Generate draft answer');
+        }
     }
 }

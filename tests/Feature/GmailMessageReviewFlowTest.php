@@ -74,11 +74,18 @@ class GmailMessageReviewFlowTest extends TestCase
 
         $this->actingAs($reviewer);
 
-        Livewire::test(ManageGmailMessages::class)
+        $component = Livewire::test(ManageGmailMessages::class)
             ->mountTableAction('view', $message)
             ->assertOk()
             ->assertHasNoActionErrors()
             ->assertMountedActionModalSee('Please review it in your Gmail Drafts folder and send it from there when you\'re ready.');
+
+        $modalHtml = $component->getMountedActionModalHtml();
+
+        $this->assertLessThan(
+            strpos($modalHtml, 'Please review it in your Gmail Drafts folder'),
+            strpos($modalHtml, 'Composed body'),
+        );
     }
 
     public function test_the_composed_email_body_preview_preserves_whitespace(): void
@@ -335,6 +342,37 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertOk()
             ->assertHasNoActionErrors()
             ->assertMountedActionModalSee('Regenerate draft answer');
+    }
+
+    public function test_the_answer_section_shows_inline_review_actions_below_the_answer(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $message = GmailMessage::factory()->create();
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create(['question_text' => 'Wie funktioniert das Investment?']);
+
+        EmailQuestionAnswerDraft::factory()
+            ->for($question, 'emailQuestion')
+            ->create([
+                'generated_answer' => 'Generated answer.',
+                'final_answer' => 'Final answer.',
+                'status' => EmailQuestionAnswerDraft::StatusDraft,
+            ]);
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->mountTableAction('view', $message)
+            ->assertOk()
+            ->assertHasNoActionErrors()
+            ->assertMountedActionModalSee('Draft actions')
+            ->assertMountedActionModalSee('Edit final answer')
+            ->assertMountedActionModalSee('Approve')
+            ->assertMountedActionModalSee('Needs revision')
+            ->assertMountedActionModalSee('Reject');
     }
 
     public function test_an_admin_sees_the_edit_template_link_in_the_composed_email_section(): void

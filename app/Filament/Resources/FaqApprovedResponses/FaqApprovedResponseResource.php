@@ -4,12 +4,8 @@ namespace App\Filament\Resources\FaqApprovedResponses;
 
 use App\Filament\Resources\FaqApprovedResponses\Pages\ManageFaqApprovedResponses;
 use App\Models\FaqApprovedResponse;
-use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -38,19 +34,21 @@ class FaqApprovedResponseResource extends Resource
         return __('admin.resources.faq_approved_response.plural');
     }
 
-    public static function form(Schema $schema): Schema
+    public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('faq_entry_id')
-                ->relationship('faqEntry', 'question')
-                ->searchable()
-                ->preload()
-                ->required(),
-            Textarea::make('approved_response')
-                ->required()
-                ->rows(8),
-            TextInput::make('match_similarity')
+            TextEntry::make('faqEntry.question')
+                ->label(__('admin.fields.faq'))
+                ->columnSpanFull(),
+            TextEntry::make('approved_response')
+                ->label(__('admin.fields.approved_response_override'))
+                ->columnSpanFull(),
+            TextEntry::make('match_similarity')
+                ->label(__('admin.fields.similarity'))
                 ->numeric(),
+            TextEntry::make('updated_at')
+                ->label(__('admin.fields.updated_at'))
+                ->dateTime(),
         ]);
     }
 
@@ -63,12 +61,9 @@ class FaqApprovedResponseResource extends Resource
                 TextColumn::make('match_similarity')->numeric(),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
-            ->headerActions([
-                CreateAction::make(),
-            ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                ViewAction::make()
+                    ->modalHeading(__('admin.actions.view_faq_approved_response')),
             ]);
     }
 
