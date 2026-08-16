@@ -130,6 +130,7 @@ return [
         'generate_draft_answer' => 'Antwortentwurf generieren',
         'needs_revision' => 'Überarbeitung nötig',
         'regenerate_draft_answer' => 'Antwortentwurf neu generieren',
+        'review' => 'Prüfen',
         'reject' => 'Ablehnen',
         'reject_answer' => 'Antwort ablehnen',
         'view_faq_approved_response' => 'Freigegebene FAQ-Antwort anzeigen',

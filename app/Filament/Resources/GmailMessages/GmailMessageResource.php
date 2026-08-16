@@ -549,6 +549,8 @@ class GmailMessageResource extends Resource
             ])
             ->recordActions([
                 ViewAction::make()
+                    ->label(__('admin.actions.review'))
+                    ->icon(Heroicon::Cog6Tooth)
                     ->modalCancelActionLabel(__('admin.actions.close'))
                     ->slideOver(),
             ]);

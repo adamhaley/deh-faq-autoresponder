@@ -30,6 +30,8 @@ class GmailMessageReviewFlowTest extends TestCase
 
         Livewire::test(ManageGmailMessages::class)
             ->assertOk()
+            ->assertSee('Review')
+            ->assertDontSee('admin.actions.review')
             ->assertCanSeeTableRecords([$message]);
     }
 
