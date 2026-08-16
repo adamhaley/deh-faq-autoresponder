@@ -30,7 +30,94 @@ class GmailMessageReviewFlowTest extends TestCase
 
         Livewire::test(ManageGmailMessages::class)
             ->assertOk()
+            ->assertSee('Review')
+            ->assertDontSee('admin.actions.review')
             ->assertCanSeeTableRecords([$message]);
+    }
+
+    public function test_the_message_list_defaults_pending_messages_first_then_newest_first(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $newerResolvedMessage = GmailMessage::factory()->create([
+            'internal_date' => now(),
+        ]);
+        EmailQuestion::factory()
+            ->for($newerResolvedMessage, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->create();
+
+        $newerPendingMessage = GmailMessage::factory()->create([
+            'internal_date' => now()->subHour(),
+        ]);
+
+        $olderPendingMessage = GmailMessage::factory()->create([
+            'internal_date' => now()->subHours(2),
+        ]);
+        EmailQuestion::factory()
+            ->for($olderPendingMessage, 'message')
+            ->create();
+
+        $olderResolvedMessage = GmailMessage::factory()->create([
+            'internal_date' => now()->subHours(3),
+        ]);
+        EmailQuestion::factory()
+            ->for($olderResolvedMessage, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusUnanswerable)
+            ->create();
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->assertOk()
+            ->assertCanSeeTableRecords([
+                $newerPendingMessage,
+                $olderPendingMessage,
+                $newerResolvedMessage,
+                $olderResolvedMessage,
+            ], inOrder: true);
+    }
+
+    public function test_the_message_list_can_be_filtered_by_processing_status(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $pendingMessage = GmailMessage::factory()->create();
+        EmailQuestion::factory()
+            ->for($pendingMessage, 'message')
+            ->create();
+
+        $draftedMessage = GmailMessage::factory()->create(['thread_id' => 'thread-filter-drafted']);
+        $draftedQuestion = EmailQuestion::factory()
+            ->for($draftedMessage, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create();
+        EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $draftedQuestion->id,
+            'status' => EmailQuestionAnswerDraft::StatusApproved,
+        ]);
+        EmailThreadDraft::factory()->create(['thread_id' => 'thread-filter-drafted']);
+
+        $resolvedMessage = GmailMessage::factory()->create();
+        EmailQuestion::factory()
+            ->for($resolvedMessage, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->create();
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->assertOk()
+            ->assertTableFilterVisible('processing_status')
+            ->filterTable('processing_status', 'pending')
+            ->assertCanSeeTableRecords([$pendingMessage])
+            ->assertCanNotSeeTableRecords([$draftedMessage, $resolvedMessage])
+            ->filterTable('processing_status', 'drafted')
+            ->assertCanSeeTableRecords([$draftedMessage])
+            ->assertCanNotSeeTableRecords([$pendingMessage, $resolvedMessage])
+            ->filterTable('processing_status', 'resolved')
+            ->assertCanSeeTableRecords([$resolvedMessage])
+            ->assertCanNotSeeTableRecords([$pendingMessage, $draftedMessage]);
     }
 
     public function test_the_view_action_mounts_without_error_for_a_message_with_no_questions(): void

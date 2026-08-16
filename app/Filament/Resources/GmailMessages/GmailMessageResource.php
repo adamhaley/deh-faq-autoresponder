@@ -27,6 +27,7 @@ use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
@@ -36,7 +37,7 @@ class GmailMessageResource extends Resource
 {
     protected static ?string $model = GmailMessage::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxArrowDown;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
     protected static ?int $navigationSort = -2;
 
@@ -496,7 +497,7 @@ class GmailMessageResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('internal_date', 'desc')
+            ->defaultSort(fn (Builder $query): Builder => self::applyDefaultTableSort($query))
             ->columns([
                 IconColumn::make('processed')
                     ->label('')
@@ -505,7 +506,11 @@ class GmailMessageResource extends Resource
                         $record->hasComposedDraft() => 'drafted',
                         default => 'resolved',
                     })
-                    ->icon(fn (string $state): BackedEnum => $state === 'pending' ? Heroicon::Clock : Heroicon::CheckCircle)
+                    ->icon(fn (string $state): BackedEnum => match ($state) {
+                        'pending' => Heroicon::Clock,
+                        'drafted' => Heroicon::Envelope,
+                        default => Heroicon::EnvelopeOpen,
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'pending' => 'warning',
                         'drafted' => 'success',
@@ -525,11 +530,114 @@ class GmailMessageResource extends Resource
                 TextColumn::make('internal_date')->label(__('admin.fields.received'))->dateTime()->sortable(),
                 TextColumn::make('imported_at')->dateTime()->sortable(),
             ])
+            ->filters([
+                SelectFilter::make('processing_status')
+                    ->label(__('admin.fields.status'))
+                    ->options([
+                        'pending' => __('admin.statuses.review.pending_review'),
+                        'drafted' => __('admin.statuses.thread_draft.created'),
+                        'resolved' => __('admin.statuses.thread_draft.no_reply_needed'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return match ($data['value'] ?? null) {
+                            'pending' => self::filterPendingMessages($query),
+                            'drafted' => $query->whereHas('threadDraft'),
+                            'resolved' => self::filterResolvedWithoutDraftMessages($query),
+                            default => $query,
+                        };
+                    }),
+            ])
             ->recordActions([
                 ViewAction::make()
+                    ->label(__('admin.actions.review'))
+                    ->icon(Heroicon::Cog6Tooth)
                     ->modalCancelActionLabel(__('admin.actions.close'))
                     ->slideOver(),
             ]);
+    }
+
+    private static function filterPendingMessages(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->doesntHave('questions')
+                ->orWhereHas('questions', fn (Builder $query): Builder => self::applyQuestionNeedsReviewConstraint($query));
+        });
+    }
+
+    private static function filterResolvedWithoutDraftMessages(Builder $query): Builder
+    {
+        return $query
+            ->whereDoesntHave('threadDraft')
+            ->whereHas('questions')
+            ->whereDoesntHave('questions', fn (Builder $query): Builder => self::applyQuestionNeedsReviewConstraint($query));
+    }
+
+    private static function applyQuestionNeedsReviewConstraint(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->where(function (Builder $query): void {
+                    $query
+                        ->where('review_status', EmailQuestion::ReviewStatusValid)
+                        ->where(function (Builder $query): void {
+                            $query
+                                ->whereDoesntHave('answerDraft')
+                                ->orWhereHas('answerDraft', function (Builder $query): void {
+                                    $query->whereNotIn('status', [
+                                        EmailQuestionAnswerDraft::StatusApproved,
+                                        EmailQuestionAnswerDraft::StatusRejected,
+                                    ]);
+                                });
+                        });
+                })
+                ->orWhereNotIn('review_status', [
+                    EmailQuestion::ReviewStatusNoise,
+                    EmailQuestion::ReviewStatusUnanswerable,
+                    EmailQuestion::ReviewStatusValid,
+                ]);
+        });
+    }
+
+    private static function applyDefaultTableSort(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw(<<<'SQL'
+                case
+                    when not exists (
+                        select 1
+                        from email_questions
+                        where email_questions.gmail_message_id = gmail_messages.id
+                    ) then 0
+                    when exists (
+                        select 1
+                        from email_questions
+                        left join email_question_answer_drafts
+                            on email_question_answer_drafts.email_question_id = email_questions.id
+                        where email_questions.gmail_message_id = gmail_messages.id
+                            and (
+                                (
+                                    email_questions.review_status = ?
+                                    and (
+                                        email_question_answer_drafts.id is null
+                                        or email_question_answer_drafts.status not in (?, ?)
+                                    )
+                                )
+                                or email_questions.review_status not in (?, ?, ?)
+                            )
+                    ) then 0
+                    else 1
+                end
+            SQL, [
+                EmailQuestion::ReviewStatusValid,
+                EmailQuestionAnswerDraft::StatusApproved,
+                EmailQuestionAnswerDraft::StatusRejected,
+                EmailQuestion::ReviewStatusNoise,
+                EmailQuestion::ReviewStatusUnanswerable,
+                EmailQuestion::ReviewStatusValid,
+            ])
+            ->orderByDesc('internal_date')
+            ->orderByDesc('gmail_messages.id');
     }
 
     public static function getEloquentQuery(): Builder

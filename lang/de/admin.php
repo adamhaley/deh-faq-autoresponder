@@ -130,6 +130,7 @@ return [
         'generate_draft_answer' => 'Antwortentwurf generieren',
         'needs_revision' => 'Überarbeitung nötig',
         'regenerate_draft_answer' => 'Antwortentwurf neu generieren',
+        'review' => 'Prüfen',
         'reject' => 'Ablehnen',
         'reject_answer' => 'Antwort ablehnen',
         'view_faq_approved_response' => 'Freigegebene FAQ-Antwort anzeigen',
@@ -175,6 +176,7 @@ return [
             'created' => 'Entwurf erstellt',
             'updated' => 'Entwurf aktualisiert',
             'failed' => 'Fehlgeschlagen',
+            'no_reply_needed' => 'Keine Antwort nötig',
         ],
         'gmail_mailbox' => [
             'connected' => 'Verbunden',

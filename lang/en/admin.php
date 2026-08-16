@@ -130,6 +130,7 @@ return [
         'generate_draft_answer' => 'Generate draft answer',
         'needs_revision' => 'Needs revision',
         'regenerate_draft_answer' => 'Regenerate draft answer',
+        'review' => 'Review',
         'reject' => 'Reject',
         'reject_answer' => 'Reject answer',
         'view_faq_approved_response' => 'View FAQ approved response',
@@ -175,6 +176,7 @@ return [
             'created' => 'Draft created',
             'updated' => 'Draft updated',
             'failed' => 'Failed',
+            'no_reply_needed' => 'No reply needed',
         ],
         'gmail_mailbox' => [
             'connected' => 'Connected',
