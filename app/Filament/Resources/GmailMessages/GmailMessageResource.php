@@ -522,11 +522,11 @@ class GmailMessageResource extends Resource
                         default => __('admin.placeholders.no_reply_needed'),
                     }),
                 TextColumn::make('participant_name')->label(__('admin.fields.participant'))->placeholder(__('admin.placeholders.unknown'))->searchable(),
+                TextColumn::make('questions_count')->label(__('admin.fields.questions'))->badge()->color('gray'),
                 TextColumn::make('mailbox.email')->label(__('admin.fields.mailbox'))->searchable()->sortable(),
                 TextColumn::make('from_email')->label(__('admin.fields.from'))->searchable()->sortable(),
                 TextColumn::make('subject')->searchable()->limit(60),
                 TextColumn::make('snippet')->limit(80),
-                TextColumn::make('questions_count')->label(__('admin.fields.questions'))->badge(),
                 TextColumn::make('internal_date')->label(__('admin.fields.received'))->dateTime()->sortable(),
                 TextColumn::make('imported_at')->dateTime()->sortable(),
             ])
