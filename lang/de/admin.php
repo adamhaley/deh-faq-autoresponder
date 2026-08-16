@@ -175,6 +175,7 @@ return [
             'created' => 'Entwurf erstellt',
             'updated' => 'Entwurf aktualisiert',
             'failed' => 'Fehlgeschlagen',
+            'no_reply_needed' => 'Keine Antwort nötig',
         ],
         'gmail_mailbox' => [
             'connected' => 'Verbunden',

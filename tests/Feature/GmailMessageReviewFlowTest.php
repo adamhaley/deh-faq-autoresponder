@@ -76,6 +76,48 @@ class GmailMessageReviewFlowTest extends TestCase
             ], inOrder: true);
     }
 
+    public function test_the_message_list_can_be_filtered_by_processing_status(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+
+        $pendingMessage = GmailMessage::factory()->create();
+        EmailQuestion::factory()
+            ->for($pendingMessage, 'message')
+            ->create();
+
+        $draftedMessage = GmailMessage::factory()->create(['thread_id' => 'thread-filter-drafted']);
+        $draftedQuestion = EmailQuestion::factory()
+            ->for($draftedMessage, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create();
+        EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $draftedQuestion->id,
+            'status' => EmailQuestionAnswerDraft::StatusApproved,
+        ]);
+        EmailThreadDraft::factory()->create(['thread_id' => 'thread-filter-drafted']);
+
+        $resolvedMessage = GmailMessage::factory()->create();
+        EmailQuestion::factory()
+            ->for($resolvedMessage, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->create();
+
+        $this->actingAs($reviewer);
+
+        Livewire::test(ManageGmailMessages::class)
+            ->assertOk()
+            ->assertTableFilterVisible('processing_status')
+            ->filterTable('processing_status', 'pending')
+            ->assertCanSeeTableRecords([$pendingMessage])
+            ->assertCanNotSeeTableRecords([$draftedMessage, $resolvedMessage])
+            ->filterTable('processing_status', 'drafted')
+            ->assertCanSeeTableRecords([$draftedMessage])
+            ->assertCanNotSeeTableRecords([$pendingMessage, $resolvedMessage])
+            ->filterTable('processing_status', 'resolved')
+            ->assertCanSeeTableRecords([$resolvedMessage])
+            ->assertCanNotSeeTableRecords([$pendingMessage, $draftedMessage]);
+    }
+
     public function test_the_view_action_mounts_without_error_for_a_message_with_no_questions(): void
     {
         $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);

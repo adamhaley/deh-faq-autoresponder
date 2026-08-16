@@ -27,6 +27,7 @@ use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
@@ -525,11 +526,71 @@ class GmailMessageResource extends Resource
                 TextColumn::make('internal_date')->label(__('admin.fields.received'))->dateTime()->sortable(),
                 TextColumn::make('imported_at')->dateTime()->sortable(),
             ])
+            ->filters([
+                SelectFilter::make('processing_status')
+                    ->label(__('admin.fields.status'))
+                    ->options([
+                        'pending' => __('admin.statuses.review.pending_review'),
+                        'drafted' => __('admin.statuses.thread_draft.created'),
+                        'resolved' => __('admin.statuses.thread_draft.no_reply_needed'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return match ($data['value'] ?? null) {
+                            'pending' => self::filterPendingMessages($query),
+                            'drafted' => $query->whereHas('threadDraft'),
+                            'resolved' => self::filterResolvedWithoutDraftMessages($query),
+                            default => $query,
+                        };
+                    }),
+            ])
             ->recordActions([
                 ViewAction::make()
                     ->modalCancelActionLabel(__('admin.actions.close'))
                     ->slideOver(),
             ]);
+    }
+
+    private static function filterPendingMessages(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->doesntHave('questions')
+                ->orWhereHas('questions', fn (Builder $query): Builder => self::applyQuestionNeedsReviewConstraint($query));
+        });
+    }
+
+    private static function filterResolvedWithoutDraftMessages(Builder $query): Builder
+    {
+        return $query
+            ->whereDoesntHave('threadDraft')
+            ->whereHas('questions')
+            ->whereDoesntHave('questions', fn (Builder $query): Builder => self::applyQuestionNeedsReviewConstraint($query));
+    }
+
+    private static function applyQuestionNeedsReviewConstraint(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->where(function (Builder $query): void {
+                    $query
+                        ->where('review_status', EmailQuestion::ReviewStatusValid)
+                        ->where(function (Builder $query): void {
+                            $query
+                                ->whereDoesntHave('answerDraft')
+                                ->orWhereHas('answerDraft', function (Builder $query): void {
+                                    $query->whereNotIn('status', [
+                                        EmailQuestionAnswerDraft::StatusApproved,
+                                        EmailQuestionAnswerDraft::StatusRejected,
+                                    ]);
+                                });
+                        });
+                })
+                ->orWhereNotIn('review_status', [
+                    EmailQuestion::ReviewStatusNoise,
+                    EmailQuestion::ReviewStatusUnanswerable,
+                    EmailQuestion::ReviewStatusValid,
+                ]);
+        });
     }
 
     private static function applyDefaultTableSort(Builder $query): Builder

@@ -175,6 +175,7 @@ return [
             'created' => 'Draft created',
             'updated' => 'Draft updated',
             'failed' => 'Failed',
+            'no_reply_needed' => 'No reply needed',
         ],
         'gmail_mailbox' => [
             'connected' => 'Connected',
