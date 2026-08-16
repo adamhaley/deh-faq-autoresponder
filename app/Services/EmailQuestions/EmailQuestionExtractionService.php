@@ -16,12 +16,13 @@ class EmailQuestionExtractionService
         $extractedQuestions = 0;
 
         GmailMessage::query()
-            ->doesntHave('questions')
+            ->whereNull('questions_extracted_at')
             ->oldest('id')
             ->limit($limit)
             ->get()
             ->each(function (GmailMessage $message) use (&$extractedQuestions): void {
                 $extractedQuestions += $this->extractMessage($message)->count();
+                $message->update(['questions_extracted_at' => now()]);
             });
 
         return $extractedQuestions;

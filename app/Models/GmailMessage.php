@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'internal_date',
     'payload',
     'imported_at',
+    'questions_extracted_at',
 ])]
 #[Appends(['mailbox_email'])]
 class GmailMessage extends Model
@@ -52,6 +53,7 @@ class GmailMessage extends Model
             'internal_date' => 'datetime',
             'payload' => 'array',
             'imported_at' => 'datetime',
+            'questions_extracted_at' => 'datetime',
         ];
     }
 

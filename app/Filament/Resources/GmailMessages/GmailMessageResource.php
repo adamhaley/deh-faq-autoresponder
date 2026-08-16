@@ -433,6 +433,18 @@ class GmailMessageResource extends Resource
         return self::freshMessageAwaitingThreadDraft($record);
     }
 
+    /**
+     * Whether extraction genuinely hasn't run for this message yet, as
+     * opposed to having run and found zero questions. Older messages
+     * imported before `questions_extracted_at` existed have no timestamp
+     * but do have question rows, so the presence of questions also counts
+     * as evidence extraction ran.
+     */
+    private static function notYetExtracted(GmailMessage $record): bool
+    {
+        return $record->questions_extracted_at === null && $record->questions->isEmpty();
+    }
+
     private static function freshMessageNeedsReview(GmailMessage $record): bool
     {
         return ($record->fresh(['questions.answerDraft']) ?? $record)->needsReview();
@@ -502,7 +514,7 @@ class GmailMessageResource extends Resource
                 IconColumn::make('processed')
                     ->label('')
                     ->state(fn (GmailMessage $record): string => match (true) {
-                        $record->questions->isEmpty(), $record->needsReview() => 'pending',
+                        self::notYetExtracted($record), $record->needsReview() => 'pending',
                         $record->hasComposedDraft() => 'drafted',
                         default => 'resolved',
                     })
@@ -560,7 +572,9 @@ class GmailMessageResource extends Resource
     {
         return $query->where(function (Builder $query): void {
             $query
-                ->doesntHave('questions')
+                ->where(function (Builder $query): void {
+                    $query->whereNull('questions_extracted_at')->doesntHave('questions');
+                })
                 ->orWhereHas('questions', fn (Builder $query): Builder => self::applyQuestionNeedsReviewConstraint($query));
         });
     }
@@ -569,7 +583,9 @@ class GmailMessageResource extends Resource
     {
         return $query
             ->whereDoesntHave('threadDraft')
-            ->whereHas('questions')
+            ->where(function (Builder $query): void {
+                $query->whereNotNull('questions_extracted_at')->orHas('questions');
+            })
             ->whereDoesntHave('questions', fn (Builder $query): Builder => self::applyQuestionNeedsReviewConstraint($query));
     }
 
@@ -604,7 +620,7 @@ class GmailMessageResource extends Resource
         return $query
             ->orderByRaw(<<<'SQL'
                 case
-                    when not exists (
+                    when gmail_messages.questions_extracted_at is null and not exists (
                         select 1
                         from email_questions
                         where email_questions.gmail_message_id = gmail_messages.id
