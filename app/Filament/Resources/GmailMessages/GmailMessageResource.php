@@ -37,7 +37,7 @@ class GmailMessageResource extends Resource
 {
     protected static ?string $model = GmailMessage::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxArrowDown;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
     protected static ?int $navigationSort = -2;
 
@@ -506,7 +506,11 @@ class GmailMessageResource extends Resource
                         $record->hasComposedDraft() => 'drafted',
                         default => 'resolved',
                     })
-                    ->icon(fn (string $state): BackedEnum => $state === 'pending' ? Heroicon::Clock : Heroicon::CheckCircle)
+                    ->icon(fn (string $state): BackedEnum => match ($state) {
+                        'pending' => Heroicon::Clock,
+                        'drafted' => Heroicon::Envelope,
+                        default => Heroicon::EnvelopeOpen,
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'pending' => 'warning',
                         'drafted' => 'success',
