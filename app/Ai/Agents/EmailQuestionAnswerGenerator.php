@@ -32,6 +32,8 @@ If the FAQ answers are incomplete, politely acknowledge the limits and keep the 
 
 Keep a professional but warm tone suitable for email replies to potential investors.
 
+Answer only the specific FAQ question. Do not add calls to action, consultation offers, booking suggestions, general next steps, "please contact us" language, closing paragraphs, or sales-oriented wrap-up language. Those are handled separately when the full email is composed.
+
 Format your answer as a segment of an email body with no greeting and no closing signature.
 INSTRUCTIONS;
     }

@@ -3,8 +3,11 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
+use App\Filament\Widgets\AnswerPerformanceSection;
+use App\Filament\Widgets\AnswerSimilarityChart;
 use App\Filament\Widgets\EmailQuestionMisalignmentRateChart;
 use App\Filament\Widgets\EmailQuestionOverview;
+use App\Filament\Widgets\QuestionClassificationSection;
 use App\Filament\Widgets\RecentEmailQuestionMisalignments;
 use App\Http\Middleware\SetLocaleFromBrowser;
 use Filament\Http\Middleware\Authenticate;
@@ -49,6 +52,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
+                AnswerPerformanceSection::class,
+                AnswerSimilarityChart::class,
+                QuestionClassificationSection::class,
                 EmailQuestionOverview::class,
                 EmailQuestionMisalignmentRateChart::class,
                 RecentEmailQuestionMisalignments::class,

@@ -161,6 +161,7 @@ class EmailQuestionResource extends Resource
                             ->columnSpanFull(),
                     ]),
                 Section::make(__('admin.sections.rag_context'))
+                    ->visible(fn (EmailQuestion $record): bool => self::canRunQuestionPipeline($record))
                     ->afterHeader([
                         Action::make('retrieveFaqMatches')
                             ->label(__('admin.actions.retrieve_faq_matches'))
@@ -222,6 +223,7 @@ class EmailQuestionResource extends Resource
                     ->poll(fn (EmailQuestion $record): ?string => $record->hasActiveFaqRetrieval() ? '3s' : null)
                     ->columnSpanFull(),
                 Section::make(__('admin.sections.answer_draft'))
+                    ->visible(fn (EmailQuestion $record): bool => self::canRunQuestionPipeline($record))
                     ->afterHeader([
                         ActionGroup::make([
                             Action::make('generateAnswerDraft')
@@ -403,6 +405,12 @@ class EmailQuestionResource extends Resource
                     ->schema([
                         TextEntry::make('message.mailbox.email')
                             ->label(__('admin.fields.mailbox')),
+                        TextEntry::make('message.participant_name')
+                            ->label(__('admin.fields.participant'))
+                            ->placeholder(__('admin.placeholders.unknown')),
+                        TextEntry::make('message.reply_to_email')
+                            ->label(__('admin.fields.email_address'))
+                            ->placeholder(__('admin.placeholders.unknown')),
                         TextEntry::make('message.from_email')
                             ->label(__('admin.fields.from')),
                         TextEntry::make('message.subject')
@@ -482,6 +490,11 @@ class EmailQuestionResource extends Resource
             ->with(['answerDraft.reviewer', 'faqMatches.faqEntry.approvedResponse', 'message.mailbox', 'reviewer'])
             ->withCount('faqMatches')
             ->latest();
+    }
+
+    private static function canRunQuestionPipeline(EmailQuestion $record): bool
+    {
+        return $record->fresh()->review_status === EmailQuestion::ReviewStatusValid;
     }
 
     private static function isActiveFaqRetrievalStatus(string $status): bool

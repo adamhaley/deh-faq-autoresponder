@@ -19,6 +19,14 @@ class EmailQuestionAnswerDraftGenerationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_answer_generator_instructions_keep_answer_segments_cta_free(): void
+    {
+        $instructions = (string) (new EmailQuestionAnswerGenerator)->instructions();
+
+        $this->assertStringContainsString('Do not add calls to action', $instructions);
+        $this->assertStringContainsString('Those are handled separately when the full email is composed', $instructions);
+    }
+
     public function test_it_generates_and_persists_answer_draft_from_retrieved_faq_matches(): void
     {
         EmailQuestionAnswerGenerator::fake([

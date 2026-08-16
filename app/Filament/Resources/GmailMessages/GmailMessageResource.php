@@ -19,9 +19,11 @@ use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Actions as SchemaActions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -307,6 +309,57 @@ class GmailMessageResource extends Resource
                             ->state(fn (): ?string => $question->answerDraft()->value('final_answer'))
                             ->placeholder(__('admin.placeholders.not_edited_yet'))
                             ->columnSpanFull(),
+                        SchemaActions::make([
+                            Action::make("quickEditAnswer_{$question->id}")
+                                ->label(__('admin.actions.edit_final_answer'))
+                                ->icon(Heroicon::PencilSquare)
+                                ->color('gray')
+                                ->outlined()
+                                ->schema([
+                                    Textarea::make('final_answer')
+                                        ->label(__('admin.fields.final_answer'))
+                                        ->required()
+                                        ->rows(8),
+                                ])
+                                ->fillForm(fn (): array => [
+                                    'final_answer' => $question->fresh()->answerDraft?->final_answer
+                                        ?? $question->fresh()->answerDraft?->generated_answer
+                                        ?? '',
+                                ])
+                                ->action(function (array $data) use ($question): void {
+                                    $question->fresh()->answerDraft?->update(['final_answer' => $data['final_answer']]);
+                                    $question->fresh()->answerDraft?->syncApprovedSideEffects();
+                                }),
+                            Action::make("quickApproveAnswer_{$question->id}")
+                                ->label(__('admin.actions.approve'))
+                                ->icon(Heroicon::CheckCircle)
+                                ->color('success')
+                                ->outlined()
+                                ->action(fn () => $question->fresh()->answerDraft?->markReviewed(
+                                    EmailQuestionAnswerDraft::StatusApproved,
+                                    auth()->id(),
+                                )),
+                            Action::make("quickNeedsRevisionAnswer_{$question->id}")
+                                ->label(__('admin.actions.needs_revision'))
+                                ->icon(Heroicon::ExclamationTriangle)
+                                ->color('warning')
+                                ->outlined()
+                                ->action(fn () => $question->fresh()->answerDraft?->markReviewed(
+                                    EmailQuestionAnswerDraft::StatusNeedsRevision,
+                                    auth()->id(),
+                                )),
+                            Action::make("quickRejectAnswer_{$question->id}")
+                                ->label(__('admin.actions.reject'))
+                                ->icon(Heroicon::XCircle)
+                                ->color('danger')
+                                ->outlined()
+                                ->action(fn () => $question->fresh()->answerDraft?->markReviewed(
+                                    EmailQuestionAnswerDraft::StatusRejected,
+                                    auth()->id(),
+                                )),
+                        ])
+                            ->alignment(Alignment::Start)
+                            ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
             ]);
@@ -345,15 +398,6 @@ class GmailMessageResource extends Resource
                 ->label(__('admin.fields.composed_at'))
                 ->state(fn (): mixed => $record->threadDraft()->value('composed_at'))
                 ->dateTime(),
-            TextEntry::make('draft_next_step')
-                ->label('')
-                ->state(__('admin.placeholders.gmail_draft_ready'))
-                ->color('info')
-                ->visible(fn (): bool => in_array($record->threadDraft()->value('status'), [
-                    EmailThreadDraft::StatusCreated,
-                    EmailThreadDraft::StatusUpdated,
-                ], true))
-                ->columnSpanFull(),
             TextEntry::make('draft_subject')
                 ->label(__('admin.fields.subject'))
                 ->state(fn (): ?string => $record->threadDraft()->value('subject'))
@@ -370,6 +414,15 @@ class GmailMessageResource extends Resource
                 ->color('danger')
                 ->placeholder(__('admin.placeholders.no_error'))
                 ->visible(fn (): bool => $record->threadDraft()->value('status') === EmailThreadDraft::StatusFailed)
+                ->columnSpanFull(),
+            TextEntry::make('draft_next_step')
+                ->label('')
+                ->state(__('admin.placeholders.gmail_draft_ready'))
+                ->color('info')
+                ->visible(fn (): bool => in_array($record->threadDraft()->value('status'), [
+                    EmailThreadDraft::StatusCreated,
+                    EmailThreadDraft::StatusUpdated,
+                ], true))
                 ->columnSpanFull(),
         ];
     }

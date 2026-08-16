@@ -11,7 +11,7 @@ class EmailQuestionOverview extends StatsOverviewWidget
 {
     protected static bool $isLazy = false;
 
-    protected static ?int $sort = 1;
+    protected static ?int $sort = 4;
 
     protected function getStats(): array
     {
