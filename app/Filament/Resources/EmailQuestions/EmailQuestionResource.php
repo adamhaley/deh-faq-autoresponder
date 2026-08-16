@@ -34,7 +34,7 @@ class EmailQuestionResource extends Resource
 {
     protected static ?string $model = EmailQuestion::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQuestionMarkCircle;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 
     protected static ?string $recordTitleAttribute = 'question_text';
 
