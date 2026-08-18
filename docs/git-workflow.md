@@ -4,15 +4,17 @@ This repo uses a simple local flow:
 
 - `main` is the deploy branch.
 - `develop` is the working branch.
-- Pull requests from `develop` to `main` are **rebase-merged** (GitHub's
-  "Rebase and merge" button), not squashed. Commits on `develop` should stay
-  atomic, since each one lands on `main` unchanged rather than getting
-  collapsed into one.
+- Pull requests from `develop` to `main` use a real **merge commit**
+  (GitHub's "Create a merge commit" button — the only option enabled on this
+  repo). Not squash, not rebase-merge. A merge commit leaves every commit's
+  original SHA untouched, so `develop`'s tip becomes an ancestor of the new
+  `main` tip and the sync step below is a plain fast-forward — no reset, no
+  force-push, ever.
 
 ## Before A PR Is Merged
 
-Use rebase when `develop` still contains unmerged work and `main` has moved
-forward:
+Rebase if `develop` still contains unmerged work and `main` has moved
+forward, so the PR stays current:
 
 ```bash
 git checkout develop
@@ -21,29 +23,23 @@ git rebase origin/main
 git push --force-with-lease origin develop
 ```
 
-This keeps the PR current with `main` without creating a merge commit.
+## After A PR Is Merged
 
-## After A PR Is Rebase-Merged
-
-GitHub's "Rebase and merge" button replays each commit's *content* onto
-`main` unchanged, but it rewrites committer metadata (date, committer
-identity) in the process, which gives every replayed commit a new SHA. So
-`develop` and `main` end up with identical content but different hashes — a
-plain `git merge --ff-only` will refuse, since `develop` is no longer a
-literal ancestor of `main`.
-
-Reset `develop` to the updated `main` before starting more work:
+Fast-forward `develop` to the updated `main`:
 
 ```bash
 git checkout develop
 git fetch origin
-git reset --hard origin/main
-git push --force-with-lease origin develop
+git merge --ff-only origin/main
+git push origin develop
 ```
 
-After this, continue new work on `develop`.
+If this ever refuses to fast-forward, something merged into `main` outside
+this flow (e.g. a squash or rebase-merge slipped through) — fall back to
+`git reset --hard origin/main && git push --force-with-lease origin develop`
+in that case.
 
 ## Rule Of Thumb
 
 - Rebase `develop` onto `origin/main` while the PR work is still unmerged.
-- Reset `develop` to `origin/main` after that work has been rebase-merged.
+- Fast-forward `develop` to `origin/main` after that work has been merged.
