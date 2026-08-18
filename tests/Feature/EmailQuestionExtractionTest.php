@@ -40,6 +40,31 @@ TEXT,
         ], $questions);
     }
 
+    public function test_the_message_option_force_reextracts_discarding_stale_questions(): void
+    {
+        $message = GmailMessage::factory()->create([
+            'text_body' => <<<'TEXT'
+Chat:
+1: Max (10/09/2025 10:58): Was kostet eine Beratung?
+TEXT,
+        ]);
+
+        $this->artisan('email-questions:extract')->assertSuccessful();
+
+        $staleQuestion = EmailQuestion::query()->where('gmail_message_id', $message->id)->sole();
+        $staleQuestion->update(['question_text' => 'Stale blob that should be discarded']);
+
+        $this->artisan('email-questions:extract', ['--message' => [$message->id]])
+            ->expectsOutput('Re-extracted 1 email question(s) across 1 message(s).')
+            ->assertSuccessful();
+
+        $questions = EmailQuestion::query()->where('gmail_message_id', $message->id)->get();
+
+        $this->assertCount(1, $questions);
+        $this->assertSame('Was kostet eine Beratung?', $questions->first()->question_text);
+        $this->assertNotSame($staleQuestion->id, $questions->first()->id);
+    }
+
     public function test_extraction_is_idempotent_per_message_and_question_text(): void
     {
         GmailMessage::factory()->create([
@@ -112,5 +137,32 @@ HTML,
             $question->question_text,
         );
         $this->assertSame('chat_section', $question->extraction_metadata['source']);
+    }
+
+    public function test_command_extracts_each_chat_message_when_entries_are_joined_by_br_without_newlines(): void
+    {
+        GmailMessage::factory()->create([
+            'text_body' => null,
+            'html_body' => <<<'HTML'
+<p>Nachfolgend findest du die Chatnachrichten.<br><br>
+Chat:<br>
+1: Dr Gertraud Dinzinger (18.08.2026 11:06): ich sehe kein laufendes Bild<br/>2: Dr Gertraud Dinzinger (18.08.2026 11:25): das leuchtet doch einem Blinden mit Krückstock ein, daß das System am Kippen ist.<br/>3: Dr Gertraud Dinzinger (18.08.2026 11:29): Lauter olle Kamellen. Das wissen doch alle schon.<br/><br/><br/><br><br>
+Viele Grüße,<br><br>
+Webinaris (18.08.2026 12:42)<br><br>
+Hinweis: Alle Zeiten sind in der Zeitzone UTC+2 angegeben.</p>
+HTML,
+        ]);
+
+        $this->artisan('email-questions:extract')
+            ->expectsOutput('Extracted 3 email question(s).')
+            ->assertSuccessful();
+
+        $questions = EmailQuestion::query()->orderBy('question_order')->pluck('question_text')->all();
+
+        $this->assertSame([
+            'ich sehe kein laufendes Bild',
+            'das leuchtet doch einem Blinden mit Krückstock ein, daß das System am Kippen ist.',
+            'Lauter olle Kamellen. Das wissen doch alle schon.',
+        ], $questions);
     }
 }
