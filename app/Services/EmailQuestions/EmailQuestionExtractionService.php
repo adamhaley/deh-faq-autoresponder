@@ -29,6 +29,24 @@ class EmailQuestionExtractionService
     }
 
     /**
+     * Delete a message's existing extracted questions and re-run extraction
+     * against its current body, replacing stale results (e.g. from a parser
+     * bug fixed since the original extraction ran).
+     *
+     * @return Collection<int, EmailQuestion>
+     */
+    public function reextractMessage(GmailMessage $message): Collection
+    {
+        $message->questions()->delete();
+
+        $questions = $this->extractMessage($message);
+
+        $message->update(['questions_extracted_at' => now()]);
+
+        return $questions;
+    }
+
+    /**
      * @return Collection<int, EmailQuestion>
      */
     public function extractMessage(GmailMessage $message): Collection
@@ -102,7 +120,7 @@ class EmailQuestionExtractionService
         $questions = [];
         $chatSection = $parts[1];
 
-        preg_match_all('/\d+:\s.*?\):\s([\s\S]*?)(?=\n\s*\d+:\s|$)/u', $chatSection, $matches);
+        preg_match_all('/\d+:\s.*?\):\s([\s\S]*?)(?=(?:\n\s*|<br\s*\/?>\s*)\d+:\s|$)/u', $chatSection, $matches);
 
         foreach ($matches[1] ?? [] as $match) {
             $questionText = $this->cleanQuestionText($match);
