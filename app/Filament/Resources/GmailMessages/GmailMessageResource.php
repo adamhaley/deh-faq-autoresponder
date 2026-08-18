@@ -114,7 +114,11 @@ class GmailMessageResource extends Resource
                             ->icon(Heroicon::PencilSquare)
                             ->color('gray')
                             ->link()
-                            ->url(fn (): ?string => EmailTemplateResource::getUrl())
+                            ->schema(fn (Schema $schema): Schema => EmailTemplateResource::form($schema))
+                            ->fillForm(fn (): array => EmailTemplate::query()->first()?->toArray() ?? [])
+                            ->action(function (array $data): void {
+                                EmailTemplate::query()->first()?->update($data);
+                            })
                             ->visible(fn (): bool => auth()->user()?->can('update', EmailTemplate::query()->first() ?? new EmailTemplate) ?? false),
                     ])
                     ->schema(fn (GmailMessage $record): array => self::threadDraftComponents($record))
