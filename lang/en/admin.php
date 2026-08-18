@@ -92,6 +92,7 @@ return [
         'human' => 'Human',
         'human_decision' => 'Human decision',
         'human_review' => 'Human Review',
+        'id' => 'ID',
         'import_query' => 'Import query',
         'mailbox' => 'Mailbox',
         'participant' => 'Participant',

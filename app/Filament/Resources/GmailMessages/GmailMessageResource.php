@@ -90,6 +90,7 @@ class GmailMessageResource extends Resource
         return $schema
             ->components([
                 Section::make(__('admin.sections.message'))
+                    ->description(fn (GmailMessage $record): string => "ID: {$record->id}")
                     ->schema([
                         TextEntry::make('participant_name')->label(__('admin.fields.participant'))->placeholder(__('admin.placeholders.unknown')),
                         TextEntry::make('reply_to_email')->label(__('admin.fields.email_address')),
@@ -539,6 +540,7 @@ class GmailMessageResource extends Resource
                         'drafted' => __('admin.statuses.thread_draft.created'),
                         default => __('admin.placeholders.no_reply_needed'),
                     }),
+                TextColumn::make('id')->label(__('admin.fields.id'))->sortable()->copyable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('participant_name')->label(__('admin.fields.participant'))->placeholder(__('admin.placeholders.unknown'))->searchable(),
                 TextColumn::make('questions_count')->label(__('admin.fields.questions'))->badge()->color('gray'),
                 TextColumn::make('mailbox.email')->label(__('admin.fields.mailbox'))->searchable()->sortable(),
