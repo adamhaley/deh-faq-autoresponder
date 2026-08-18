@@ -55,6 +55,27 @@ class EmailQuestionTableTest extends TestCase
         $this->assertSame(['review_status', 'classification', 'question_text'], array_slice($columnNames, 0, 3));
     }
 
+    public function test_the_table_can_be_sorted_by_a_column_other_than_created_at(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+
+        $lowConfidence = EmailQuestion::factory()
+            ->for(GmailMessage::factory(), 'message')
+            ->create(['classification_confidence' => 10, 'created_at' => now()->subMinute()]);
+        $highConfidence = EmailQuestion::factory()
+            ->for(GmailMessage::factory(), 'message')
+            ->create(['classification_confidence' => 90, 'created_at' => now()]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(ManageEmailQuestions::class)
+            ->assertOk()
+            ->sortTable('classification_confidence')
+            ->assertCanSeeTableRecords([$lowConfidence, $highConfidence], inOrder: true)
+            ->sortTable('classification_confidence', 'desc')
+            ->assertCanSeeTableRecords([$highConfidence, $lowConfidence], inOrder: true);
+    }
+
     public function test_invalid_reviewed_questions_hide_downstream_pipeline_sections(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);

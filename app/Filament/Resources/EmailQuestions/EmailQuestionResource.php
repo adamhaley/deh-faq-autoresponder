@@ -429,6 +429,7 @@ class EmailQuestionResource extends Resource
         return $table
             ->poll(fn (): ?string => EmailQuestion::query()->withActiveAsyncPipeline()->exists() ? '3s' : null)
             ->recordTitleAttribute('question_text')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('review_status')
                     ->label(__('admin.fields.human_review'))
@@ -488,8 +489,7 @@ class EmailQuestionResource extends Resource
     {
         return parent::getEloquentQuery()
             ->with(['answerDraft.reviewer', 'faqMatches.faqEntry.approvedResponse', 'message.mailbox', 'reviewer'])
-            ->withCount('faqMatches')
-            ->latest();
+            ->withCount('faqMatches');
     }
 
     private static function canRunQuestionPipeline(EmailQuestion $record): bool
