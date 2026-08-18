@@ -25,14 +25,20 @@ This keeps the PR current with `main` without creating a merge commit.
 
 ## After A PR Is Rebase-Merged
 
-Because rebase-merging replays `develop`'s commits onto `main` unchanged, the
-SHAs match. `develop` just needs a fast-forward, no reset required:
+GitHub's "Rebase and merge" button replays each commit's *content* onto
+`main` unchanged, but it rewrites committer metadata (date, committer
+identity) in the process, which gives every replayed commit a new SHA. So
+`develop` and `main` end up with identical content but different hashes — a
+plain `git merge --ff-only` will refuse, since `develop` is no longer a
+literal ancestor of `main`.
+
+Reset `develop` to the updated `main` before starting more work:
 
 ```bash
 git checkout develop
 git fetch origin
-git merge --ff-only origin/main
-git push origin develop
+git reset --hard origin/main
+git push --force-with-lease origin develop
 ```
 
 After this, continue new work on `develop`.
@@ -40,5 +46,4 @@ After this, continue new work on `develop`.
 ## Rule Of Thumb
 
 - Rebase `develop` onto `origin/main` while the PR work is still unmerged.
-- Fast-forward `develop` to `origin/main` after that work has been
-  rebase-merged.
+- Reset `develop` to `origin/main` after that work has been rebase-merged.
