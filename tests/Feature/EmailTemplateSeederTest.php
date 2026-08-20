@@ -36,9 +36,26 @@ class EmailTemplateSeederTest extends TestCase
 
         $this->seed(EmailTemplateSeeder::class);
 
-        $template = EmailTemplate::query()->where('name', 'Default')->sole();
+        $template = EmailTemplate::sole();
 
         $this->assertSame('Edited subject', $template->subject);
         $this->assertSame('<p>Edited body</p>', $template->body);
+    }
+
+    #[Test]
+    public function it_does_not_create_a_duplicate_when_the_template_was_renamed(): void
+    {
+        EmailTemplate::query()->create([
+            'name' => 'Default Email',
+            'subject' => 'Edited subject',
+            'body' => '<p>Edited body</p>',
+        ]);
+
+        $this->seed(EmailTemplateSeeder::class);
+
+        $template = EmailTemplate::sole();
+
+        $this->assertSame('Default Email', $template->name);
+        $this->assertSame('Edited subject', $template->subject);
     }
 }

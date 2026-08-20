@@ -13,8 +13,10 @@ use Illuminate\Support\Facades\File;
  * currently used in the legacy n8n "Generate Email from Approved" workflow.
  * Editable afterward via the Email Templates Filament resource.
  *
- * Idempotent: safe to re-run, keyed on name. Existing templates are never
- * overwritten, so production edits survive deploys.
+ * Idempotent: safe to re-run, keyed on row existence rather than `name`.
+ * `name` is a freely editable field in Filament, so it must never be the
+ * idempotency key -- a rename would make firstOrCreate() blind to the
+ * existing row and seed a duplicate on the next deploy.
  */
 class EmailTemplateSeeder extends Seeder
 {
@@ -22,13 +24,15 @@ class EmailTemplateSeeder extends Seeder
 
     public function run(): void
     {
-        EmailTemplate::query()->firstOrCreate(
-            ['name' => 'Default'],
-            [
-                'subject' => 'Deutsches Edelsteinhaus Sachwerte - Ihre Webinarfrage',
-                'body' => File::get(database_path('seeders/data/email_template_body.html')),
-            ],
-        );
+        if (EmailTemplate::query()->exists()) {
+            return;
+        }
+
+        EmailTemplate::query()->create([
+            'name' => 'Default',
+            'subject' => 'Deutsches Edelsteinhaus Sachwerte - Ihre Webinarfrage',
+            'body' => File::get(database_path('seeders/data/email_template_body.html')),
+        ]);
 
         $this->command?->info('Seeded the default email template.');
     }
