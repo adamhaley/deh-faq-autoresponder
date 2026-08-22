@@ -112,6 +112,7 @@ return [
         'source_email' => 'Source email',
         'status' => 'Status',
         'subject' => 'Subject',
+        'template_name' => 'Template name',
         'text_body' => 'Text body',
         'updated_at' => 'Updated at',
     ],

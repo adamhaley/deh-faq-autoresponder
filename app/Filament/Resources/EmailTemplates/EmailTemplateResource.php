@@ -46,7 +46,9 @@ class EmailTemplateResource extends Resource
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->required(),
+                    ->label(__('admin.fields.template_name'))
+                    ->disabled()
+                    ->dehydrated(false),
                 TextInput::make('subject')
                     ->required()
                     ->columnSpanFull(),
@@ -65,7 +67,7 @@ class EmailTemplateResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name'),
+                TextColumn::make('name')->label(__('admin.fields.template_name')),
                 TextColumn::make('subject')->limit(60),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
