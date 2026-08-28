@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\RecordPipelineStatusChanged;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Services\EmailQuestions\EmailQuestionFaqRetrievalService;
@@ -67,6 +68,7 @@ class RetrieveEmailQuestionFaqMatches implements ShouldBeUnique, ShouldQueue
             'faq_retrieval_started_at' => now(),
             'faq_retrieval_failed_at' => null,
         ]);
+        $this->broadcastStatusChanged();
 
         $retrieval->retrieve($question);
 
@@ -74,6 +76,7 @@ class RetrieveEmailQuestionFaqMatches implements ShouldBeUnique, ShouldQueue
             'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusCompleted,
             'faq_retrieval_completed_at' => now(),
         ]);
+        $this->broadcastStatusChanged();
 
         $this->dispatchAnswerGeneration($question->fresh());
     }
@@ -107,6 +110,7 @@ class RetrieveEmailQuestionFaqMatches implements ShouldBeUnique, ShouldQueue
         );
 
         GenerateEmailQuestionAnswerDraft::dispatch($question->id);
+        $this->broadcastStatusChanged();
     }
 
     public function failed(?Throwable $exception): void
@@ -118,5 +122,11 @@ class RetrieveEmailQuestionFaqMatches implements ShouldBeUnique, ShouldQueue
                 'faq_retrieval_error' => $exception?->getMessage(),
                 'faq_retrieval_failed_at' => now(),
             ]);
+        $this->broadcastStatusChanged();
+    }
+
+    private function broadcastStatusChanged(): void
+    {
+        RecordPipelineStatusChanged::dispatch("email-questions.{$this->emailQuestionId}");
     }
 }

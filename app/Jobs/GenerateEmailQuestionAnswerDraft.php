@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\RecordPipelineStatusChanged;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Services\EmailQuestions\EmailQuestionAnswerDraftGenerationService;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -66,8 +67,10 @@ class GenerateEmailQuestionAnswerDraft implements ShouldBeUnique, ShouldQueue
             'generation_started_at' => now(),
             'generation_failed_at' => null,
         ]);
+        $this->broadcastStatusChanged();
 
         $drafts->generate($draft->emailQuestion);
+        $this->broadcastStatusChanged();
     }
 
     public function failed(?Throwable $exception): void
@@ -77,6 +80,7 @@ class GenerateEmailQuestionAnswerDraft implements ShouldBeUnique, ShouldQueue
             'generation_error' => $exception?->getMessage(),
             'generation_failed_at' => now(),
         ]);
+        $this->broadcastStatusChanged();
     }
 
     private function queuedDraft(): EmailQuestionAnswerDraft
@@ -85,5 +89,10 @@ class GenerateEmailQuestionAnswerDraft implements ShouldBeUnique, ShouldQueue
             ['email_question_id' => $this->emailQuestionId],
             EmailQuestionAnswerDraft::queuedAttributes(),
         )->load('emailQuestion');
+    }
+
+    private function broadcastStatusChanged(): void
+    {
+        RecordPipelineStatusChanged::dispatch("email-questions.{$this->emailQuestionId}");
     }
 }

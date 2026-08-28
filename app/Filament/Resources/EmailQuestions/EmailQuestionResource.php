@@ -221,7 +221,6 @@ class EmailQuestionResource extends Resource
                             ->columns(2)
                             ->columnSpanFull(),
                     ])
-                    ->poll(fn (EmailQuestion $record): ?string => $record->hasActiveFaqRetrieval() ? '3s' : null)
                     ->columnSpanFull(),
                 Section::make(__('admin.sections.answer_draft'))
                     ->visible(fn (EmailQuestion $record): bool => self::canRunQuestionPipeline($record))
@@ -402,7 +401,6 @@ class EmailQuestionResource extends Resource
                             ->alignment(Alignment::Start)
                             ->columnSpanFull(),
                     ])
-                    ->poll(fn (EmailQuestion $record): ?string => $record->hasActiveAnswerDraftGeneration() ? '3s' : null)
                     ->columnSpanFull(),
                 Section::make(__('admin.sections.source_email'))
                     ->schema([
@@ -430,7 +428,6 @@ class EmailQuestionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->poll(fn (): ?string => EmailQuestion::query()->withActiveAsyncPipeline()->exists() ? '3s' : null)
             ->recordTitleAttribute('question_text')
             ->defaultSort('created_at', 'desc')
             ->columns([

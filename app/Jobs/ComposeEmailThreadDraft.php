@@ -2,11 +2,13 @@
 
 namespace App\Jobs;
 
+use App\Events\RecordPipelineStatusChanged;
 use App\Services\EmailQuestions\EmailThreadDraftComposerService;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimited;
+use Throwable;
 
 class ComposeEmailThreadDraft implements ShouldBeUnique, ShouldQueue
 {
@@ -52,5 +54,16 @@ class ComposeEmailThreadDraft implements ShouldBeUnique, ShouldQueue
     public function handle(EmailThreadDraftComposerService $composer): void
     {
         $composer->composeForThread($this->threadId);
+        $this->broadcastStatusChanged();
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        $this->broadcastStatusChanged();
+    }
+
+    private function broadcastStatusChanged(): void
+    {
+        RecordPipelineStatusChanged::dispatch("email-threads.{$this->threadId}");
     }
 }
