@@ -2,19 +2,19 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\ScoreAnswerSemanticSimilarity;
 use App\Models\EmailQuestionAnswerDraft;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
+use Laravel\Ai\Embeddings;
 use Tests\TestCase;
 
 class BackfillAnswerSemanticSimilarityScoresTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_command_queues_only_approved_drafts_missing_a_score(): void
+    public function test_command_scores_only_approved_drafts_missing_a_score(): void
     {
-        Queue::fake();
+        $vector = $this->embedding([1.0, 0.0]);
+        Embeddings::fake([[$vector, $vector]]);
 
         $missingScore = EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'Generated.',
@@ -45,19 +45,16 @@ class BackfillAnswerSemanticSimilarityScoresTest extends TestCase
         ]);
 
         $this->artisan('email-questions:backfill-semantic-similarity')
-            ->expectsOutput('Queued semantic-similarity scoring for 1 approved answer draft(s).')
+            ->expectsOutput('Scored 1 approved answer draft(s).')
             ->assertSuccessful();
 
-        Queue::assertPushed(
-            ScoreAnswerSemanticSimilarity::class,
-            fn (ScoreAnswerSemanticSimilarity $job): bool => $job->draftId === $missingScore->id,
-        );
-        Queue::assertPushed(ScoreAnswerSemanticSimilarity::class, 1);
+        $this->assertSame(100, $missingScore->fresh()->semantic_similarity_score);
     }
 
     public function test_command_respects_the_limit_option(): void
     {
-        Queue::fake();
+        $vector = $this->embedding([1.0, 0.0]);
+        Embeddings::fake([[$vector, $vector], [$vector, $vector]]);
 
         EmailQuestionAnswerDraft::factory()->count(3)->create([
             'generated_answer' => 'Generated.',
@@ -67,9 +64,18 @@ class BackfillAnswerSemanticSimilarityScoresTest extends TestCase
         ]);
 
         $this->artisan('email-questions:backfill-semantic-similarity', ['--limit' => 2])
-            ->expectsOutput('Queued semantic-similarity scoring for 2 approved answer draft(s).')
+            ->expectsOutput('Scored 2 approved answer draft(s).')
             ->assertSuccessful();
 
-        Queue::assertPushed(ScoreAnswerSemanticSimilarity::class, 2);
+        $this->assertSame(2, EmailQuestionAnswerDraft::query()->whereNotNull('semantic_similarity_score')->count());
+    }
+
+    /**
+     * @param  list<float>  $prefix
+     * @return list<float>
+     */
+    private function embedding(array $prefix): array
+    {
+        return array_pad($prefix, 1536, 0.0);
     }
 }

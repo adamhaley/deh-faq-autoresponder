@@ -2,25 +2,30 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ScoreAnswerSemanticSimilarity;
 use App\Models\EmailQuestionAnswerDraft;
+use App\Services\EmailQuestions\AnswerSemanticSimilarityScorer;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Throwable;
 
 #[Signature('email-questions:backfill-semantic-similarity {--limit=50}')]
-#[Description('Queue semantic-similarity scoring for approved answer drafts that predate the feature')]
+#[Description('Score approved answer drafts that predate the semantic-similarity feature')]
 class BackfillAnswerSemanticSimilarityScores extends Command
 {
     /**
-     * Execute the console command.
+     * A one-off admin backfill over a modest, already-deduplicated batch has
+     * no concurrent-dispatch risk to guard against and shouldn't compete
+     * with live traffic for the shared 'openai' rate limit -- so this runs
+     * synchronously instead of going through ScoreAnswerSemanticSimilarity's
+     * ShouldBeUnique/RateLimited queue path, which is designed for the
+     * single-record, event-triggered approval flow, not batch backfills.
      */
-    public function handle(): int
+    public function handle(AnswerSemanticSimilarityScorer $scorer): int
     {
         $limit = max(1, (int) $this->option('limit'));
-        $queuedDrafts = 0;
 
-        EmailQuestionAnswerDraft::query()
+        $drafts = EmailQuestionAnswerDraft::query()
             ->where('status', EmailQuestionAnswerDraft::StatusApproved)
             ->whereNull('semantic_similarity_score')
             ->whereNotNull('generated_answer')
@@ -29,14 +34,27 @@ class BackfillAnswerSemanticSimilarityScores extends Command
             ->where('final_answer', '!=', '')
             ->oldest('id')
             ->limit($limit)
-            ->pluck('id')
-            ->each(function (int $draftId) use (&$queuedDrafts): void {
-                ScoreAnswerSemanticSimilarity::dispatch($draftId);
-                $queuedDrafts++;
-            });
+            ->get(['id', 'generated_answer', 'final_answer']);
 
-        $this->info("Queued semantic-similarity scoring for {$queuedDrafts} approved answer draft(s).");
+        $scored = 0;
+        $failed = 0;
 
-        return self::SUCCESS;
+        $this->withProgressBar($drafts, function (EmailQuestionAnswerDraft $draft) use ($scorer, &$scored, &$failed): void {
+            try {
+                $draft->updateQuietly([
+                    'semantic_similarity_score' => $scorer->score($draft->generated_answer, $draft->final_answer),
+                ]);
+                $scored++;
+            } catch (Throwable $e) {
+                $failed++;
+                $this->newLine();
+                $this->error("Draft {$draft->id}: {$e->getMessage()}");
+            }
+        });
+        $this->newLine();
+
+        $this->info("Scored {$scored} approved answer draft(s).".($failed > 0 ? " {$failed} failed." : ''));
+
+        return $failed > 0 ? self::FAILURE : self::SUCCESS;
     }
 }
