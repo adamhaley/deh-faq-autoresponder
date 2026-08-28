@@ -5,7 +5,7 @@ namespace App\Filament\Widgets;
 use App\Services\EmailQuestions\EmailAnswerPerformanceMetrics;
 use Filament\Widgets\ChartWidget;
 
-class AnswerSimilarityChart extends ChartWidget
+class SemanticAnswerSimilarityChart extends ChartWidget
 {
     protected static bool $isLazy = false;
 
@@ -15,7 +15,7 @@ class AnswerSimilarityChart extends ChartWidget
 
     public function getHeading(): string
     {
-        return __('admin.dashboard.answer_similarity');
+        return __('admin.dashboard.answer_semantic_similarity');
     }
 
     protected function getData(): array
@@ -25,10 +25,10 @@ class AnswerSimilarityChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => __('admin.dashboard.answer_similarity_dataset'),
-                    'data' => $metrics['similarity_scores'],
-                    'borderColor' => '#2f8f83',
-                    'backgroundColor' => 'rgba(47, 143, 131, 0.16)',
+                    'label' => __('admin.dashboard.answer_semantic_similarity_dataset'),
+                    'data' => $metrics['semantic_similarity_scores'],
+                    'borderColor' => '#eab308',
+                    'backgroundColor' => 'rgba(234, 179, 8, 0.16)',
                     'fill' => true,
                     'tension' => 0.35,
                     'spanGaps' => true,
