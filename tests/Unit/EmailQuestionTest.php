@@ -72,6 +72,7 @@ class EmailQuestionTest extends TestCase
         $this->assertSame([
             'generated_answer' => EmailQuestionAnswerDraft::PendingGeneratedAnswer,
             'final_answer' => null,
+            'semantic_similarity_score' => null,
             'status' => EmailQuestionAnswerDraft::StatusQueued,
             'generation_reason' => null,
             'generation_metadata' => null,

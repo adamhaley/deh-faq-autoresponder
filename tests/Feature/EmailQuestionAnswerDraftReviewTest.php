@@ -20,6 +20,8 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
 
     public function test_approving_a_draft_saves_the_final_answer_as_the_best_matched_faq_override(): void
     {
+        Queue::fake();
+
         $question = EmailQuestion::factory()->create();
 
         $bestMatch = FaqEntry::factory()->create();
@@ -56,6 +58,8 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
 
     public function test_approving_a_draft_updates_an_existing_override_for_the_same_faq(): void
     {
+        Queue::fake();
+
         $question = EmailQuestion::factory()->create();
 
         $faqEntry = FaqEntry::factory()->create();
@@ -112,6 +116,8 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
 
     public function test_approving_a_draft_without_faq_matches_does_not_error(): void
     {
+        Queue::fake();
+
         $question = EmailQuestion::factory()->create();
 
         $draft = EmailQuestionAnswerDraft::factory()->create([

@@ -225,8 +225,10 @@ return [
     'dashboard' => [
         'answer_performance' => 'Answer Performance',
         'answer_performance_description' => 'How closely AI-generated answers match the final approved answers over time.',
-        'answer_similarity' => 'Answer Similarity',
+        'answer_similarity' => 'Answer Similarity (Wording)',
         'answer_similarity_dataset' => 'Generated-to-approved similarity',
+        'answer_semantic_similarity' => 'Answer Similarity (Meaning)',
+        'answer_semantic_similarity_dataset' => 'Generated-to-approved similarity',
         'question_classification' => 'Question Classification',
         'question_classification_description' => 'Human-in-the-loop review quality for extracted question classifications.',
         'pending_review' => 'Pending review',

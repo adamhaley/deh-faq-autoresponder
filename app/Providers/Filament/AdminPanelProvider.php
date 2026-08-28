@@ -9,6 +9,7 @@ use App\Filament\Widgets\EmailQuestionMisalignmentRateChart;
 use App\Filament\Widgets\EmailQuestionOverview;
 use App\Filament\Widgets\QuestionClassificationSection;
 use App\Filament\Widgets\RecentEmailQuestionMisalignments;
+use App\Filament\Widgets\SemanticAnswerSimilarityChart;
 use App\Http\Middleware\SetLocaleFromBrowser;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -54,6 +55,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AnswerPerformanceSection::class,
                 AnswerSimilarityChart::class,
+                SemanticAnswerSimilarityChart::class,
                 QuestionClassificationSection::class,
                 EmailQuestionOverview::class,
                 EmailQuestionMisalignmentRateChart::class,

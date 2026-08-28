@@ -94,6 +94,7 @@ class EmailQuestionResource extends Resource
                     ->schema([
                         TextEntry::make('question_text')
                             ->label(__('admin.fields.extracted_question'))
+                            ->extraAttributes(['style' => 'white-space: pre-line;'])
                             ->columnSpanFull(),
                         TextEntry::make('normalized_question')
                             ->placeholder(__('admin.placeholders.not_normalized_yet'))
@@ -327,11 +328,13 @@ class EmailQuestionResource extends Resource
                             ->label(__('admin.fields.generated_answer'))
                             ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('generated_answer'))
                             ->placeholder(__('admin.placeholders.no_draft_generated_yet'))
+                            ->extraAttributes(['style' => 'white-space: pre-line;'])
                             ->columnSpanFull(),
                         TextEntry::make('answerDraft.final_answer')
                             ->label(__('admin.fields.final_answer'))
                             ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('final_answer'))
                             ->placeholder(__('admin.placeholders.not_edited_yet'))
+                            ->extraAttributes(['style' => 'white-space: pre-line;'])
                             ->columnSpanFull(),
                         TextEntry::make('answerDraft.generation_reason')
                             ->label(__('admin.fields.generation_reason'))
