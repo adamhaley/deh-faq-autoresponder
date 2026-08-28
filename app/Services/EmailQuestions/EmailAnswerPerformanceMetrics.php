@@ -9,7 +9,7 @@ use Illuminate\Support\Collection;
 class EmailAnswerPerformanceMetrics
 {
     /**
-     * @return array{labels: list<string>, similarity_scores: list<int|null>, approved_counts: list<int>}
+     * @return array{labels: list<string>, similarity_scores: list<int|null>, semantic_similarity_scores: list<int|null>, approved_counts: list<int>}
      */
     public function dailySimilarityScores(int $days): array
     {
@@ -21,11 +21,12 @@ class EmailAnswerPerformanceMetrics
             ->whereNotNull('generated_answer')
             ->whereNotNull('final_answer')
             ->whereBetween('reviewed_at', [$start, $end])
-            ->get(['generated_answer', 'final_answer', 'reviewed_at'])
+            ->get(['generated_answer', 'final_answer', 'semantic_similarity_score', 'reviewed_at'])
             ->groupBy(fn (EmailQuestionAnswerDraft $draft): string => $draft->reviewed_at?->toDateString() ?? '');
 
         $labels = [];
         $similarityScores = [];
+        $semanticSimilarityScores = [];
         $approvedCounts = [];
 
         foreach (CarbonPeriod::create($start, '1 day', $end) as $date) {
@@ -34,12 +35,14 @@ class EmailAnswerPerformanceMetrics
 
             $labels[] = $date->format('M j');
             $similarityScores[] = $this->averageSimilarityScore($drafts);
+            $semanticSimilarityScores[] = $this->averageSemanticSimilarityScore($drafts);
             $approvedCounts[] = $drafts->count();
         }
 
         return [
             'labels' => $labels,
             'similarity_scores' => $similarityScores,
+            'semantic_similarity_scores' => $semanticSimilarityScores,
             'approved_counts' => $approvedCounts,
         ];
     }
@@ -72,6 +75,26 @@ class EmailAnswerPerformanceMetrics
                 $draft->generated_answer,
                 $draft->final_answer,
             ))
+            ->filter(fn (?int $score): bool => $score !== null);
+
+        if ($scores->isEmpty()) {
+            return null;
+        }
+
+        return (int) round($scores->average());
+    }
+
+    /**
+     * Stored at approval time by ScoreAnswerSemanticSimilarity, not computed
+     * live -- unlike answerSimilarityScore(), so drafts approved before this
+     * feature shipped have no value here and are excluded, not zeroed.
+     *
+     * @param  Collection<int, EmailQuestionAnswerDraft>  $drafts
+     */
+    private function averageSemanticSimilarityScore(Collection $drafts): ?int
+    {
+        $scores = $drafts
+            ->pluck('semantic_similarity_score')
             ->filter(fn (?int $score): bool => $score !== null);
 
         if ($scores->isEmpty()) {

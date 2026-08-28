@@ -33,6 +33,15 @@ class AnswerSimilarityChart extends ChartWidget
                     'tension' => 0.35,
                     'spanGaps' => true,
                 ],
+                [
+                    'label' => __('admin.dashboard.answer_semantic_similarity_dataset'),
+                    'data' => $metrics['semantic_similarity_scores'],
+                    'borderColor' => '#7c5cff',
+                    'backgroundColor' => 'rgba(124, 92, 255, 0.16)',
+                    'fill' => true,
+                    'tension' => 0.35,
+                    'spanGaps' => true,
+                ],
             ],
             'labels' => $metrics['labels'],
         ];
@@ -46,7 +55,7 @@ class AnswerSimilarityChart extends ChartWidget
         return [
             'plugins' => [
                 'legend' => [
-                    'display' => false,
+                    'display' => true,
                 ],
             ],
             'scales' => [

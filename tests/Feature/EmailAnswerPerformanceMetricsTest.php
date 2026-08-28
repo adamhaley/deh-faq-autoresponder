@@ -19,6 +19,7 @@ class EmailAnswerPerformanceMetricsTest extends TestCase
         EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'identical answer',
             'final_answer' => 'identical answer',
+            'semantic_similarity_score' => 100,
             'status' => EmailQuestionAnswerDraft::StatusApproved,
             'reviewed_at' => now()->subDays(2),
         ]);
@@ -26,6 +27,7 @@ class EmailAnswerPerformanceMetricsTest extends TestCase
         EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'same answer',
             'final_answer' => 'same answer',
+            'semantic_similarity_score' => 90,
             'status' => EmailQuestionAnswerDraft::StatusApproved,
             'reviewed_at' => now()->subDay(),
         ]);
@@ -33,6 +35,7 @@ class EmailAnswerPerformanceMetricsTest extends TestCase
         EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'abc',
             'final_answer' => 'xyz',
+            'semantic_similarity_score' => null,
             'status' => EmailQuestionAnswerDraft::StatusApproved,
             'reviewed_at' => now()->subDay(),
         ]);
@@ -49,6 +52,7 @@ class EmailAnswerPerformanceMetricsTest extends TestCase
 
         $this->assertSame(['Aug 11', 'Aug 12', 'Aug 13'], $daily['labels']);
         $this->assertSame([100, 50, null], $daily['similarity_scores']);
+        $this->assertSame([100, 90, null], $daily['semantic_similarity_scores']);
         $this->assertSame([1, 2, 0], $daily['approved_counts']);
         $this->assertSame(100, $metrics->answerSimilarityScore('<p>Same&nbsp;answer</p>', 'Same answer'));
         $this->assertNull($metrics->answerSimilarityScore('', 'Final answer'));
