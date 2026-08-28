@@ -49,7 +49,7 @@ class PipelineStatusBroadcastingTest extends TestCase
 
         Event::assertDispatched(
             RecordPipelineStatusChanged::class,
-            fn (RecordPipelineStatusChanged $event): bool => $event->channel === "email-questions.{$question->id}",
+            fn (RecordPipelineStatusChanged $event): bool => $event->channel === 'email-questions-pipeline',
         );
     }
 
@@ -74,7 +74,7 @@ class PipelineStatusBroadcastingTest extends TestCase
 
         Event::assertDispatched(
             RecordPipelineStatusChanged::class,
-            fn (RecordPipelineStatusChanged $event): bool => $event->channel === "email-questions.{$question->id}",
+            fn (RecordPipelineStatusChanged $event): bool => $event->channel === 'email-questions-pipeline',
         );
     }
 
@@ -117,7 +117,7 @@ class PipelineStatusBroadcastingTest extends TestCase
 
         Event::assertDispatched(
             RecordPipelineStatusChanged::class,
-            fn (RecordPipelineStatusChanged $event): bool => $event->channel === 'email-threads.thread-broadcast',
+            fn (RecordPipelineStatusChanged $event): bool => $event->channel === 'email-threads-pipeline',
         );
     }
 
@@ -141,15 +141,15 @@ class PipelineStatusBroadcastingTest extends TestCase
         $viewer = User::factory()->create(['role' => UserRole::Viewer]);
 
         $this->actingAs($admin)
-            ->postJson('/broadcasting/auth', ['channel_name' => 'private-email-questions.1', 'socket_id' => '1234.5678'])
+            ->postJson('/broadcasting/auth', ['channel_name' => 'private-email-questions-pipeline', 'socket_id' => '1234.5678'])
             ->assertOk();
 
         $this->actingAs($reviewer)
-            ->postJson('/broadcasting/auth', ['channel_name' => 'private-email-questions.1', 'socket_id' => '1234.5678'])
+            ->postJson('/broadcasting/auth', ['channel_name' => 'private-email-questions-pipeline', 'socket_id' => '1234.5678'])
             ->assertOk();
 
         $this->actingAs($viewer)
-            ->postJson('/broadcasting/auth', ['channel_name' => 'private-email-questions.1', 'socket_id' => '1234.5678'])
+            ->postJson('/broadcasting/auth', ['channel_name' => 'private-email-questions-pipeline', 'socket_id' => '1234.5678'])
             ->assertForbidden();
     }
 }

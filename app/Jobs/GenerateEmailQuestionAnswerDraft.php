@@ -93,6 +93,6 @@ class GenerateEmailQuestionAnswerDraft implements ShouldBeUnique, ShouldQueue
 
     private function broadcastStatusChanged(): void
     {
-        RecordPipelineStatusChanged::dispatch("email-questions.{$this->emailQuestionId}");
+        RecordPipelineStatusChanged::dispatch('email-questions-pipeline');
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\EmailQuestions\Pages;
 
 use App\Filament\Resources\EmailQuestions\EmailQuestionResource;
-use App\Models\EmailQuestion;
 use Filament\Resources\Pages\ManageRecords;
 
 class ManageEmailQuestions extends ManageRecords
@@ -16,18 +15,15 @@ class ManageEmailQuestions extends ManageRecords
     }
 
     /**
+     * Fixed channel, always known at mount -- see routes/channels.php for
+     * why this can't be scoped to whichever record's modal is open.
+     *
      * @return array<string, string>
      */
     public function getListeners(): array
     {
-        $record = $this->getMountedTableActionRecord();
-
-        if (! $record instanceof EmailQuestion) {
-            return [];
-        }
-
         return [
-            "echo-private:email-questions.{$record->id},.status.changed" => '$refresh',
+            'echo-private:email-questions-pipeline,.status.changed' => '$refresh',
         ];
     }
 }

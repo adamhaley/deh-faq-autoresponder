@@ -64,6 +64,6 @@ class ComposeEmailThreadDraft implements ShouldBeUnique, ShouldQueue
 
     private function broadcastStatusChanged(): void
     {
-        RecordPipelineStatusChanged::dispatch("email-threads.{$this->threadId}");
+        RecordPipelineStatusChanged::dispatch('email-threads-pipeline');
     }
 }
