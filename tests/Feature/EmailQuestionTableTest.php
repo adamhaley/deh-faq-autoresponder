@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\EmailQuestionReviewStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\EmailQuestions\Pages\ManageEmailQuestions;
 use App\Models\EmailQuestion;
@@ -82,7 +83,7 @@ class EmailQuestionTableTest extends TestCase
 
         $this->actingAs($admin);
 
-        foreach ([EmailQuestion::ReviewStatusNoise, EmailQuestion::ReviewStatusUnanswerable] as $reviewStatus) {
+        foreach ([EmailQuestionReviewStatus::Noise, EmailQuestionReviewStatus::Unanswerable] as $reviewStatus) {
             $question = EmailQuestion::factory()
                 ->for(GmailMessage::factory(), 'message')
                 ->reviewedAs($reviewStatus)

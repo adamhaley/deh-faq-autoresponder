@@ -3,35 +3,37 @@
 namespace Tests\Unit;
 
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
+use App\Enums\FaqRetrievalStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use Tests\TestCase;
 
 class EmailQuestionTest extends TestCase
 {
-    public function test_human_review_decision_options_only_include_reviewer_decisions(): void
+    public function test_reviewer_decision_cases_only_include_reviewer_decisions(): void
     {
         $this->assertSame([
-            EmailQuestion::ReviewStatusValid => 'Valid question',
-            EmailQuestion::ReviewStatusNoise => 'Noise',
-            EmailQuestion::ReviewStatusUnanswerable => 'Unanswerable',
-        ], EmailQuestion::humanReviewDecisionOptions());
+            EmailQuestionReviewStatus::Valid,
+            EmailQuestionReviewStatus::Noise,
+            EmailQuestionReviewStatus::Unanswerable,
+        ], EmailQuestionReviewStatus::reviewerDecisionCases());
     }
 
-    public function test_human_review_filter_options_include_pending_but_not_needs_human(): void
+    public function test_reviewer_filter_cases_include_pending_but_not_needs_human(): void
     {
         $this->assertSame([
-            EmailQuestion::ReviewStatusPendingReview => 'Pending review',
-            EmailQuestion::ReviewStatusValid => 'Valid question',
-            EmailQuestion::ReviewStatusNoise => 'Noise',
-            EmailQuestion::ReviewStatusUnanswerable => 'Unanswerable',
-        ], EmailQuestion::humanReviewFilterOptions());
+            EmailQuestionReviewStatus::PendingReview,
+            EmailQuestionReviewStatus::Valid,
+            EmailQuestionReviewStatus::Noise,
+            EmailQuestionReviewStatus::Unanswerable,
+        ], EmailQuestionReviewStatus::reviewerFilterCases());
     }
 
     public function test_active_async_pipeline_detects_faq_retrieval_work(): void
     {
         $question = EmailQuestion::factory()->create([
-            'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusQueued,
+            'faq_retrieval_status' => FaqRetrievalStatus::Queued,
         ]);
 
         $this->assertTrue($question->hasActiveFaqRetrieval());
@@ -39,7 +41,7 @@ class EmailQuestionTest extends TestCase
         $this->assertTrue(EmailQuestion::query()->withActiveAsyncPipeline()->whereKey($question)->exists());
 
         $question->update([
-            'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusCompleted,
+            'faq_retrieval_status' => FaqRetrievalStatus::Completed,
         ]);
 
         $this->assertFalse($question->refresh()->hasActiveFaqRetrieval());

@@ -144,26 +144,8 @@ return [
 
     'statuses' => [
         'classification' => [
-            'valid_faq_question' => 'Valid question',
-            'noise' => 'Noise',
-            'unanswerable' => 'Unanswerable',
-            'needs_human' => 'Needs human',
             'unclassified' => 'Unclassified',
             'not_classified' => 'Not classified',
-        ],
-        'review' => [
-            'pending_review' => 'Pending review',
-            'valid' => 'Valid question',
-            'noise' => 'Noise',
-            'unanswerable' => 'Unanswerable',
-            'needs_human' => 'Needs human',
-        ],
-        'retrieval' => [
-            'not_started' => 'Not started',
-            'queued' => 'Queued',
-            'processing' => 'Processing',
-            'completed' => 'Completed',
-            'failed' => 'Failed',
         ],
         'thread_draft' => [
             'no_reply_needed' => 'No reply needed',

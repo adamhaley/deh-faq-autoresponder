@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -23,7 +24,7 @@ class GenerateEmailQuestionAnswerDrafts extends Command
         $queuedDrafts = 0;
 
         EmailQuestion::query()
-            ->where('review_status', EmailQuestion::ReviewStatusValid)
+            ->where('review_status', EmailQuestionReviewStatus::Valid)
             ->whereHas('faqMatches')
             ->where(function ($query): void {
                 $query

@@ -2,6 +2,8 @@
 
 namespace App\Services\EmailQuestions;
 
+use App\Enums\EmailQuestionClassification;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Models\EmailQuestion;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,7 +15,7 @@ class EmailQuestionDashboardMetrics
     public function pendingReviewCount(): int
     {
         return EmailQuestion::query()
-            ->where('review_status', EmailQuestion::ReviewStatusPendingReview)
+            ->where('review_status', EmailQuestionReviewStatus::PendingReview)
             ->count();
     }
 
@@ -109,7 +111,7 @@ class EmailQuestionDashboardMetrics
                 'reviewed_at',
             ])
             ->whereNotNull('reviewed_at')
-            ->where('review_status', '!=', EmailQuestion::ReviewStatusPendingReview);
+            ->where('review_status', '!=', EmailQuestionReviewStatus::PendingReview);
     }
 
     /**
@@ -123,23 +125,23 @@ class EmailQuestionDashboardMetrics
                 ->whereNull('classification')
                 ->orWhere(function (Builder $query): void {
                     $query
-                        ->where('classification', EmailQuestion::ClassificationValidFaqQuestion)
-                        ->where('review_status', '!=', EmailQuestion::ReviewStatusValid);
+                        ->where('classification', EmailQuestionClassification::ValidFaqQuestion)
+                        ->where('review_status', '!=', EmailQuestionReviewStatus::Valid);
                 })
                 ->orWhere(function (Builder $query): void {
                     $query
-                        ->where('classification', EmailQuestion::ClassificationNoise)
-                        ->where('review_status', '!=', EmailQuestion::ReviewStatusNoise);
+                        ->where('classification', EmailQuestionClassification::Noise)
+                        ->where('review_status', '!=', EmailQuestionReviewStatus::Noise);
                 })
                 ->orWhere(function (Builder $query): void {
                     $query
-                        ->where('classification', EmailQuestion::ClassificationUnanswerable)
-                        ->where('review_status', '!=', EmailQuestion::ReviewStatusUnanswerable);
+                        ->where('classification', EmailQuestionClassification::Unanswerable)
+                        ->where('review_status', '!=', EmailQuestionReviewStatus::Unanswerable);
                 })
                 ->orWhere(function (Builder $query): void {
                     $query
-                        ->where('classification', EmailQuestion::ClassificationNeedsHuman)
-                        ->where('review_status', '!=', EmailQuestion::ReviewStatusNeedsHuman);
+                        ->where('classification', EmailQuestionClassification::NeedsHuman)
+                        ->where('review_status', '!=', EmailQuestionReviewStatus::NeedsHuman);
                 });
         });
     }
@@ -167,13 +169,13 @@ class EmailQuestionDashboardMetrics
         return $this->humanStatusForClassification($question->classification) === $question->review_status;
     }
 
-    private function humanStatusForClassification(?string $classification): ?string
+    private function humanStatusForClassification(?EmailQuestionClassification $classification): ?EmailQuestionReviewStatus
     {
         return match ($classification) {
-            EmailQuestion::ClassificationValidFaqQuestion => EmailQuestion::ReviewStatusValid,
-            EmailQuestion::ClassificationNoise => EmailQuestion::ReviewStatusNoise,
-            EmailQuestion::ClassificationUnanswerable => EmailQuestion::ReviewStatusUnanswerable,
-            EmailQuestion::ClassificationNeedsHuman => EmailQuestion::ReviewStatusNeedsHuman,
+            EmailQuestionClassification::ValidFaqQuestion => EmailQuestionReviewStatus::Valid,
+            EmailQuestionClassification::Noise => EmailQuestionReviewStatus::Noise,
+            EmailQuestionClassification::Unanswerable => EmailQuestionReviewStatus::Unanswerable,
+            EmailQuestionClassification::NeedsHuman => EmailQuestionReviewStatus::NeedsHuman,
             default => null,
         };
     }

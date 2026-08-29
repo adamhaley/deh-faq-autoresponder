@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Ai\Agents\EmailGreetingGenerator;
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Enums\EmailThreadDraftStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -43,7 +44,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
 
         $question = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create(['question_text' => 'Wie funktioniert das Investment?']);
 
         EmailQuestionAnswerDraft::factory()->create([
@@ -87,7 +88,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
 
         $question = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
 
         EmailQuestionAnswerDraft::factory()->create([
@@ -126,7 +127,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
 
         $approvedQuestion = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $approvedQuestion->id,
@@ -135,7 +136,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
 
         $pendingQuestion = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $pendingQuestion->id,

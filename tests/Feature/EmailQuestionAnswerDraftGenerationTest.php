@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Ai\Agents\EmailQuestionAnswerGenerator;
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -38,7 +39,7 @@ class EmailQuestionAnswerDraftGenerationTest extends TestCase
         ])->preventStrayPrompts();
 
         $question = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create([
                 'question_text' => 'Können Aktien als Vermögenswert umgewandelt werden?',
                 'normalized_question' => 'Können Aktien als Vermögenswert nach dem SAG umgewandelt werden?',
@@ -82,18 +83,18 @@ class EmailQuestionAnswerDraftGenerationTest extends TestCase
         Queue::fake();
 
         $readyQuestion = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
         EmailQuestionFaqMatch::factory()->create([
             'email_question_id' => $readyQuestion->id,
         ]);
 
         EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
 
         $noiseQuestion = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->reviewedAs(EmailQuestionReviewStatus::Noise)
             ->create();
         EmailQuestionFaqMatch::factory()->create([
             'email_question_id' => $noiseQuestion->id,
@@ -127,7 +128,7 @@ class EmailQuestionAnswerDraftGenerationTest extends TestCase
         ])->preventStrayPrompts();
 
         $question = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
         EmailQuestionFaqMatch::factory()->create([
             'email_question_id' => $question->id,

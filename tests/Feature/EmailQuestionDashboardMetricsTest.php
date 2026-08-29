@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\EmailQuestionClassification;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Models\EmailQuestion;
 use App\Services\EmailQuestions\EmailQuestionDashboardMetrics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,35 +19,35 @@ class EmailQuestionDashboardMetricsTest extends TestCase
         Carbon::setTestNow(Carbon::parse('2026-08-13 12:00:00'));
 
         EmailQuestion::factory()->create([
-            'review_status' => EmailQuestion::ReviewStatusPendingReview,
+            'review_status' => EmailQuestionReviewStatus::PendingReview,
         ]);
 
         EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create([
-                'classification' => EmailQuestion::ClassificationValidFaqQuestion,
+                'classification' => EmailQuestionClassification::ValidFaqQuestion,
                 'reviewed_at' => now()->subDays(2),
             ]);
 
         EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->reviewedAs(EmailQuestionReviewStatus::Noise)
             ->create([
-                'classification' => EmailQuestion::ClassificationNoise,
+                'classification' => EmailQuestionClassification::Noise,
                 'reviewed_at' => now()->subDay(),
             ]);
 
         $misalignment = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create([
                 'question_text' => 'Can this inherited gemstone be valued?',
-                'classification' => EmailQuestion::ClassificationNoise,
+                'classification' => EmailQuestionClassification::Noise,
                 'reviewed_at' => now()->subDay(),
             ]);
 
         EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create([
-                'classification' => EmailQuestion::ClassificationValidFaqQuestion,
+                'classification' => EmailQuestionClassification::ValidFaqQuestion,
                 'reviewed_at' => now()->subDays(10),
             ]);
 

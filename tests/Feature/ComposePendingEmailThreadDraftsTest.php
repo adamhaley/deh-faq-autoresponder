@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Jobs\ComposeEmailThreadDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -24,7 +25,7 @@ class ComposePendingEmailThreadDraftsTest extends TestCase
 
         $question = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
@@ -49,7 +50,7 @@ class ComposePendingEmailThreadDraftsTest extends TestCase
 
         $question = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
@@ -73,7 +74,7 @@ class ComposePendingEmailThreadDraftsTest extends TestCase
 
         $question = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,

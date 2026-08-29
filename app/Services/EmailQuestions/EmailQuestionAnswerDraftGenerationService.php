@@ -4,6 +4,7 @@ namespace App\Services\EmailQuestions;
 
 use App\Ai\Agents\EmailQuestionAnswerGenerator;
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -19,7 +20,7 @@ class EmailQuestionAnswerDraftGenerationService
         $generatedDrafts = 0;
 
         EmailQuestion::query()
-            ->where('review_status', EmailQuestion::ReviewStatusValid)
+            ->where('review_status', EmailQuestionReviewStatus::Valid)
             ->whereHas('faqMatches')
             ->where(function ($query): void {
                 $query

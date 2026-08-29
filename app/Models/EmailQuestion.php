@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionClassification;
+use App\Enums\EmailQuestionReviewStatus;
+use App\Enums\FaqRetrievalStatus;
 use App\Jobs\RetrieveEmailQuestionFaqMatches;
 use Database\Factories\EmailQuestionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -37,34 +40,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class EmailQuestion extends Model
 {
-    public const ClassificationValidFaqQuestion = 'valid_faq_question';
-
-    public const ClassificationNoise = 'noise';
-
-    public const ClassificationUnanswerable = 'unanswerable';
-
-    public const ClassificationNeedsHuman = 'needs_human';
-
-    public const ReviewStatusPendingReview = 'pending_review';
-
-    public const ReviewStatusValid = 'valid';
-
-    public const ReviewStatusNoise = 'noise';
-
-    public const ReviewStatusUnanswerable = 'unanswerable';
-
-    public const ReviewStatusNeedsHuman = 'needs_human';
-
-    public const FaqRetrievalStatusNotStarted = 'not_started';
-
-    public const FaqRetrievalStatusQueued = 'queued';
-
-    public const FaqRetrievalStatusProcessing = 'processing';
-
-    public const FaqRetrievalStatusCompleted = 'completed';
-
-    public const FaqRetrievalStatusFailed = 'failed';
-
     /** @use HasFactory<EmailQuestionFactory> */
     use HasFactory;
 
@@ -73,8 +48,8 @@ class EmailQuestion extends Model
      */
     protected $attributes = [
         'question_order' => 1,
-        'review_status' => self::ReviewStatusPendingReview,
-        'faq_retrieval_status' => self::FaqRetrievalStatusNotStarted,
+        'review_status' => EmailQuestionReviewStatus::PendingReview->value,
+        'faq_retrieval_status' => FaqRetrievalStatus::NotStarted->value,
         'parser_version' => 'n8n-chat-v1',
     ];
 
@@ -94,6 +69,9 @@ class EmailQuestion extends Model
             'faq_retrieval_started_at' => 'datetime',
             'faq_retrieval_completed_at' => 'datetime',
             'faq_retrieval_failed_at' => 'datetime',
+            'classification' => EmailQuestionClassification::class,
+            'review_status' => EmailQuestionReviewStatus::class,
+            'faq_retrieval_status' => FaqRetrievalStatus::class,
         ];
     }
 
@@ -118,107 +96,11 @@ class EmailQuestion extends Model
         return $this->hasOne(EmailQuestionAnswerDraft::class);
     }
 
-    /**
-     * @return array<string, string>
-     */
-    public static function classificationOptions(): array
-    {
-        return [
-            self::ClassificationValidFaqQuestion => __('admin.statuses.classification.valid_faq_question'),
-            self::ClassificationNoise => __('admin.statuses.classification.noise'),
-            self::ClassificationUnanswerable => __('admin.statuses.classification.unanswerable'),
-            self::ClassificationNeedsHuman => __('admin.statuses.classification.needs_human'),
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function reviewStatusOptions(): array
-    {
-        return [
-            self::ReviewStatusPendingReview => __('admin.statuses.review.pending_review'),
-            self::ReviewStatusValid => __('admin.statuses.review.valid'),
-            self::ReviewStatusNoise => __('admin.statuses.review.noise'),
-            self::ReviewStatusUnanswerable => __('admin.statuses.review.unanswerable'),
-            self::ReviewStatusNeedsHuman => __('admin.statuses.review.needs_human'),
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function humanReviewDecisionOptions(): array
-    {
-        return [
-            self::ReviewStatusValid => __('admin.statuses.review.valid'),
-            self::ReviewStatusNoise => __('admin.statuses.review.noise'),
-            self::ReviewStatusUnanswerable => __('admin.statuses.review.unanswerable'),
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function humanReviewFilterOptions(): array
-    {
-        return [
-            self::ReviewStatusPendingReview => 'Pending review',
-            ...self::humanReviewDecisionOptions(),
-        ];
-    }
-
-    public static function classificationColor(?string $classification): string
-    {
-        return match ($classification) {
-            self::ClassificationValidFaqQuestion => 'success',
-            self::ClassificationNoise => 'gray',
-            self::ClassificationUnanswerable => 'warning',
-            self::ClassificationNeedsHuman => 'info',
-            default => 'gray',
-        };
-    }
-
-    public static function reviewStatusColor(string $status): string
-    {
-        return match ($status) {
-            self::ReviewStatusValid => 'success',
-            self::ReviewStatusNoise => 'gray',
-            self::ReviewStatusUnanswerable => 'warning',
-            self::ReviewStatusNeedsHuman => 'info',
-            default => 'gray',
-        };
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function faqRetrievalStatusOptions(): array
-    {
-        return [
-            self::FaqRetrievalStatusNotStarted => __('admin.statuses.retrieval.not_started'),
-            self::FaqRetrievalStatusQueued => __('admin.statuses.retrieval.queued'),
-            self::FaqRetrievalStatusProcessing => __('admin.statuses.retrieval.processing'),
-            self::FaqRetrievalStatusCompleted => __('admin.statuses.retrieval.completed'),
-            self::FaqRetrievalStatusFailed => __('admin.statuses.retrieval.failed'),
-        ];
-    }
-
-    public static function faqRetrievalStatusColor(string $status): string
-    {
-        return match ($status) {
-            self::FaqRetrievalStatusQueued, self::FaqRetrievalStatusProcessing => 'info',
-            self::FaqRetrievalStatusCompleted => 'success',
-            self::FaqRetrievalStatusFailed => 'danger',
-            default => 'gray',
-        };
-    }
-
     public function hasActiveFaqRetrieval(): bool
     {
         return in_array($this->newQuery()->whereKey($this)->value('faq_retrieval_status'), [
-            self::FaqRetrievalStatusQueued,
-            self::FaqRetrievalStatusProcessing,
+            FaqRetrievalStatus::Queued,
+            FaqRetrievalStatus::Processing,
         ], true);
     }
 
@@ -241,8 +123,8 @@ class EmailQuestion extends Model
         return $query->where(function (Builder $query): void {
             $query
                 ->whereIn('faq_retrieval_status', [
-                    self::FaqRetrievalStatusQueued,
-                    self::FaqRetrievalStatusProcessing,
+                    FaqRetrievalStatus::Queued,
+                    FaqRetrievalStatus::Processing,
                 ])
                 ->orWhereHas('answerDraft', function (Builder $query): void {
                     $query->whereIn('status', [
@@ -258,7 +140,7 @@ class EmailQuestion extends Model
      * (which, on completion, chains into automatic answer generation) so
      * reviewers never have to trigger the pipeline by hand.
      */
-    public function markReviewed(string $status, ?int $reviewerId): bool
+    public function markReviewed(EmailQuestionReviewStatus $status, ?int $reviewerId): bool
     {
         $updated = $this->update([
             'review_status' => $status,
@@ -266,9 +148,9 @@ class EmailQuestion extends Model
             'reviewed_at' => now(),
         ]);
 
-        if ($updated && $status === self::ReviewStatusValid) {
+        if ($updated && $status === EmailQuestionReviewStatus::Valid) {
             $this->update([
-                'faq_retrieval_status' => self::FaqRetrievalStatusQueued,
+                'faq_retrieval_status' => FaqRetrievalStatus::Queued,
                 'faq_retrieval_error' => null,
                 'faq_retrieval_failed_at' => null,
             ]);

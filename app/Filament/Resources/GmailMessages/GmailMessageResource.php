@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\GmailMessages;
 
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionClassification;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Enums\EmailThreadDraftStatus;
 use App\Filament\Resources\EmailTemplates\EmailTemplateResource;
 use App\Filament\Resources\GmailMessages\Pages\ManageGmailMessages;
@@ -163,11 +165,11 @@ class GmailMessageResource extends Resource
                     ->label('')
                     ->state(fn (): string => sprintf(
                         '%s · %s',
-                        EmailQuestion::reviewStatusOptions()[$question->fresh()->review_status] ?? $question->review_status,
+                        $question->fresh()->review_status->getLabel(),
                         $question->fresh()->answerDraft?->status?->getLabel() ?? __('admin.placeholders.no_draft'),
                     ))
                     ->badge()
-                    ->color(fn (): string => EmailQuestion::reviewStatusColor($question->fresh()->review_status)),
+                    ->color(fn (): string => $question->fresh()->review_status->getColor()),
                 TextEntry::make("question_{$question->id}_text")
                     ->label(__('admin.fields.question'))
                     ->state($question->question_text)
@@ -180,17 +182,17 @@ class GmailMessageResource extends Resource
                                 ->label(__('admin.actions.valid_question'))
                                 ->icon(Heroicon::CheckCircle)
                                 ->color('success')
-                                ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusValid, auth()->id())),
+                                ->action(fn () => $question->markReviewed(EmailQuestionReviewStatus::Valid, auth()->id())),
                             Action::make("markNoise_{$question->id}")
                                 ->label(__('admin.actions.noise'))
                                 ->icon(Heroicon::XCircle)
                                 ->color('gray')
-                                ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusNoise, auth()->id())),
+                                ->action(fn () => $question->markReviewed(EmailQuestionReviewStatus::Noise, auth()->id())),
                             Action::make("markUnanswerable_{$question->id}")
                                 ->label(__('admin.actions.unanswerable'))
                                 ->icon(Heroicon::ExclamationTriangle)
                                 ->color('warning')
-                                ->action(fn () => $question->markReviewed(EmailQuestion::ReviewStatusUnanswerable, auth()->id())),
+                                ->action(fn () => $question->markReviewed(EmailQuestionReviewStatus::Unanswerable, auth()->id())),
                         ])
                             ->label(__('admin.actions.classify'))
                             ->icon(Heroicon::ChevronDown)
@@ -199,11 +201,9 @@ class GmailMessageResource extends Resource
                     ->schema([
                         TextEntry::make("ai_classification_{$question->id}")
                             ->label(__('admin.fields.ai_classification'))
-                            ->state(fn (): ?string => $question->fresh()->classification)
+                            ->state(fn (): ?EmailQuestionClassification => $question->fresh()->classification)
                             ->badge()
-                            ->placeholder(__('admin.placeholders.not_classified_yet'))
-                            ->color(fn (?string $state): string => $state === null ? 'gray' : EmailQuestion::classificationColor($state))
-                            ->formatStateUsing(fn (?string $state): string => $state === null ? __('admin.statuses.classification.not_classified') : EmailQuestion::classificationOptions()[$state] ?? $state),
+                            ->placeholder(__('admin.placeholders.not_classified_yet')),
                         TextEntry::make("ai_classification_confidence_{$question->id}")
                             ->label(__('admin.fields.ai_confidence'))
                             ->state(fn (): ?int => $question->fresh()->classification_confidence)
@@ -216,10 +216,8 @@ class GmailMessageResource extends Resource
                             ->columnSpanFull(),
                         TextEntry::make("review_status_{$question->id}")
                             ->label(__('admin.fields.human_decision'))
-                            ->state(fn (): string => $question->fresh()->review_status)
-                            ->badge()
-                            ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
-                            ->formatStateUsing(fn (string $state): string => EmailQuestion::reviewStatusOptions()[$state] ?? $state),
+                            ->state(fn (): EmailQuestionReviewStatus => $question->fresh()->review_status)
+                            ->badge(),
                         TextEntry::make("reviewer_{$question->id}")
                             ->label(__('admin.fields.reviewed_by'))
                             ->state(fn (): ?string => $question->fresh()->reviewer?->name)
@@ -228,7 +226,7 @@ class GmailMessageResource extends Resource
                     ->columns(2),
                 Section::make(__('admin.sections.answer'))
                     ->key("answer_{$question->id}")
-                    ->visible(fn (): bool => $question->fresh()->review_status === EmailQuestion::ReviewStatusValid)
+                    ->visible(fn (): bool => $question->fresh()->review_status === EmailQuestionReviewStatus::Valid)
                     ->afterHeader([
                         ActionGroup::make([
                             Action::make("generateAnswer_{$question->id}")
@@ -460,7 +458,7 @@ class GmailMessageResource extends Resource
         }
 
         return $freshRecord->questions->contains(
-            fn (EmailQuestion $question): bool => $question->review_status === EmailQuestion::ReviewStatusValid
+            fn (EmailQuestion $question): bool => $question->review_status === EmailQuestionReviewStatus::Valid
                 && $question->answerDraft?->status === AnswerDraftStatus::Approved,
         );
     }
@@ -532,8 +530,8 @@ class GmailMessageResource extends Resource
                         default => 'gray',
                     })
                     ->tooltip(fn (string $state): string => match ($state) {
-                        'pending' => __('admin.statuses.review.pending_review'),
-                        'drafted' => __('admin.statuses.thread_draft.created'),
+                        'pending' => EmailQuestionReviewStatus::PendingReview->getLabel(),
+                        'drafted' => EmailThreadDraftStatus::Created->getLabel(),
                         default => __('admin.placeholders.no_reply_needed'),
                     }),
                 TextColumn::make('id')->label(__('admin.fields.id'))->sortable()->copyable()->toggleable(isToggledHiddenByDefault: true),
@@ -550,8 +548,8 @@ class GmailMessageResource extends Resource
                 SelectFilter::make('processing_status')
                     ->label(__('admin.fields.status'))
                     ->options([
-                        'pending' => __('admin.statuses.review.pending_review'),
-                        'drafted' => __('admin.statuses.thread_draft.created'),
+                        'pending' => EmailQuestionReviewStatus::PendingReview->getLabel(),
+                        'drafted' => EmailThreadDraftStatus::Created->getLabel(),
                         'resolved' => __('admin.statuses.thread_draft.no_reply_needed'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -599,7 +597,7 @@ class GmailMessageResource extends Resource
             $query
                 ->where(function (Builder $query): void {
                     $query
-                        ->where('review_status', EmailQuestion::ReviewStatusValid)
+                        ->where('review_status', EmailQuestionReviewStatus::Valid)
                         ->where(function (Builder $query): void {
                             $query
                                 ->whereDoesntHave('answerDraft')
@@ -612,9 +610,9 @@ class GmailMessageResource extends Resource
                         });
                 })
                 ->orWhereNotIn('review_status', [
-                    EmailQuestion::ReviewStatusNoise,
-                    EmailQuestion::ReviewStatusUnanswerable,
-                    EmailQuestion::ReviewStatusValid,
+                    EmailQuestionReviewStatus::Noise,
+                    EmailQuestionReviewStatus::Unanswerable,
+                    EmailQuestionReviewStatus::Valid,
                 ]);
         });
     }
@@ -649,12 +647,12 @@ class GmailMessageResource extends Resource
                     else 1
                 end
             SQL, [
-                EmailQuestion::ReviewStatusValid,
+                EmailQuestionReviewStatus::Valid,
                 AnswerDraftStatus::Approved,
                 AnswerDraftStatus::Rejected,
-                EmailQuestion::ReviewStatusNoise,
-                EmailQuestion::ReviewStatusUnanswerable,
-                EmailQuestion::ReviewStatusValid,
+                EmailQuestionReviewStatus::Noise,
+                EmailQuestionReviewStatus::Unanswerable,
+                EmailQuestionReviewStatus::Valid,
             ])
             ->orderByDesc('internal_date')
             ->orderByDesc('gmail_messages.id');

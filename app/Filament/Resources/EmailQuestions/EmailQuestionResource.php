@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\EmailQuestions;
 
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionClassification;
+use App\Enums\EmailQuestionReviewStatus;
+use App\Enums\FaqRetrievalStatus;
 use App\Filament\Resources\EmailQuestions\Pages\ManageEmailQuestions;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Jobs\RetrieveEmailQuestionFaqMatches;
@@ -67,11 +70,13 @@ class EmailQuestionResource extends Resource
                     ->columnSpanFull(),
                 Select::make('review_status')
                     ->label(__('admin.fields.human_review'))
-                    ->options(EmailQuestion::humanReviewDecisionOptions())
+                    ->options(collect(EmailQuestionReviewStatus::reviewerDecisionCases())->mapWithKeys(
+                        fn (EmailQuestionReviewStatus $case): array => [$case->value => $case->getLabel()],
+                    ))
                     ->required(),
                 Select::make('classification')
                     ->label(__('admin.fields.ai_classification'))
-                    ->options(EmailQuestion::classificationOptions())
+                    ->options(EmailQuestionClassification::class)
                     ->disabled()
                     ->dehydrated(false),
                 TextInput::make('classification_confidence')
@@ -110,7 +115,7 @@ class EmailQuestionResource extends Resource
                                 ->icon(Heroicon::CheckCircle)
                                 ->color('success')
                                 ->action(fn (EmailQuestion $record): bool => $record->markReviewed(
-                                    EmailQuestion::ReviewStatusValid,
+                                    EmailQuestionReviewStatus::Valid,
                                     auth()->id(),
                                 )),
                             Action::make('markNoise')
@@ -118,7 +123,7 @@ class EmailQuestionResource extends Resource
                                 ->icon(Heroicon::XCircle)
                                 ->color('gray')
                                 ->action(fn (EmailQuestion $record): bool => $record->markReviewed(
-                                    EmailQuestion::ReviewStatusNoise,
+                                    EmailQuestionReviewStatus::Noise,
                                     auth()->id(),
                                 )),
                             Action::make('markUnanswerable')
@@ -126,7 +131,7 @@ class EmailQuestionResource extends Resource
                                 ->icon(Heroicon::ExclamationTriangle)
                                 ->color('warning')
                                 ->action(fn (EmailQuestion $record): bool => $record->markReviewed(
-                                    EmailQuestion::ReviewStatusUnanswerable,
+                                    EmailQuestionReviewStatus::Unanswerable,
                                     auth()->id(),
                                 )),
                         ])
@@ -137,9 +142,7 @@ class EmailQuestionResource extends Resource
                     ->schema([
                         TextEntry::make('review_status')
                             ->label(__('admin.fields.classification'))
-                            ->badge()
-                            ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
-                            ->formatStateUsing(fn (string $state): string => EmailQuestion::reviewStatusOptions()[$state] ?? $state),
+                            ->badge(),
                         TextEntry::make('reviewer.name')
                             ->label(__('admin.fields.reviewed_by'))
                             ->placeholder(__('admin.placeholders.not_reviewed_yet')),
@@ -152,8 +155,7 @@ class EmailQuestionResource extends Resource
                         TextEntry::make('classification')
                             ->label(__('admin.fields.ai_classification'))
                             ->badge()
-                            ->color(fn (?string $state): string => EmailQuestion::classificationColor($state))
-                            ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? __('admin.statuses.classification.unclassified')),
+                            ->placeholder(__('admin.statuses.classification.unclassified')),
                         TextEntry::make('classification_confidence')
                             ->label(__('admin.fields.ai_confidence'))
                             ->suffix('%')
@@ -170,7 +172,7 @@ class EmailQuestionResource extends Resource
                             ->icon(Heroicon::ArrowPath)
                             ->action(function (EmailQuestion $record): void {
                                 $record->update([
-                                    'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusQueued,
+                                    'faq_retrieval_status' => FaqRetrievalStatus::Queued,
                                     'faq_retrieval_error' => null,
                                     'faq_retrieval_failed_at' => null,
                                 ]);
@@ -188,9 +190,7 @@ class EmailQuestionResource extends Resource
                         TextEntry::make('faq_retrieval_status')
                             ->label(__('admin.fields.retrieval_status'))
                             ->badge()
-                            ->icon(fn (string $state): Heroicon|HtmlString|null => self::isActiveFaqRetrievalStatus($state) ? self::spinningStatusIcon() : null)
-                            ->color(fn (string $state): string => EmailQuestion::faqRetrievalStatusColor($state))
-                            ->formatStateUsing(fn (string $state): string => EmailQuestion::faqRetrievalStatusOptions()[$state] ?? $state),
+                            ->icon(fn (FaqRetrievalStatus $state): Heroicon|HtmlString|null => self::isActiveFaqRetrievalStatus($state) ? self::spinningStatusIcon() : null),
                         TextEntry::make('faq_retrieval_error')
                             ->label(__('admin.fields.retrieval_error'))
                             ->color('danger')
@@ -436,14 +436,11 @@ class EmailQuestionResource extends Resource
                 TextColumn::make('review_status')
                     ->label(__('admin.fields.human_review'))
                     ->badge()
-                    ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
-                    ->formatStateUsing(fn (string $state): string => EmailQuestion::reviewStatusOptions()[$state] ?? $state)
                     ->sortable(),
                 TextColumn::make('classification')
                     ->label(__('admin.fields.ai_classification'))
                     ->badge()
-                    ->color(fn (?string $state): string => EmailQuestion::classificationColor($state))
-                    ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? __('admin.statuses.classification.unclassified'))
+                    ->placeholder(__('admin.statuses.classification.unclassified'))
                     ->sortable(),
                 TextColumn::make('question_text')
                     ->label(__('admin.fields.question'))
@@ -475,10 +472,12 @@ class EmailQuestionResource extends Resource
             ->filters([
                 SelectFilter::make('review_status')
                     ->label(__('admin.fields.human_review'))
-                    ->options(EmailQuestion::humanReviewFilterOptions()),
+                    ->options(collect(EmailQuestionReviewStatus::reviewerFilterCases())->mapWithKeys(
+                        fn (EmailQuestionReviewStatus $case): array => [$case->value => $case->getLabel()],
+                    )),
                 SelectFilter::make('classification')
                     ->label(__('admin.fields.ai_classification'))
-                    ->options(EmailQuestion::classificationOptions()),
+                    ->options(EmailQuestionClassification::class),
             ])
             ->recordActions([
                 ViewAction::make()
@@ -496,14 +495,14 @@ class EmailQuestionResource extends Resource
 
     private static function canRunQuestionPipeline(EmailQuestion $record): bool
     {
-        return $record->fresh()->review_status === EmailQuestion::ReviewStatusValid;
+        return $record->fresh()->review_status === EmailQuestionReviewStatus::Valid;
     }
 
-    private static function isActiveFaqRetrievalStatus(string $status): bool
+    private static function isActiveFaqRetrievalStatus(FaqRetrievalStatus $status): bool
     {
         return in_array($status, [
-            EmailQuestion::FaqRetrievalStatusQueued,
-            EmailQuestion::FaqRetrievalStatusProcessing,
+            FaqRetrievalStatus::Queued,
+            FaqRetrievalStatus::Processing,
         ], true);
     }
 

@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
+use App\Enums\FaqRetrievalStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Services\EmailQuestions\EmailQuestionFaqRetrievalService;
@@ -63,7 +65,7 @@ class RetrieveEmailQuestionFaqMatches implements ShouldBeUnique, ShouldQueue
         $question = EmailQuestion::query()->findOrFail($this->emailQuestionId);
 
         $question->update([
-            'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusProcessing,
+            'faq_retrieval_status' => FaqRetrievalStatus::Processing,
             'faq_retrieval_error' => null,
             'faq_retrieval_started_at' => now(),
             'faq_retrieval_failed_at' => null,
@@ -72,7 +74,7 @@ class RetrieveEmailQuestionFaqMatches implements ShouldBeUnique, ShouldQueue
         $retrieval->retrieve($question);
 
         $question->update([
-            'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusCompleted,
+            'faq_retrieval_status' => FaqRetrievalStatus::Completed,
             'faq_retrieval_completed_at' => now(),
         ]);
 
@@ -87,7 +89,7 @@ class RetrieveEmailQuestionFaqMatches implements ShouldBeUnique, ShouldQueue
      */
     private function dispatchAnswerGeneration(EmailQuestion $question): void
     {
-        if ($question->review_status !== EmailQuestion::ReviewStatusValid) {
+        if ($question->review_status !== EmailQuestionReviewStatus::Valid) {
             return;
         }
 
@@ -115,7 +117,7 @@ class RetrieveEmailQuestionFaqMatches implements ShouldBeUnique, ShouldQueue
         EmailQuestion::query()
             ->whereKey($this->emailQuestionId)
             ->update([
-                'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusFailed,
+                'faq_retrieval_status' => FaqRetrievalStatus::Failed,
                 'faq_retrieval_error' => $exception?->getMessage(),
                 'faq_retrieval_failed_at' => now(),
             ]);

@@ -4,6 +4,7 @@ namespace App\Services\EmailQuestions;
 
 use App\Ai\Agents\EmailGreetingGenerator;
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Enums\EmailThreadDraftStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailTemplate;
@@ -32,7 +33,7 @@ class EmailThreadDraftComposerService
     public function composeForThread(string $threadId): ?EmailThreadDraft
     {
         $questions = EmailQuestion::query()
-            ->where('review_status', EmailQuestion::ReviewStatusValid)
+            ->where('review_status', EmailQuestionReviewStatus::Valid)
             ->whereHas('message', fn ($query) => $query->where('thread_id', $threadId))
             ->with(['answerDraft', 'message.mailbox'])
             ->get()

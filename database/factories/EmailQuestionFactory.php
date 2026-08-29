@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\EmailQuestionClassification;
+use App\Enums\EmailQuestionReviewStatus;
+use App\Enums\FaqRetrievalStatus;
 use App\Models\EmailQuestion;
 use App\Models\GmailMessage;
 use App\Models\User;
@@ -28,8 +31,8 @@ class EmailQuestionFactory extends Factory
             'classification' => null,
             'classification_confidence' => null,
             'classification_reason' => null,
-            'review_status' => EmailQuestion::ReviewStatusPendingReview,
-            'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusNotStarted,
+            'review_status' => EmailQuestionReviewStatus::PendingReview,
+            'faq_retrieval_status' => FaqRetrievalStatus::NotStarted,
             'faq_retrieval_error' => null,
             'faq_retrieval_started_at' => null,
             'faq_retrieval_completed_at' => null,
@@ -45,14 +48,14 @@ class EmailQuestionFactory extends Factory
     public function classifiedAsValid(): static
     {
         return $this->state(fn (): array => [
-            'classification' => EmailQuestion::ClassificationValidFaqQuestion,
+            'classification' => EmailQuestionClassification::ValidFaqQuestion,
             'classification_confidence' => 92,
             'classification_reason' => 'This is a customer FAQ question.',
             'classified_at' => now(),
         ]);
     }
 
-    public function reviewedAs(string $status): static
+    public function reviewedAs(EmailQuestionReviewStatus $status): static
     {
         return $this->state(fn (): array => [
             'review_status' => $status,

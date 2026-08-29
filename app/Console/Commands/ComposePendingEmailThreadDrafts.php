@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Jobs\ComposeEmailThreadDraft;
-use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\GmailMessage;
 use Illuminate\Console\Attributes\Description;
@@ -32,7 +32,7 @@ class ComposePendingEmailThreadDrafts extends Command
 
         GmailMessage::query()
             ->whereHas('questions', fn ($query) => $query
-                ->where('review_status', EmailQuestion::ReviewStatusValid)
+                ->where('review_status', EmailQuestionReviewStatus::Valid)
                 ->whereHas('answerDraft', fn ($draftQuery) => $draftQuery->where(
                     'status',
                     AnswerDraftStatus::Approved,

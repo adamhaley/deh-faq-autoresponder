@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\GmailMessages\Pages\ManageGmailMessages;
 use App\Models\EmailQuestion;
@@ -45,7 +46,7 @@ class GmailMessageReviewFlowTest extends TestCase
         ]);
         EmailQuestion::factory()
             ->for($newerResolvedMessage, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->reviewedAs(EmailQuestionReviewStatus::Noise)
             ->create();
 
         $newerPendingMessage = GmailMessage::factory()->create([
@@ -64,7 +65,7 @@ class GmailMessageReviewFlowTest extends TestCase
         ]);
         EmailQuestion::factory()
             ->for($olderResolvedMessage, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusUnanswerable)
+            ->reviewedAs(EmailQuestionReviewStatus::Unanswerable)
             ->create();
 
         $this->actingAs($reviewer);
@@ -91,7 +92,7 @@ class GmailMessageReviewFlowTest extends TestCase
         $draftedMessage = GmailMessage::factory()->create(['thread_id' => 'thread-filter-drafted']);
         $draftedQuestion = EmailQuestion::factory()
             ->for($draftedMessage, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $draftedQuestion->id,
@@ -102,7 +103,7 @@ class GmailMessageReviewFlowTest extends TestCase
         $resolvedMessage = GmailMessage::factory()->create();
         EmailQuestion::factory()
             ->for($resolvedMessage, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->reviewedAs(EmailQuestionReviewStatus::Noise)
             ->create();
 
         $this->actingAs($reviewer);
@@ -142,7 +143,7 @@ class GmailMessageReviewFlowTest extends TestCase
 
         $approvedQuestion = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create(['question_text' => 'Wie funktioniert das Investment?']);
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $approvedQuestion->id,
@@ -245,7 +246,7 @@ class GmailMessageReviewFlowTest extends TestCase
         $message = GmailMessage::factory()->create();
         EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->reviewedAs(EmailQuestionReviewStatus::Noise)
             ->create(['question_text' => 'ich sehe euch nicht, hore den Ton nicht']);
 
         $this->actingAs($reviewer);
@@ -296,7 +297,7 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertMountedActionModalSee('approve or resolve every question above first')
             ->assertMountedActionModalDontSee('No reply needed');
 
-        $question->markReviewed(EmailQuestion::ReviewStatusNoise, $reviewer->id);
+        $question->markReviewed(EmailQuestionReviewStatus::Noise, $reviewer->id);
 
         $component
             ->call('$refresh')
@@ -311,7 +312,7 @@ class GmailMessageReviewFlowTest extends TestCase
         $message = GmailMessage::factory()->create();
         $question = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create(['question_text' => 'Wie funktioniert das Investment?']);
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
@@ -335,7 +336,7 @@ class GmailMessageReviewFlowTest extends TestCase
         $message = GmailMessage::factory()->create(['thread_id' => 'thread-awaiting-draft']);
         $question = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create(['question_text' => 'Wie funktioniert das Investment?']);
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
@@ -366,7 +367,7 @@ class GmailMessageReviewFlowTest extends TestCase
         $draftedMessage = GmailMessage::factory()->create(['thread_id' => 'thread-drafted']);
         $draftedQuestion = EmailQuestion::factory()
             ->for($draftedMessage, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $draftedQuestion->id,
@@ -375,7 +376,7 @@ class GmailMessageReviewFlowTest extends TestCase
         EmailThreadDraft::factory()->create(['thread_id' => 'thread-drafted']);
 
         $resolvedMessage = GmailMessage::factory()->create();
-        EmailQuestion::factory()->for($resolvedMessage, 'message')->reviewedAs(EmailQuestion::ReviewStatusNoise)->create();
+        EmailQuestion::factory()->for($resolvedMessage, 'message')->reviewedAs(EmailQuestionReviewStatus::Noise)->create();
 
         $this->actingAs($reviewer);
 
@@ -406,7 +407,7 @@ class GmailMessageReviewFlowTest extends TestCase
             ->mountTableAction('view', $message)
             ->assertMountedActionModalDontSee('Regenerate draft answer');
 
-        $question->markReviewed(EmailQuestion::ReviewStatusValid, $reviewer->id);
+        $question->markReviewed(EmailQuestionReviewStatus::Valid, $reviewer->id);
 
         $component
             ->call('$refresh')
@@ -420,7 +421,7 @@ class GmailMessageReviewFlowTest extends TestCase
         $message = GmailMessage::factory()->create();
         EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create(['question_text' => 'Wie funktioniert das Investment?']);
 
         $this->actingAs($reviewer);
@@ -439,7 +440,7 @@ class GmailMessageReviewFlowTest extends TestCase
         $message = GmailMessage::factory()->create();
         $question = EmailQuestion::factory()
             ->for($message, 'message')
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create(['question_text' => 'Wie funktioniert das Investment?']);
 
         EmailQuestionAnswerDraft::factory()

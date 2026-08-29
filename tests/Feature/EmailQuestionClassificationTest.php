@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Ai\Agents\EmailQuestionClassifier;
+use App\Enums\EmailQuestionClassification;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Models\EmailQuestion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Prompts\AgentPrompt;
@@ -16,7 +18,7 @@ class EmailQuestionClassificationTest extends TestCase
     {
         EmailQuestionClassifier::fake([
             [
-                'classification' => EmailQuestion::ClassificationValidFaqQuestion,
+                'classification' => EmailQuestionClassification::ValidFaqQuestion->value,
                 'confidence' => 91,
                 'reason' => 'The text asks a clear question about gemstone appraisal.',
                 'normalized_question' => 'Wie werden die Wertgutachten für Edelsteine erstellt?',
@@ -34,11 +36,11 @@ class EmailQuestionClassificationTest extends TestCase
         $question = $question->fresh();
 
         $this->assertInstanceOf(EmailQuestion::class, $question);
-        $this->assertSame(EmailQuestion::ClassificationValidFaqQuestion, $question->classification);
+        $this->assertSame(EmailQuestionClassification::ValidFaqQuestion, $question->classification);
         $this->assertSame(91, $question->classification_confidence);
         $this->assertSame('The text asks a clear question about gemstone appraisal.', $question->classification_reason);
         $this->assertSame('Wie werden die Wertgutachten für Edelsteine erstellt?', $question->normalized_question);
-        $this->assertSame(EmailQuestion::ReviewStatusPendingReview, $question->review_status);
+        $this->assertSame(EmailQuestionReviewStatus::PendingReview, $question->review_status);
         $this->assertSame([], $question->classification_metadata['training_example_ids']);
         $this->assertNotNull($question->classified_at);
 
@@ -52,7 +54,7 @@ class EmailQuestionClassificationTest extends TestCase
     {
         EmailQuestionClassifier::fake([
             [
-                'classification' => EmailQuestion::ClassificationValidFaqQuestion,
+                'classification' => EmailQuestionClassification::ValidFaqQuestion->value,
                 'confidence' => 88,
                 'reason' => 'The text asks about whether an asset can be evaluated.',
                 'normalized_question' => 'Kann dieser Edelstein bewertet werden?',
@@ -60,20 +62,20 @@ class EmailQuestionClassificationTest extends TestCase
         ])->preventStrayPrompts();
 
         $validExample = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create([
                 'question_text' => 'Können geerbte Edelsteine bewertet werden?',
-                'classification' => EmailQuestion::ClassificationNoise,
+                'classification' => EmailQuestionClassification::Noise,
                 'classification_confidence' => 74,
                 'classification_reason' => 'Originally considered noise.',
                 'classified_at' => now(),
             ]);
 
         $noiseExample = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->reviewedAs(EmailQuestionReviewStatus::Noise)
             ->create([
                 'question_text' => 'hören ja, und 2 fotos',
-                'classification' => EmailQuestion::ClassificationNoise,
+                'classification' => EmailQuestionClassification::Noise,
                 'classification_confidence' => 95,
                 'classification_reason' => 'Fragmentary chat text.',
                 'classified_at' => now(),

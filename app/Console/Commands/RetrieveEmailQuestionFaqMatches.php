@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\EmailQuestionReviewStatus;
+use App\Enums\FaqRetrievalStatus;
 use App\Jobs\RetrieveEmailQuestionFaqMatches as RetrieveEmailQuestionFaqMatchesJob;
 use App\Models\EmailQuestion;
 use Illuminate\Console\Attributes\Description;
@@ -21,19 +23,19 @@ class RetrieveEmailQuestionFaqMatches extends Command
         $queuedQuestions = 0;
 
         EmailQuestion::query()
-            ->where('review_status', EmailQuestion::ReviewStatusValid)
+            ->where('review_status', EmailQuestionReviewStatus::Valid)
             ->whereNotNull('reviewed_at')
             ->whereDoesntHave('faqMatches')
             ->whereIn('faq_retrieval_status', [
-                EmailQuestion::FaqRetrievalStatusNotStarted,
-                EmailQuestion::FaqRetrievalStatusFailed,
+                FaqRetrievalStatus::NotStarted,
+                FaqRetrievalStatus::Failed,
             ])
             ->oldest('id')
             ->limit($limit)
             ->get()
             ->each(function (EmailQuestion $question) use (&$queuedQuestions): void {
                 $question->update([
-                    'faq_retrieval_status' => EmailQuestion::FaqRetrievalStatusQueued,
+                    'faq_retrieval_status' => FaqRetrievalStatus::Queued,
                     'faq_retrieval_error' => null,
                     'faq_retrieval_failed_at' => null,
                 ]);

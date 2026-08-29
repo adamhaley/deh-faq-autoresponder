@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\EmailQuestionReviewStatus;
 use App\Enums\UserRole;
-use App\Models\EmailQuestion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
@@ -37,14 +37,14 @@ class AdminLocalizationTest extends TestCase
 
         $this->assertSame(
             'Gültige Frage',
-            EmailQuestion::reviewStatusOptions()[EmailQuestion::ReviewStatusValid],
+            EmailQuestionReviewStatus::Valid->getLabel(),
         );
 
         App::setLocale('en');
 
         $this->assertSame(
             'Valid question',
-            EmailQuestion::reviewStatusOptions()[EmailQuestion::ReviewStatusValid],
+            EmailQuestionReviewStatus::Valid->getLabel(),
         );
     }
 

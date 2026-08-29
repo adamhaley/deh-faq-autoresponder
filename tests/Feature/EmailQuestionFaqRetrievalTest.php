@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\EmailQuestionReviewStatus;
+use App\Enums\FaqRetrievalStatus;
 use App\Filament\Resources\EmailQuestions\EmailQuestionResource;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Jobs\RetrieveEmailQuestionFaqMatches;
@@ -49,7 +51,7 @@ class EmailQuestionFaqRetrievalTest extends TestCase
         ]);
 
         $question = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create([
                 'question_text' => 'Kann ich in Edelsteine investieren?',
                 'normalized_question' => 'Wie funktioniert ein Edelstein-Investment?',
@@ -76,9 +78,9 @@ class EmailQuestionFaqRetrievalTest extends TestCase
             'question_text' => 'Kann ich in Edelsteine investieren?',
         ]);
 
-        $question->markReviewed(EmailQuestion::ReviewStatusValid, null);
+        $question->markReviewed(EmailQuestionReviewStatus::Valid, null);
 
-        $this->assertSame(EmailQuestion::FaqRetrievalStatusQueued, $question->refresh()->faq_retrieval_status);
+        $this->assertSame(FaqRetrievalStatus::Queued, $question->refresh()->faq_retrieval_status);
 
         Queue::assertPushed(
             RetrieveEmailQuestionFaqMatches::class,
@@ -94,7 +96,7 @@ class EmailQuestionFaqRetrievalTest extends TestCase
             'question_text' => 'Hallo',
         ]);
 
-        $question->markReviewed(EmailQuestion::ReviewStatusNoise, null);
+        $question->markReviewed(EmailQuestionReviewStatus::Noise, null);
 
         Queue::assertNotPushed(RetrieveEmailQuestionFaqMatches::class);
     }
@@ -104,13 +106,13 @@ class EmailQuestionFaqRetrievalTest extends TestCase
         Queue::fake();
 
         $validQuestion = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create([
                 'question_text' => 'Kann ich in Edelsteine investieren?',
             ]);
 
         EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusNoise)
+            ->reviewedAs(EmailQuestionReviewStatus::Noise)
             ->create([
                 'question_text' => 'Hallo',
             ]);
@@ -120,7 +122,7 @@ class EmailQuestionFaqRetrievalTest extends TestCase
             ->assertSuccessful();
 
         $this->assertSame(
-            EmailQuestion::FaqRetrievalStatusQueued,
+            FaqRetrievalStatus::Queued,
             $validQuestion->refresh()->faq_retrieval_status,
         );
 
@@ -142,7 +144,7 @@ class EmailQuestionFaqRetrievalTest extends TestCase
         ]);
 
         $question = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create([
                 'question_text' => 'Kann ich in Edelsteine investieren?',
             ]);
@@ -151,7 +153,7 @@ class EmailQuestionFaqRetrievalTest extends TestCase
             ->handle(app(EmailQuestionFaqRetrievalService::class));
 
         $this->assertSame(1, $question->faqMatches()->count());
-        $this->assertSame(EmailQuestion::FaqRetrievalStatusCompleted, $question->refresh()->faq_retrieval_status);
+        $this->assertSame(FaqRetrievalStatus::Completed, $question->refresh()->faq_retrieval_status);
         $this->assertNotNull($question->faq_retrieval_started_at);
         $this->assertNotNull($question->faq_retrieval_completed_at);
     }
@@ -168,7 +170,7 @@ class EmailQuestionFaqRetrievalTest extends TestCase
         ]);
 
         $question = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create([
                 'question_text' => 'Kann ich in Edelsteine investieren?',
             ]);
@@ -188,7 +190,7 @@ class EmailQuestionFaqRetrievalTest extends TestCase
         Embeddings::fake([[$this->embedding([1.0, 0.0])]]);
 
         $question = EmailQuestion::factory()
-            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->reviewedAs(EmailQuestionReviewStatus::Valid)
             ->create([
                 'question_text' => 'Kann ich in Edelsteine investieren?',
             ]);

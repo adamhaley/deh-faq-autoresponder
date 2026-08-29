@@ -2,7 +2,7 @@
 
 namespace App\Ai\Agents;
 
-use App\Models\EmailQuestion;
+use App\Enums\EmailQuestionClassification;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasStructuredOutput;
@@ -42,12 +42,10 @@ INSTRUCTIONS;
     {
         return [
             'classification' => $schema->string()
-                ->enum([
-                    EmailQuestion::ClassificationValidFaqQuestion,
-                    EmailQuestion::ClassificationNoise,
-                    EmailQuestion::ClassificationUnanswerable,
-                    EmailQuestion::ClassificationNeedsHuman,
-                ])
+                ->enum(array_map(
+                    fn (EmailQuestionClassification $case): string => $case->value,
+                    EmailQuestionClassification::cases(),
+                ))
                 ->required(),
             'confidence' => $schema->integer()->min(0)->max(100)->required(),
             'reason' => $schema->string()->required(),

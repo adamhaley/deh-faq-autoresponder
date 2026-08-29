@@ -3,6 +3,8 @@
 namespace App\Services\EmailQuestions;
 
 use App\Ai\Agents\EmailQuestionClassifier;
+use App\Enums\EmailQuestionClassification;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Models\EmailQuestion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -45,7 +47,7 @@ class EmailQuestionClassificationService
             'classification_confidence' => $confidence,
             'classification_reason' => $reason,
             'normalized_question' => $normalizedQuestion === '' ? null : $normalizedQuestion,
-            'review_status' => EmailQuestion::ReviewStatusPendingReview,
+            'review_status' => EmailQuestionReviewStatus::PendingReview,
             'classification_metadata' => [
                 'classifier' => EmailQuestionClassifier::class,
                 'training_example_ids' => $trainingExamples->pluck('id')->values()->all(),
@@ -102,23 +104,23 @@ PROMPT,
                 $query
                     ->where(function (Builder $query): void {
                         $query
-                            ->where('classification', EmailQuestion::ClassificationValidFaqQuestion)
-                            ->where('review_status', '!=', EmailQuestion::ReviewStatusValid);
+                            ->where('classification', EmailQuestionClassification::ValidFaqQuestion)
+                            ->where('review_status', '!=', EmailQuestionReviewStatus::Valid);
                     })
                     ->orWhere(function (Builder $query): void {
                         $query
-                            ->where('classification', EmailQuestion::ClassificationNoise)
-                            ->where('review_status', '!=', EmailQuestion::ReviewStatusNoise);
+                            ->where('classification', EmailQuestionClassification::Noise)
+                            ->where('review_status', '!=', EmailQuestionReviewStatus::Noise);
                     })
                     ->orWhere(function (Builder $query): void {
                         $query
-                            ->where('classification', EmailQuestion::ClassificationUnanswerable)
-                            ->where('review_status', '!=', EmailQuestion::ReviewStatusUnanswerable);
+                            ->where('classification', EmailQuestionClassification::Unanswerable)
+                            ->where('review_status', '!=', EmailQuestionReviewStatus::Unanswerable);
                     })
                     ->orWhere(function (Builder $query): void {
                         $query
-                            ->where('classification', EmailQuestion::ClassificationNeedsHuman)
-                            ->where('review_status', '!=', EmailQuestion::ReviewStatusNeedsHuman);
+                            ->where('classification', EmailQuestionClassification::NeedsHuman)
+                            ->where('review_status', '!=', EmailQuestionReviewStatus::NeedsHuman);
                     });
             })
             ->latest('reviewed_at')
@@ -128,9 +130,9 @@ PROMPT,
         $examples = $examples->merge($misalignments);
 
         foreach ([
-            EmailQuestion::ReviewStatusValid,
-            EmailQuestion::ReviewStatusNoise,
-            EmailQuestion::ReviewStatusUnanswerable,
+            EmailQuestionReviewStatus::Valid,
+            EmailQuestionReviewStatus::Noise,
+            EmailQuestionReviewStatus::Unanswerable,
         ] as $status) {
             $examples = $examples->merge(
                 $this->reviewedExampleQuery($question)
@@ -166,7 +168,7 @@ PROMPT,
             ->whereNotNull('reviewed_at')
             ->whereNotNull('reviewed_by_user_id')
             ->whereNotNull('question_text')
-            ->where('review_status', '!=', EmailQuestion::ReviewStatusPendingReview)
+            ->where('review_status', '!=', EmailQuestionReviewStatus::PendingReview)
             ->with('message:id,subject,from_email');
     }
 
@@ -193,7 +195,7 @@ EXAMPLE,
                     $index + 1,
                     $example->question_text,
                     $this->classificationLabel($example->classification),
-                    EmailQuestion::reviewStatusOptions()[$example->review_status] ?? $example->review_status,
+                    $example->review_status?->getLabel(),
                     $example->message?->subject ?? '',
                     $example->message?->from_email ?? '',
                 );
@@ -201,31 +203,18 @@ EXAMPLE,
             ->implode("\n\n");
     }
 
-    private function classificationLabel(?string $classification): string
+    private function classificationLabel(?EmailQuestionClassification $classification): string
     {
-        if ($classification === null || $classification === '') {
-            return 'Unclassified';
-        }
-
-        return EmailQuestion::classificationOptions()[$classification] ?? $classification;
+        return $classification?->getLabel() ?? 'Unclassified';
     }
 
-    private function classification(mixed $classification): string
+    private function classification(mixed $classification): EmailQuestionClassification
     {
         if (! is_string($classification)) {
-            return EmailQuestion::ClassificationNeedsHuman;
+            return EmailQuestionClassification::NeedsHuman;
         }
 
-        $allowed = [
-            EmailQuestion::ClassificationValidFaqQuestion,
-            EmailQuestion::ClassificationNoise,
-            EmailQuestion::ClassificationUnanswerable,
-            EmailQuestion::ClassificationNeedsHuman,
-        ];
-
-        return in_array($classification, $allowed, true)
-            ? $classification
-            : EmailQuestion::ClassificationNeedsHuman;
+        return EmailQuestionClassification::tryFrom($classification) ?? EmailQuestionClassification::NeedsHuman;
     }
 
     private function confidence(mixed $confidence): int

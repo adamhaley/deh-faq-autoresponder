@@ -2,7 +2,6 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\EmailQuestion;
 use App\Services\EmailQuestions\EmailQuestionDashboardMetrics;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -34,13 +33,10 @@ class RecentEmailQuestionMisalignments extends TableWidget
                 TextColumn::make('classification')
                     ->label(__('admin.fields.ai'))
                     ->badge()
-                    ->color(fn (?string $state): string => EmailQuestion::classificationColor($state))
-                    ->formatStateUsing(fn (?string $state): string => EmailQuestion::classificationOptions()[$state] ?? __('admin.statuses.classification.unclassified')),
+                    ->placeholder(__('admin.statuses.classification.unclassified')),
                 TextColumn::make('review_status')
                     ->label(__('admin.fields.human'))
-                    ->badge()
-                    ->color(fn (string $state): string => EmailQuestion::reviewStatusColor($state))
-                    ->formatStateUsing(fn (string $state): string => EmailQuestion::reviewStatusOptions()[$state] ?? $state),
+                    ->badge(),
                 TextColumn::make('reviewed_at')
                     ->label(__('admin.fields.reviewed'))
                     ->dateTime()

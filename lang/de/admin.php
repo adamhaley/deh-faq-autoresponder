@@ -142,26 +142,8 @@ return [
 
     'statuses' => [
         'classification' => [
-            'valid_faq_question' => 'Gültige Frage',
-            'noise' => 'Rauschen',
-            'unanswerable' => 'Nicht beantwortbar',
-            'needs_human' => 'Menschliche Prüfung nötig',
             'unclassified' => 'Nicht klassifiziert',
             'not_classified' => 'Nicht klassifiziert',
-        ],
-        'review' => [
-            'pending_review' => 'Prüfung ausstehend',
-            'valid' => 'Gültige Frage',
-            'noise' => 'Rauschen',
-            'unanswerable' => 'Nicht beantwortbar',
-            'needs_human' => 'Menschliche Prüfung nötig',
-        ],
-        'retrieval' => [
-            'not_started' => 'Nicht gestartet',
-            'queued' => 'In Warteschlange',
-            'processing' => 'In Bearbeitung',
-            'completed' => 'Abgeschlossen',
-            'failed' => 'Fehlgeschlagen',
         ],
         'thread_draft' => [
             'no_reply_needed' => 'Keine Antwort nötig',

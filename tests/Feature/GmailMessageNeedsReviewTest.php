@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\AnswerDraftStatus;
+use App\Enums\EmailQuestionReviewStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailThreadDraft;
@@ -25,7 +26,7 @@ class GmailMessageNeedsReviewTest extends TestCase
     {
         $message = GmailMessage::factory()->create();
         EmailQuestion::factory()->for($message, 'message')->create([
-            'review_status' => EmailQuestion::ReviewStatusPendingReview,
+            'review_status' => EmailQuestionReviewStatus::PendingReview,
         ]);
 
         $this->assertTrue($message->load('questions.answerDraft')->needsReview());
@@ -34,8 +35,8 @@ class GmailMessageNeedsReviewTest extends TestCase
     public function test_a_message_does_not_need_review_once_all_questions_are_noise_or_unanswerable(): void
     {
         $message = GmailMessage::factory()->create();
-        EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestion::ReviewStatusNoise)->create();
-        EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestion::ReviewStatusUnanswerable)->create();
+        EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestionReviewStatus::Noise)->create();
+        EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestionReviewStatus::Unanswerable)->create();
 
         $this->assertFalse($message->load('questions.answerDraft')->needsReview());
     }
@@ -43,7 +44,7 @@ class GmailMessageNeedsReviewTest extends TestCase
     public function test_a_message_needs_review_while_a_valid_question_has_no_terminal_answer(): void
     {
         $message = GmailMessage::factory()->create();
-        $question = EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestion::ReviewStatusValid)->create();
+        $question = EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestionReviewStatus::Valid)->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'status' => AnswerDraftStatus::Draft,
@@ -55,7 +56,7 @@ class GmailMessageNeedsReviewTest extends TestCase
     public function test_a_message_does_not_need_review_once_a_valid_question_is_approved(): void
     {
         $message = GmailMessage::factory()->create();
-        $question = EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestion::ReviewStatusValid)->create();
+        $question = EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestionReviewStatus::Valid)->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'status' => AnswerDraftStatus::Approved,
@@ -67,7 +68,7 @@ class GmailMessageNeedsReviewTest extends TestCase
     public function test_a_message_does_not_need_review_once_a_valid_question_is_rejected(): void
     {
         $message = GmailMessage::factory()->create();
-        $question = EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestion::ReviewStatusValid)->create();
+        $question = EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestionReviewStatus::Valid)->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'status' => AnswerDraftStatus::Rejected,
