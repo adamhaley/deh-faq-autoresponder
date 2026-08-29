@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\AnswerDraftStatus;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Services\EmailQuestions\AnswerSemanticSimilarityScorer;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -60,7 +61,7 @@ class ScoreAnswerSemanticSimilarity implements ShouldBeUnique, ShouldQueue
     {
         $draft = EmailQuestionAnswerDraft::find($this->draftId);
 
-        if ($draft === null || $draft->status !== EmailQuestionAnswerDraft::StatusApproved) {
+        if ($draft === null || $draft->status !== AnswerDraftStatus::Approved) {
             return;
         }
 

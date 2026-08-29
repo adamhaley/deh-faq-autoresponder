@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\AnswerDraftStatus;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Services\EmailQuestions\EmailQuestionAnswerDraftGenerationService;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -61,7 +62,7 @@ class GenerateEmailQuestionAnswerDraft implements ShouldBeUnique, ShouldQueue
         $draft = $this->queuedDraft();
 
         $draft->update([
-            'status' => EmailQuestionAnswerDraft::StatusGenerating,
+            'status' => AnswerDraftStatus::Generating,
             'generation_error' => null,
             'generation_started_at' => now(),
             'generation_failed_at' => null,
@@ -73,7 +74,7 @@ class GenerateEmailQuestionAnswerDraft implements ShouldBeUnique, ShouldQueue
     public function failed(?Throwable $exception): void
     {
         $this->queuedDraft()->update([
-            'status' => EmailQuestionAnswerDraft::StatusGenerationFailed,
+            'status' => AnswerDraftStatus::GenerationFailed,
             'generation_error' => $exception?->getMessage(),
             'generation_failed_at' => now(),
         ]);

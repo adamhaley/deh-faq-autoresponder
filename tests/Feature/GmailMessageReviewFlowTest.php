@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnswerDraftStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\GmailMessages\Pages\ManageGmailMessages;
 use App\Models\EmailQuestion;
@@ -94,7 +95,7 @@ class GmailMessageReviewFlowTest extends TestCase
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $draftedQuestion->id,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
         EmailThreadDraft::factory()->create(['thread_id' => 'thread-filter-drafted']);
 
@@ -146,7 +147,7 @@ class GmailMessageReviewFlowTest extends TestCase
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $approvedQuestion->id,
             'final_answer' => 'Sie investieren direkt.',
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         EmailQuestion::factory()
@@ -314,7 +315,7 @@ class GmailMessageReviewFlowTest extends TestCase
             ->create(['question_text' => 'Wie funktioniert das Investment?']);
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
-            'status' => EmailQuestionAnswerDraft::StatusQueued,
+            'status' => AnswerDraftStatus::Queued,
         ]);
 
         $this->actingAs($reviewer);
@@ -339,7 +340,7 @@ class GmailMessageReviewFlowTest extends TestCase
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'final_answer' => 'Sie investieren direkt.',
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         $this->actingAs($reviewer);
@@ -369,7 +370,7 @@ class GmailMessageReviewFlowTest extends TestCase
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $draftedQuestion->id,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
         EmailThreadDraft::factory()->create(['thread_id' => 'thread-drafted']);
 
@@ -446,7 +447,7 @@ class GmailMessageReviewFlowTest extends TestCase
             ->create([
                 'generated_answer' => 'Generated answer.',
                 'final_answer' => 'Final answer.',
-                'status' => EmailQuestionAnswerDraft::StatusDraft,
+                'status' => AnswerDraftStatus::Draft,
             ]);
 
         $this->actingAs($reviewer);

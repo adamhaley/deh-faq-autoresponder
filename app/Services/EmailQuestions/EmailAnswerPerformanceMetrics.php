@@ -2,6 +2,7 @@
 
 namespace App\Services\EmailQuestions;
 
+use App\Enums\AnswerDraftStatus;
 use App\Models\EmailQuestionAnswerDraft;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
@@ -16,7 +17,7 @@ class EmailAnswerPerformanceMetrics
         $start = now()->subDays($days - 1)->startOfDay();
         $end = now()->endOfDay();
         $draftsByDay = EmailQuestionAnswerDraft::query()
-            ->where('status', EmailQuestionAnswerDraft::StatusApproved)
+            ->where('status', AnswerDraftStatus::Approved)
             ->whereNotNull('reviewed_at')
             ->whereNotNull('generated_answer')
             ->whereNotNull('final_answer')

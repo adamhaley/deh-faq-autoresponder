@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnswerDraftStatus;
 use App\Jobs\ComposeEmailThreadDraft;
 use App\Jobs\ScoreAnswerSemanticSimilarity;
 use App\Models\EmailQuestionAnswerDraft;
@@ -23,7 +24,7 @@ class ScoreAnswerSemanticSimilarityTest extends TestCase
         $draft = EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'Original AI draft.',
             'final_answer' => 'Original AI draft.',
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         (new ScoreAnswerSemanticSimilarity($draft->id))->handle(app(AnswerSemanticSimilarityScorer::class));
@@ -36,7 +37,7 @@ class ScoreAnswerSemanticSimilarityTest extends TestCase
         $draft = EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'Draft answer.',
             'final_answer' => 'Draft answer.',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
         (new ScoreAnswerSemanticSimilarity($draft->id))->handle(app(AnswerSemanticSimilarityScorer::class));
@@ -50,10 +51,10 @@ class ScoreAnswerSemanticSimilarityTest extends TestCase
 
         $draft = EmailQuestionAnswerDraft::factory()->create([
             'final_answer' => 'Answer.',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
-        $draft->markReviewed(EmailQuestionAnswerDraft::StatusApproved, reviewerId: null);
+        $draft->markReviewed(AnswerDraftStatus::Approved, reviewerId: null);
 
         Queue::assertPushed(
             ScoreAnswerSemanticSimilarity::class,
@@ -70,7 +71,7 @@ class ScoreAnswerSemanticSimilarityTest extends TestCase
         $draft = EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'Original AI draft.',
             'final_answer' => 'Original AI draft.',
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         (new ScoreAnswerSemanticSimilarity($draft->id))->handle(app(AnswerSemanticSimilarityScorer::class));

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AnswerDraftStatus;
 use Database\Factories\GmailMessageFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -100,8 +101,8 @@ class GmailMessage extends Model
         return $this->questions->contains(function (EmailQuestion $question): bool {
             if ($question->review_status === EmailQuestion::ReviewStatusValid) {
                 return ! in_array($question->answerDraft?->status, [
-                    EmailQuestionAnswerDraft::StatusApproved,
-                    EmailQuestionAnswerDraft::StatusRejected,
+                    AnswerDraftStatus::Approved,
+                    AnswerDraftStatus::Rejected,
                 ], true);
             }
 

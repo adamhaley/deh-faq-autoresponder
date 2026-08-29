@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\AnswerDraftStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,7 +23,7 @@ class EmailQuestionAnswerDraftFactory extends Factory
             'email_question_id' => EmailQuestion::factory(),
             'generated_answer' => fake()->paragraph(),
             'final_answer' => null,
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
             'generation_reason' => 'Factory generated draft.',
             'generation_metadata' => ['source' => 'factory'],
             'generation_error' => null,

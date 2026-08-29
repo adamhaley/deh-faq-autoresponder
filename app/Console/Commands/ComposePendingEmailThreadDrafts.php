@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AnswerDraftStatus;
 use App\Jobs\ComposeEmailThreadDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -34,7 +35,7 @@ class ComposePendingEmailThreadDrafts extends Command
                 ->where('review_status', EmailQuestion::ReviewStatusValid)
                 ->whereHas('answerDraft', fn ($draftQuery) => $draftQuery->where(
                     'status',
-                    EmailQuestionAnswerDraft::StatusApproved,
+                    AnswerDraftStatus::Approved,
                 )))
             ->whereDoesntHave('threadDraft')
             ->pluck('thread_id')

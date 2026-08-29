@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Ai\Agents\EmailGreetingGenerator;
+use App\Enums\AnswerDraftStatus;
 use App\Enums\EmailThreadDraftStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -48,7 +49,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'final_answer' => 'Sie investieren direkt in Farbedelsteine.',
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         Http::preventStrayRequests();
@@ -92,7 +93,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'final_answer' => 'Original answer.',
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         EmailThreadDraft::factory()->create([
@@ -129,7 +130,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $approvedQuestion->id,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         $pendingQuestion = EmailQuestion::factory()
@@ -138,7 +139,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $pendingQuestion->id,
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
         Http::preventStrayRequests();

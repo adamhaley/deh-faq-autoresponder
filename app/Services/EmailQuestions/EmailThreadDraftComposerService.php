@@ -3,9 +3,9 @@
 namespace App\Services\EmailQuestions;
 
 use App\Ai\Agents\EmailGreetingGenerator;
+use App\Enums\AnswerDraftStatus;
 use App\Enums\EmailThreadDraftStatus;
 use App\Models\EmailQuestion;
-use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailTemplate;
 use App\Models\EmailThreadDraft;
 use App\Models\GmailMessage;
@@ -45,7 +45,7 @@ class EmailThreadDraftComposerService
         }
 
         $notReady = $questions->contains(
-            fn (EmailQuestion $question) => $question->answerDraft?->status !== EmailQuestionAnswerDraft::StatusApproved,
+            fn (EmailQuestion $question) => $question->answerDraft?->status !== AnswerDraftStatus::Approved,
         );
 
         if ($notReady) {

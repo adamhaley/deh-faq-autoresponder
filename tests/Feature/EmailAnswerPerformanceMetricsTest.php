@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnswerDraftStatus;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Services\EmailQuestions\EmailAnswerPerformanceMetrics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,7 +21,7 @@ class EmailAnswerPerformanceMetricsTest extends TestCase
             'generated_answer' => 'identical answer',
             'final_answer' => 'identical answer',
             'semantic_similarity_score' => 100,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
             'reviewed_at' => now()->subDays(2),
         ]);
 
@@ -28,7 +29,7 @@ class EmailAnswerPerformanceMetricsTest extends TestCase
             'generated_answer' => 'same answer',
             'final_answer' => 'same answer',
             'semantic_similarity_score' => 90,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
             'reviewed_at' => now()->subDay(),
         ]);
 
@@ -36,14 +37,14 @@ class EmailAnswerPerformanceMetricsTest extends TestCase
             'generated_answer' => 'abc',
             'final_answer' => 'xyz',
             'semantic_similarity_score' => null,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
             'reviewed_at' => now()->subDay(),
         ]);
 
         EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'ignored draft',
             'final_answer' => 'ignored final',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
             'reviewed_at' => now()->subDay(),
         ]);
 

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\AnswerDraftStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Services\EmailQuestions\EmailQuestionFaqRetrievalService;
@@ -95,8 +96,8 @@ class RetrieveEmailQuestionFaqMatches implements ShouldBeUnique, ShouldQueue
         }
 
         if (in_array($question->answerDraft?->status, [
-            EmailQuestionAnswerDraft::StatusApproved,
-            EmailQuestionAnswerDraft::StatusRejected,
+            AnswerDraftStatus::Approved,
+            AnswerDraftStatus::Rejected,
         ], true)) {
             return;
         }

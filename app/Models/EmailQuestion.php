@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AnswerDraftStatus;
 use App\Jobs\RetrieveEmailQuestionFaqMatches;
 use Database\Factories\EmailQuestionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -224,8 +225,8 @@ class EmailQuestion extends Model
     public function hasActiveAnswerDraftGeneration(): bool
     {
         return in_array($this->answerDraft()->value('status'), [
-            EmailQuestionAnswerDraft::StatusQueued,
-            EmailQuestionAnswerDraft::StatusGenerating,
+            AnswerDraftStatus::Queued,
+            AnswerDraftStatus::Generating,
         ], true);
     }
 
@@ -245,8 +246,8 @@ class EmailQuestion extends Model
                 ])
                 ->orWhereHas('answerDraft', function (Builder $query): void {
                     $query->whereIn('status', [
-                        EmailQuestionAnswerDraft::StatusQueued,
-                        EmailQuestionAnswerDraft::StatusGenerating,
+                        AnswerDraftStatus::Queued,
+                        AnswerDraftStatus::Generating,
                     ]);
                 });
         });

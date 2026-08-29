@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AnswerDraftStatus;
 use App\Jobs\ComposeEmailThreadDraft;
 use App\Jobs\ScoreAnswerSemanticSimilarity;
 use Database\Factories\EmailQuestionAnswerDraftFactory;
@@ -30,20 +31,6 @@ class EmailQuestionAnswerDraft extends Model
 {
     public const PendingGeneratedAnswer = '[Queued for generation]';
 
-    public const StatusQueued = 'queued';
-
-    public const StatusGenerating = 'generating';
-
-    public const StatusGenerationFailed = 'generation_failed';
-
-    public const StatusDraft = 'draft';
-
-    public const StatusApproved = 'approved';
-
-    public const StatusRejected = 'rejected';
-
-    public const StatusNeedsRevision = 'needs_revision';
-
     /** @use HasFactory<EmailQuestionAnswerDraftFactory> */
     use HasFactory;
 
@@ -58,6 +45,7 @@ class EmailQuestionAnswerDraft extends Model
             'generated_at' => 'datetime',
             'generation_failed_at' => 'datetime',
             'reviewed_at' => 'datetime',
+            'status' => AnswerDraftStatus::class,
         ];
     }
 
@@ -72,34 +60,6 @@ class EmailQuestionAnswerDraft extends Model
     }
 
     /**
-     * @return array<string, string>
-     */
-    public static function statusOptions(): array
-    {
-        return [
-            self::StatusQueued => __('admin.statuses.answer_draft.queued'),
-            self::StatusGenerating => __('admin.statuses.answer_draft.generating'),
-            self::StatusGenerationFailed => __('admin.statuses.answer_draft.generation_failed'),
-            self::StatusDraft => __('admin.statuses.answer_draft.draft'),
-            self::StatusApproved => __('admin.statuses.answer_draft.approved'),
-            self::StatusRejected => __('admin.statuses.answer_draft.rejected'),
-            self::StatusNeedsRevision => __('admin.statuses.answer_draft.needs_revision'),
-        ];
-    }
-
-    public static function statusColor(string $status): string
-    {
-        return match ($status) {
-            self::StatusQueued, self::StatusGenerating => 'info',
-            self::StatusGenerationFailed => 'danger',
-            self::StatusApproved => 'success',
-            self::StatusRejected => 'danger',
-            self::StatusNeedsRevision => 'warning',
-            default => 'gray',
-        };
-    }
-
-    /**
      * @return array<string, mixed>
      */
     public static function queuedAttributes(): array
@@ -108,7 +68,7 @@ class EmailQuestionAnswerDraft extends Model
             'generated_answer' => self::PendingGeneratedAnswer,
             'final_answer' => null,
             'semantic_similarity_score' => null,
-            'status' => self::StatusQueued,
+            'status' => AnswerDraftStatus::Queued,
             'generation_reason' => null,
             'generation_metadata' => null,
             'generation_error' => null,
@@ -120,7 +80,7 @@ class EmailQuestionAnswerDraft extends Model
         ];
     }
 
-    public function markReviewed(string $status, ?int $reviewerId, ?string $finalAnswer = null): bool
+    public function markReviewed(AnswerDraftStatus $status, ?int $reviewerId, ?string $finalAnswer = null): bool
     {
         $finalAnswer ??= $this->final_answer ?? $this->generated_answer;
 
@@ -148,7 +108,7 @@ class EmailQuestionAnswerDraft extends Model
      */
     public function syncApprovedSideEffects(): void
     {
-        if ($this->status !== self::StatusApproved) {
+        if ($this->status !== AnswerDraftStatus::Approved) {
             return;
         }
 

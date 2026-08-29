@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnswerDraftStatus;
 use App\Jobs\ComposeEmailThreadDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -27,7 +28,7 @@ class ComposePendingEmailThreadDraftsTest extends TestCase
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         $this->artisan('email-questions:compose-pending-drafts')
@@ -52,7 +53,7 @@ class ComposePendingEmailThreadDraftsTest extends TestCase
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         EmailThreadDraft::factory()->create(['thread_id' => 'thread-already-composed']);
@@ -76,7 +77,7 @@ class ComposePendingEmailThreadDraftsTest extends TestCase
             ->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
         $this->artisan('email-questions:compose-pending-drafts')

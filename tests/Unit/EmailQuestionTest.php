@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\AnswerDraftStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use Tests\TestCase;
@@ -50,7 +51,7 @@ class EmailQuestionTest extends TestCase
     {
         $question = EmailQuestion::factory()
             ->has(EmailQuestionAnswerDraft::factory()->state([
-                'status' => EmailQuestionAnswerDraft::StatusGenerating,
+                'status' => AnswerDraftStatus::Generating,
             ]), 'answerDraft')
             ->create();
 
@@ -59,7 +60,7 @@ class EmailQuestionTest extends TestCase
         $this->assertTrue(EmailQuestion::query()->withActiveAsyncPipeline()->whereKey($question)->exists());
 
         $question->answerDraft->update([
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
         $this->assertFalse($question->refresh()->hasActiveAnswerDraftGeneration());
@@ -73,7 +74,7 @@ class EmailQuestionTest extends TestCase
             'generated_answer' => EmailQuestionAnswerDraft::PendingGeneratedAnswer,
             'final_answer' => null,
             'semantic_similarity_score' => null,
-            'status' => EmailQuestionAnswerDraft::StatusQueued,
+            'status' => AnswerDraftStatus::Queued,
             'generation_reason' => null,
             'generation_metadata' => null,
             'generation_error' => null,

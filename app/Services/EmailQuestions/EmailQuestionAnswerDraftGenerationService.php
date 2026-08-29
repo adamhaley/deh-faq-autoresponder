@@ -3,6 +3,7 @@
 namespace App\Services\EmailQuestions;
 
 use App\Ai\Agents\EmailQuestionAnswerGenerator;
+use App\Enums\AnswerDraftStatus;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -25,7 +26,7 @@ class EmailQuestionAnswerDraftGenerationService
                     ->whereDoesntHave('answerDraft')
                     ->orWhereHas('answerDraft', fn ($drafts) => $drafts->where(
                         'status',
-                        EmailQuestionAnswerDraft::StatusGenerationFailed,
+                        AnswerDraftStatus::GenerationFailed,
                     ));
             })
             ->with(['faqMatches.faqEntry.approvedResponse', 'message:id,subject,from_email,snippet,text_body'])
@@ -74,7 +75,7 @@ class EmailQuestionAnswerDraftGenerationService
             [
                 'generated_answer' => $answer,
                 'final_answer' => $answer,
-                'status' => EmailQuestionAnswerDraft::StatusDraft,
+                'status' => AnswerDraftStatus::Draft,
                 'generation_reason' => $reason,
                 'generation_metadata' => [
                     'agent' => EmailQuestionAnswerGenerator::class,

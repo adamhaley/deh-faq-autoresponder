@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnswerDraftStatus;
 use App\Models\EmailQuestionAnswerDraft;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Embeddings;
@@ -19,28 +20,28 @@ class BackfillAnswerSemanticSimilarityScoresTest extends TestCase
         $missingScore = EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'Generated.',
             'final_answer' => 'Final.',
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
             'semantic_similarity_score' => null,
         ]);
 
         EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'Generated.',
             'final_answer' => 'Final.',
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
             'semantic_similarity_score' => 82,
         ]);
 
         EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'Generated.',
             'final_answer' => 'Final.',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
             'semantic_similarity_score' => null,
         ]);
 
         EmailQuestionAnswerDraft::factory()->create([
             'generated_answer' => 'Generated.',
             'final_answer' => null,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
             'semantic_similarity_score' => null,
         ]);
 
@@ -59,7 +60,7 @@ class BackfillAnswerSemanticSimilarityScoresTest extends TestCase
         EmailQuestionAnswerDraft::factory()->count(3)->create([
             'generated_answer' => 'Generated.',
             'final_answer' => 'Final.',
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
             'semantic_similarity_score' => null,
         ]);
 

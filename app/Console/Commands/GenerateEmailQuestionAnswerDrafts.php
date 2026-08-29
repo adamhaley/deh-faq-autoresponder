@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AnswerDraftStatus;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -29,7 +30,7 @@ class GenerateEmailQuestionAnswerDrafts extends Command
                     ->whereDoesntHave('answerDraft')
                     ->orWhereHas('answerDraft', fn ($drafts) => $drafts->where(
                         'status',
-                        EmailQuestionAnswerDraft::StatusGenerationFailed,
+                        AnswerDraftStatus::GenerationFailed,
                     ));
             })
             ->oldest('id')

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EmailQuestions;
 
+use App\Enums\AnswerDraftStatus;
 use App\Filament\Resources\EmailQuestions\Pages\ManageEmailQuestions;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Jobs\RetrieveEmailQuestionFaqMatches;
@@ -270,7 +271,7 @@ class EmailQuestionResource extends Resource
                                 ->icon(Heroicon::CheckCircle)
                                 ->color('success')
                                 ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
-                                    EmailQuestionAnswerDraft::StatusApproved,
+                                    AnswerDraftStatus::Approved,
                                     auth()->id(),
                                 )),
                             Action::make('needsRevisionAnswerDraft')
@@ -278,7 +279,7 @@ class EmailQuestionResource extends Resource
                                 ->icon(Heroicon::ExclamationTriangle)
                                 ->color('warning')
                                 ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
-                                    EmailQuestionAnswerDraft::StatusNeedsRevision,
+                                    AnswerDraftStatus::NeedsRevision,
                                     auth()->id(),
                                 )),
                             Action::make('rejectAnswerDraft')
@@ -286,7 +287,7 @@ class EmailQuestionResource extends Resource
                                 ->icon(Heroicon::XCircle)
                                 ->color('danger')
                                 ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
-                                    EmailQuestionAnswerDraft::StatusRejected,
+                                    AnswerDraftStatus::Rejected,
                                     auth()->id(),
                                 )),
                         ])
@@ -297,12 +298,10 @@ class EmailQuestionResource extends Resource
                     ->schema([
                         TextEntry::make('answerDraft.status')
                             ->label(__('admin.fields.status'))
-                            ->state(fn (EmailQuestion $record): ?string => $record->answerDraft()->value('status'))
+                            ->state(fn (EmailQuestion $record): ?AnswerDraftStatus => $record->answerDraft()->value('status'))
                             ->badge()
-                            ->icon(fn (?string $state): Heroicon|HtmlString|null => self::isActiveAnswerDraftStatus($state) ? self::spinningStatusIcon() : null)
-                            ->placeholder(__('admin.placeholders.no_draft_generated_yet'))
-                            ->color(fn (?string $state): string => $state === null ? 'gray' : EmailQuestionAnswerDraft::statusColor($state))
-                            ->formatStateUsing(fn (?string $state): string => $state === null ? __('admin.placeholders.no_draft') : EmailQuestionAnswerDraft::statusOptions()[$state] ?? $state),
+                            ->icon(fn (?AnswerDraftStatus $state): Heroicon|HtmlString|null => self::isActiveAnswerDraftStatus($state) ? self::spinningStatusIcon() : null)
+                            ->placeholder(__('admin.placeholders.no_draft_generated_yet')),
                         TextEntry::make('answerDraft.generated_at')
                             ->label(__('admin.fields.generated_at'))
                             ->state(fn (EmailQuestion $record): mixed => $record->answerDraft()->value('generated_at'))
@@ -377,7 +376,7 @@ class EmailQuestionResource extends Resource
                                 ->color('success')
                                 ->outlined()
                                 ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
-                                    EmailQuestionAnswerDraft::StatusApproved,
+                                    AnswerDraftStatus::Approved,
                                     auth()->id(),
                                 )),
                             Action::make('quickNeedsRevisionAnswerDraft')
@@ -386,7 +385,7 @@ class EmailQuestionResource extends Resource
                                 ->color('warning')
                                 ->outlined()
                                 ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
-                                    EmailQuestionAnswerDraft::StatusNeedsRevision,
+                                    AnswerDraftStatus::NeedsRevision,
                                     auth()->id(),
                                 )),
                             Action::make('quickRejectAnswerDraft')
@@ -395,7 +394,7 @@ class EmailQuestionResource extends Resource
                                 ->color('danger')
                                 ->outlined()
                                 ->action(fn (EmailQuestion $record): ?bool => $record->answerDraft?->markReviewed(
-                                    EmailQuestionAnswerDraft::StatusRejected,
+                                    AnswerDraftStatus::Rejected,
                                     auth()->id(),
                                 )),
                         ])
@@ -508,11 +507,11 @@ class EmailQuestionResource extends Resource
         ], true);
     }
 
-    private static function isActiveAnswerDraftStatus(?string $status): bool
+    private static function isActiveAnswerDraftStatus(?AnswerDraftStatus $status): bool
     {
         return in_array($status, [
-            EmailQuestionAnswerDraft::StatusQueued,
-            EmailQuestionAnswerDraft::StatusGenerating,
+            AnswerDraftStatus::Queued,
+            AnswerDraftStatus::Generating,
         ], true);
     }
 

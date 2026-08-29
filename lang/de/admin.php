@@ -163,15 +163,6 @@ return [
             'completed' => 'Abgeschlossen',
             'failed' => 'Fehlgeschlagen',
         ],
-        'answer_draft' => [
-            'queued' => 'In Warteschlange',
-            'generating' => 'Wird generiert',
-            'generation_failed' => 'Generierung fehlgeschlagen',
-            'draft' => 'Entwurf',
-            'approved' => 'Freigegeben',
-            'rejected' => 'Abgelehnt',
-            'needs_revision' => 'Überarbeitung nötig',
-        ],
         'thread_draft' => [
             'no_reply_needed' => 'Keine Antwort nötig',
         ],

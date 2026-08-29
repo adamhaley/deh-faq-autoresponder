@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AnswerDraftStatus;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Services\EmailQuestions\AnswerSemanticSimilarityScorer;
 use Illuminate\Console\Attributes\Description;
@@ -26,7 +27,7 @@ class BackfillAnswerSemanticSimilarityScores extends Command
         $limit = max(1, (int) $this->option('limit'));
 
         $drafts = EmailQuestionAnswerDraft::query()
-            ->where('status', EmailQuestionAnswerDraft::StatusApproved)
+            ->where('status', AnswerDraftStatus::Approved)
             ->whereNull('semantic_similarity_score')
             ->whereNotNull('generated_answer')
             ->whereNotNull('final_answer')

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Ai\Agents\EmailQuestionAnswerGenerator;
+use App\Enums\AnswerDraftStatus;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -62,7 +63,7 @@ class EmailQuestionAnswerDraftGenerationTest extends TestCase
         $draft = app(EmailQuestionAnswerDraftGenerationService::class)->generate($question);
 
         $this->assertSame($question->id, $draft->email_question_id);
-        $this->assertSame(EmailQuestionAnswerDraft::StatusDraft, $draft->status);
+        $this->assertSame(AnswerDraftStatus::Draft, $draft->status);
         $this->assertSame('Ja, Aktien können im Rahmen der Umwandlung besprochen werden.', $draft->generated_answer);
         $this->assertSame($draft->generated_answer, $draft->final_answer);
         $this->assertSame('Used the highest similarity FAQ and approved response guidance.', $draft->generation_reason);
@@ -106,7 +107,7 @@ class EmailQuestionAnswerDraftGenerationTest extends TestCase
         $draft = EmailQuestionAnswerDraft::query()->sole();
 
         $this->assertSame($readyQuestion->id, $draft->email_question_id);
-        $this->assertSame(EmailQuestionAnswerDraft::StatusQueued, $draft->status);
+        $this->assertSame(AnswerDraftStatus::Queued, $draft->status);
         $this->assertNull($draft->generated_at);
         $this->assertNull($draft->generation_started_at);
 
@@ -137,7 +138,7 @@ class EmailQuestionAnswerDraftGenerationTest extends TestCase
 
         $draft = EmailQuestionAnswerDraft::query()->whereBelongsTo($question)->sole();
 
-        $this->assertSame(EmailQuestionAnswerDraft::StatusDraft, $draft->status);
+        $this->assertSame(AnswerDraftStatus::Draft, $draft->status);
         $this->assertSame('Das ist ein geprüfter Antwortentwurf.', $draft->generated_answer);
         $this->assertNotNull($draft->generation_started_at);
         $this->assertNull($draft->generation_failed_at);

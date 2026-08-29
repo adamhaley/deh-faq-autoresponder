@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnswerDraftStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailThreadDraft;
@@ -45,7 +46,7 @@ class GmailMessageNeedsReviewTest extends TestCase
         $question = EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestion::ReviewStatusValid)->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
         $this->assertTrue($message->load('questions.answerDraft')->needsReview());
@@ -57,7 +58,7 @@ class GmailMessageNeedsReviewTest extends TestCase
         $question = EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestion::ReviewStatusValid)->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         $this->assertFalse($message->load('questions.answerDraft')->needsReview());
@@ -69,7 +70,7 @@ class GmailMessageNeedsReviewTest extends TestCase
         $question = EmailQuestion::factory()->for($message, 'message')->reviewedAs(EmailQuestion::ReviewStatusValid)->create();
         EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
-            'status' => EmailQuestionAnswerDraft::StatusRejected,
+            'status' => AnswerDraftStatus::Rejected,
         ]);
 
         $this->assertFalse($message->load('questions.answerDraft')->needsReview());

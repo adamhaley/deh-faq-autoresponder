@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnswerDraftStatus;
 use App\Jobs\ComposeEmailThreadDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
@@ -44,10 +45,10 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
             'email_question_id' => $question->id,
             'generated_answer' => 'Original AI draft.',
             'final_answer' => 'Operator-edited final answer.',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
-        $draft->markReviewed(EmailQuestionAnswerDraft::StatusApproved, reviewerId: User::factory()->create()->id);
+        $draft->markReviewed(AnswerDraftStatus::Approved, reviewerId: User::factory()->create()->id);
 
         $override = FaqApprovedResponse::query()->where('faq_entry_id', $bestMatch->id)->sole();
 
@@ -79,10 +80,10 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
         $draft = EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'final_answer' => 'Fresh operator-approved answer.',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
-        $draft->markReviewed(EmailQuestionAnswerDraft::StatusApproved, reviewerId: User::factory()->create()->id);
+        $draft->markReviewed(AnswerDraftStatus::Approved, reviewerId: User::factory()->create()->id);
 
         $this->assertSame(1, FaqApprovedResponse::query()->where('faq_entry_id', $faqEntry->id)->count());
         $this->assertSame(
@@ -105,11 +106,11 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
         $draft = EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'final_answer' => 'Not good enough.',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
-        $draft->markReviewed(EmailQuestionAnswerDraft::StatusRejected, reviewerId: User::factory()->create()->id);
-        $draft->markReviewed(EmailQuestionAnswerDraft::StatusNeedsRevision, reviewerId: User::factory()->create()->id);
+        $draft->markReviewed(AnswerDraftStatus::Rejected, reviewerId: User::factory()->create()->id);
+        $draft->markReviewed(AnswerDraftStatus::NeedsRevision, reviewerId: User::factory()->create()->id);
 
         $this->assertSame(0, FaqApprovedResponse::query()->count());
     }
@@ -123,10 +124,10 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
         $draft = EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'final_answer' => 'Answer with no retrieved matches.',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
-        $draft->markReviewed(EmailQuestionAnswerDraft::StatusApproved, reviewerId: User::factory()->create()->id);
+        $draft->markReviewed(AnswerDraftStatus::Approved, reviewerId: User::factory()->create()->id);
 
         $this->assertSame(0, FaqApprovedResponse::query()->count());
     }
@@ -141,10 +142,10 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
         $draft = EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'final_answer' => 'Answer.',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
-        $draft->markReviewed(EmailQuestionAnswerDraft::StatusApproved, reviewerId: User::factory()->create()->id);
+        $draft->markReviewed(AnswerDraftStatus::Approved, reviewerId: User::factory()->create()->id);
 
         Queue::assertPushed(
             ComposeEmailThreadDraft::class,
@@ -160,7 +161,7 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
         $draft = EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'final_answer' => 'Original.',
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
+            'status' => AnswerDraftStatus::Approved,
         ]);
 
         Queue::fake();
@@ -184,7 +185,7 @@ class EmailQuestionAnswerDraftReviewTest extends TestCase
         $draft = EmailQuestionAnswerDraft::factory()->create([
             'email_question_id' => $question->id,
             'final_answer' => 'Original.',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
+            'status' => AnswerDraftStatus::Draft,
         ]);
 
         $draft->update(['final_answer' => 'Still just a draft.']);

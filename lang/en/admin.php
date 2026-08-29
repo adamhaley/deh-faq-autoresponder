@@ -165,15 +165,6 @@ return [
             'completed' => 'Completed',
             'failed' => 'Failed',
         ],
-        'answer_draft' => [
-            'queued' => 'Queued',
-            'generating' => 'Generating',
-            'generation_failed' => 'Generation failed',
-            'draft' => 'Draft',
-            'approved' => 'Approved',
-            'rejected' => 'Rejected',
-            'needs_revision' => 'Needs revision',
-        ],
         'thread_draft' => [
             'no_reply_needed' => 'No reply needed',
         ],
