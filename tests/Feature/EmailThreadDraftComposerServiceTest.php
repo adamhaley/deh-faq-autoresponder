@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Ai\Agents\EmailGreetingGenerator;
+use App\Enums\EmailThreadDraftStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailTemplate;
@@ -65,7 +66,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
 
         $this->assertInstanceOf(EmailThreadDraft::class, $draft);
         $this->assertSame('draft-123', $draft->gmail_draft_id);
-        $this->assertSame(EmailThreadDraft::StatusCreated, $draft->status);
+        $this->assertSame(EmailThreadDraftStatus::Created, $draft->status);
         $this->assertSame('Ihre Webinarfrage', $draft->subject);
         $this->assertStringContainsString('Sehr geehrte Frau Schmidt', $draft->body);
         $this->assertStringContainsString('Wie funktioniert das Investment?', $draft->body);
@@ -112,7 +113,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
         $draft = app(EmailThreadDraftComposerService::class)->composeForThread('thread-xyz');
 
         $this->assertSame('existing-draft-id', $draft->gmail_draft_id);
-        $this->assertSame(EmailThreadDraft::StatusUpdated, $draft->status);
+        $this->assertSame(EmailThreadDraftStatus::Updated, $draft->status);
         $this->assertSame(1, EmailThreadDraft::query()->count());
     }
 

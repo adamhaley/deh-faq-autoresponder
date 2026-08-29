@@ -3,6 +3,7 @@
 namespace App\Services\EmailQuestions;
 
 use App\Ai\Agents\EmailGreetingGenerator;
+use App\Enums\EmailThreadDraftStatus;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailTemplate;
@@ -95,11 +96,11 @@ class EmailThreadDraftComposerService
                 : $this->gmail->createDraft($mailbox, $raw, $threadId);
 
             $draft->gmail_draft_id = $response['id'] ?? $draft->gmail_draft_id;
-            $draft->status = $wasExisting ? EmailThreadDraft::StatusUpdated : EmailThreadDraft::StatusCreated;
+            $draft->status = $wasExisting ? EmailThreadDraftStatus::Updated : EmailThreadDraftStatus::Created;
             $draft->last_error = null;
             $draft->composed_at = now();
         } catch (Throwable $exception) {
-            $draft->status = EmailThreadDraft::StatusFailed;
+            $draft->status = EmailThreadDraftStatus::Failed;
             $draft->last_error = $exception->getMessage();
 
             report($exception);

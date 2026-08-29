@@ -173,9 +173,6 @@ return [
             'needs_revision' => 'Überarbeitung nötig',
         ],
         'thread_draft' => [
-            'created' => 'Entwurf erstellt',
-            'updated' => 'Entwurf aktualisiert',
-            'failed' => 'Fehlgeschlagen',
             'no_reply_needed' => 'Keine Antwort nötig',
         ],
     ],

@@ -175,9 +175,6 @@ return [
             'needs_revision' => 'Needs revision',
         ],
         'thread_draft' => [
-            'created' => 'Draft created',
-            'updated' => 'Draft updated',
-            'failed' => 'Failed',
             'no_reply_needed' => 'No reply needed',
         ],
     ],

@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources\GmailMessages;
 
+use App\Enums\EmailThreadDraftStatus;
 use App\Filament\Resources\EmailTemplates\EmailTemplateResource;
 use App\Filament\Resources\GmailMessages\Pages\ManageGmailMessages;
 use App\Jobs\GenerateEmailQuestionAnswerDraft;
 use App\Models\EmailQuestion;
 use App\Models\EmailQuestionAnswerDraft;
 use App\Models\EmailTemplate;
-use App\Models\EmailThreadDraft;
 use App\Models\GmailMessage;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -396,10 +396,9 @@ class GmailMessageResource extends Resource
         return [
             TextEntry::make('draft_status')
                 ->label(__('admin.fields.status'))
-                ->state(fn (): ?string => $record->threadDraft()->value('status'))
+                ->state(fn (): ?EmailThreadDraftStatus => $record->threadDraft()->value('status'))
                 ->badge()
-                ->color(fn (?string $state): string => $state === null ? 'gray' : EmailThreadDraft::statusColor($state))
-                ->formatStateUsing(fn (?string $state): string => $state === null ? __('admin.placeholders.no_draft') : EmailThreadDraft::statusOptions()[$state] ?? $state),
+                ->placeholder(__('admin.placeholders.no_draft')),
             TextEntry::make('draft_composed_at')
                 ->label(__('admin.fields.composed_at'))
                 ->state(fn (): mixed => $record->threadDraft()->value('composed_at'))
@@ -419,15 +418,15 @@ class GmailMessageResource extends Resource
                 ->state(fn (): ?string => $record->threadDraft()->value('last_error'))
                 ->color('danger')
                 ->placeholder(__('admin.placeholders.no_error'))
-                ->visible(fn (): bool => $record->threadDraft()->value('status') === EmailThreadDraft::StatusFailed)
+                ->visible(fn (): bool => $record->threadDraft()->value('status') === EmailThreadDraftStatus::Failed)
                 ->columnSpanFull(),
             TextEntry::make('draft_next_step')
                 ->label('')
                 ->state(__('admin.placeholders.gmail_draft_ready'))
                 ->color('info')
                 ->visible(fn (): bool => in_array($record->threadDraft()->value('status'), [
-                    EmailThreadDraft::StatusCreated,
-                    EmailThreadDraft::StatusUpdated,
+                    EmailThreadDraftStatus::Created,
+                    EmailThreadDraftStatus::Updated,
                 ], true))
                 ->columnSpanFull(),
         ];

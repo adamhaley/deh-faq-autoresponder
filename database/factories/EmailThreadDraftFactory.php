@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\EmailThreadDraftStatus;
 use App\Models\EmailThreadDraft;
 use App\Models\GmailMailbox;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,7 +25,7 @@ class EmailThreadDraftFactory extends Factory
             'gmail_draft_id' => null,
             'subject' => fake()->sentence(),
             'body' => '<p>Body</p>',
-            'status' => EmailThreadDraft::StatusCreated,
+            'status' => EmailThreadDraftStatus::Created,
             'last_error' => null,
             'composed_at' => now(),
         ];
