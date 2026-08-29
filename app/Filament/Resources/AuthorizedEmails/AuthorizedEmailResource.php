@@ -53,9 +53,7 @@ class AuthorizedEmailResource extends Resource
                 ->required()
                 ->unique(ignoreRecord: true),
             Select::make('role')
-                ->options(collect(UserRole::cases())->mapWithKeys(
-                    fn (UserRole $role): array => [$role->value => ucfirst($role->value)],
-                ))
+                ->options(UserRole::class)
                 ->required()
                 ->default(UserRole::Viewer->value),
             Toggle::make('is_active')

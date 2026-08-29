@@ -2,8 +2,13 @@
 
 namespace App\Enums;
 
-enum UserRole: string
+use App\Enums\Concerns\TranslatesLabels;
+use Filament\Support\Contracts\HasLabel;
+
+enum UserRole: string implements HasLabel
 {
+    use TranslatesLabels;
+
     case Admin = 'admin';
     case Reviewer = 'reviewer';
     case Viewer = 'viewer';
