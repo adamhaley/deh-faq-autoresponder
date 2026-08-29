@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\GmailMailboxSyncStatus;
 use Database\Factories\GmailMailboxFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -33,18 +34,12 @@ class GmailMailbox extends Model
 
     public const DefaultLabelIds = ['INBOX'];
 
-    public const SyncStatusConnected = 'connected';
-
-    public const SyncStatusFailed = 'failed';
-
-    public const SyncStatusResyncRequired = 'resync_required';
-
     /**
      * @var array<string, mixed>
      */
     protected $attributes = [
         'is_active' => true,
-        'sync_status' => self::SyncStatusConnected,
+        'sync_status' => GmailMailboxSyncStatus::Connected->value,
     ];
 
     /**
@@ -62,6 +57,7 @@ class GmailMailbox extends Model
             'label_ids' => 'array',
             'last_sync_at' => 'datetime',
             'is_active' => 'boolean',
+            'sync_status' => GmailMailboxSyncStatus::class,
         ];
     }
 

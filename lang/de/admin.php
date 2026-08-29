@@ -178,11 +178,6 @@ return [
             'failed' => 'Fehlgeschlagen',
             'no_reply_needed' => 'Keine Antwort nötig',
         ],
-        'gmail_mailbox' => [
-            'connected' => 'Verbunden',
-            'failed' => 'Fehlgeschlagen',
-            'resync_required' => 'Neue Synchronisierung nötig',
-        ],
     ],
 
     'placeholders' => [

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\GmailMailboxSyncStatus;
 use App\Models\GmailMailbox;
 use App\Models\GmailMessage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -91,7 +92,7 @@ class GmailMailboxSyncTest extends TestCase
 
         $this->assertSame('fresh-access-token', $mailbox->access_token);
         $this->assertSame('200', $mailbox->last_history_id);
-        $this->assertSame(GmailMailbox::SyncStatusConnected, $mailbox->sync_status);
+        $this->assertSame(GmailMailboxSyncStatus::Connected, $mailbox->sync_status);
         $this->assertNull($mailbox->last_error);
         $this->assertNotNull($mailbox->last_sync_at);
 
@@ -461,7 +462,7 @@ class GmailMailboxSyncTest extends TestCase
             'refresh_token' => 'refresh-token',
             'token_expires_at' => now()->subDay(),
             'last_history_id' => '100',
-            'sync_status' => GmailMailbox::SyncStatusResyncRequired,
+            'sync_status' => GmailMailboxSyncStatus::ResyncRequired,
             'last_error' => 'HTTP request returned status code 404',
         ]);
 
@@ -473,7 +474,7 @@ class GmailMailboxSyncTest extends TestCase
 
         $this->assertInstanceOf(GmailMailbox::class, $mailbox);
         $this->assertSame('400', $mailbox->last_history_id);
-        $this->assertSame(GmailMailbox::SyncStatusConnected, $mailbox->sync_status);
+        $this->assertSame(GmailMailboxSyncStatus::Connected, $mailbox->sync_status);
         $this->assertNull($mailbox->last_error);
         $this->assertSame(2, GmailMessage::query()->count());
     }
@@ -535,8 +536,8 @@ class GmailMailboxSyncTest extends TestCase
             ->expectsOutput('Imported 0 Gmail message(s).')
             ->assertSuccessful();
 
-        $this->assertSame(GmailMailbox::SyncStatusFailed, $failedMailbox->fresh()->sync_status);
-        $this->assertSame(GmailMailbox::SyncStatusConnected, $successfulMailbox->fresh()->sync_status);
+        $this->assertSame(GmailMailboxSyncStatus::Failed, $failedMailbox->fresh()->sync_status);
+        $this->assertSame(GmailMailboxSyncStatus::Connected, $successfulMailbox->fresh()->sync_status);
         $this->assertSame('300', $successfulMailbox->fresh()->last_history_id);
     }
 

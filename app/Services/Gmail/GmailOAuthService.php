@@ -2,6 +2,7 @@
 
 namespace App\Services\Gmail;
 
+use App\Enums\GmailMailboxSyncStatus;
 use App\Models\GmailMailbox;
 use App\Models\User;
 use Illuminate\Support\Arr;
@@ -77,7 +78,7 @@ class GmailOAuthService
                 'scopes' => $this->responseScopes($tokenData),
                 'last_history_id' => $profileData['historyId'] ?? null,
                 'is_active' => true,
-                'sync_status' => 'connected',
+                'sync_status' => GmailMailboxSyncStatus::Connected,
                 'last_error' => null,
                 'connected_by_user_id' => $connectedBy->id,
             ],

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\GmailMailboxSyncStatus;
 use App\Models\GmailMailbox;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -26,7 +27,7 @@ class GmailMailboxFactory extends Factory
             'label_ids' => GmailMailbox::DefaultLabelIds,
             'last_history_id' => (string) fake()->numberBetween(1000, 9999),
             'is_active' => true,
-            'sync_status' => GmailMailbox::SyncStatusConnected,
+            'sync_status' => GmailMailboxSyncStatus::Connected,
         ];
     }
 }

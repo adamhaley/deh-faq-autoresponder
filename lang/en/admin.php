@@ -180,11 +180,6 @@ return [
             'failed' => 'Failed',
             'no_reply_needed' => 'No reply needed',
         ],
-        'gmail_mailbox' => [
-            'connected' => 'Connected',
-            'failed' => 'Failed',
-            'resync_required' => 'Resync required',
-        ],
     ],
 
     'placeholders' => [

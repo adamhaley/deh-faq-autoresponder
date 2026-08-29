@@ -2,6 +2,7 @@
 
 namespace App\Services\Gmail;
 
+use App\Enums\GmailMailboxSyncStatus;
 use App\Models\GmailMailbox;
 use App\Models\GmailMessage;
 use Illuminate\Http\Client\RequestException;
@@ -58,7 +59,7 @@ class GmailMailboxSyncService
 
     private function syncMailboxOrFail(GmailMailbox $mailbox): int
     {
-        if ($mailbox->sync_status === GmailMailbox::SyncStatusResyncRequired) {
+        if ($mailbox->sync_status === GmailMailboxSyncStatus::ResyncRequired) {
             return $this->recoverFromResyncRequired($mailbox);
         }
 
@@ -68,7 +69,7 @@ class GmailMailboxSyncService
             $mailbox->update([
                 'last_history_id' => $profile['historyId'] ?? null,
                 'last_sync_at' => now(),
-                'sync_status' => GmailMailbox::SyncStatusConnected,
+                'sync_status' => GmailMailboxSyncStatus::Connected,
                 'last_error' => null,
             ]);
 
@@ -105,7 +106,7 @@ class GmailMailboxSyncService
         $mailbox->update([
             'last_history_id' => $latestHistoryId,
             'last_sync_at' => now(),
-            'sync_status' => GmailMailbox::SyncStatusConnected,
+            'sync_status' => GmailMailboxSyncStatus::Connected,
             'last_error' => null,
         ]);
 
@@ -126,7 +127,7 @@ class GmailMailboxSyncService
         $mailbox->update([
             'last_history_id' => $profile['historyId'] ?? null,
             'last_sync_at' => now(),
-            'sync_status' => GmailMailbox::SyncStatusConnected,
+            'sync_status' => GmailMailboxSyncStatus::Connected,
             'last_error' => null,
         ]);
 
@@ -478,8 +479,8 @@ class GmailMailboxSyncService
     {
         $mailbox->update([
             'sync_status' => $exception instanceof RequestException && $exception->response->status() === 404
-                ? GmailMailbox::SyncStatusResyncRequired
-                : GmailMailbox::SyncStatusFailed,
+                ? GmailMailboxSyncStatus::ResyncRequired
+                : GmailMailboxSyncStatus::Failed,
             'last_error' => $exception->getMessage(),
             'last_sync_at' => now(),
         ]);
