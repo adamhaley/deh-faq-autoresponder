@@ -16,6 +16,7 @@ use App\Filament\Widgets\RecentEmailQuestionMisalignments;
 use App\Filament\Widgets\SemanticAnswerSimilarityChart;
 use App\Filament\Widgets\WeeklyRepetitionChart;
 use App\Http\Middleware\SetLocaleFromBrowser;
+use App\Support\AppVersion;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -31,6 +32,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -42,6 +44,11 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
+            ->brandName(fn (): HtmlString => new HtmlString(
+                e(config('app.name')).(filled($version = AppVersion::current())
+                    ? ' <span style="display: inline-flex; align-items: flex-end; margin-left: 0.5rem; margin-bottom: 1px; font-size: 0.75rem; line-height: 1; font-weight: 400; color: #9ca3af;">v'.e($version).'</span>'
+                    : ''),
+            ))
             ->colors([
                 'primary' => Color::hex('#8f1024'),
             ])
