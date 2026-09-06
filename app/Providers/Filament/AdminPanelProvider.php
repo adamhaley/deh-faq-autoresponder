@@ -5,11 +5,16 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Widgets\AnswerPerformanceSection;
 use App\Filament\Widgets\AnswerSimilarityChart;
+use App\Filament\Widgets\CumulativeFaqCoverageChart;
+use App\Filament\Widgets\CumulativeWarmShareChart;
 use App\Filament\Widgets\EmailQuestionMisalignmentRateChart;
 use App\Filament\Widgets\EmailQuestionOverview;
+use App\Filament\Widgets\FaqRepetitionChart;
+use App\Filament\Widgets\FaqRepetitionSection;
 use App\Filament\Widgets\QuestionClassificationSection;
 use App\Filament\Widgets\RecentEmailQuestionMisalignments;
 use App\Filament\Widgets\SemanticAnswerSimilarityChart;
+use App\Filament\Widgets\WeeklyRepetitionChart;
 use App\Http\Middleware\SetLocaleFromBrowser;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -60,6 +65,11 @@ class AdminPanelProvider extends PanelProvider
                 EmailQuestionOverview::class,
                 EmailQuestionMisalignmentRateChart::class,
                 RecentEmailQuestionMisalignments::class,
+                FaqRepetitionSection::class,
+                FaqRepetitionChart::class,
+                WeeklyRepetitionChart::class,
+                CumulativeFaqCoverageChart::class,
+                CumulativeWarmShareChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,
