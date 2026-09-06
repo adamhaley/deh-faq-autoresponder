@@ -1,3 +1,16 @@
+# [1.1.0](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.0.0...v1.1.0) (2026-09-06)
+
+
+### Bug Fixes
+
+* hide point markers on dashboard line charts ([8262a6c](https://github.com/adamhaley/deh-faq-autoresponder/commit/8262a6ca46e7364615a38f1628c2c1cfd2b54122))
+
+
+### Features
+
+* add FAQ repetition and cumulative coverage charts ([acf3a13](https://github.com/adamhaley/deh-faq-autoresponder/commit/acf3a13427deae3b15c8afac4d8ddfb8aa1db5bb))
+* display app version in admin panel brand name ([44a5967](https://github.com/adamhaley/deh-faq-autoresponder/commit/44a5967ce5b1e0728d330f2da80b28f17a91c0aa))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
