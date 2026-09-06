@@ -5,38 +5,32 @@ namespace App\Filament\Widgets;
 use App\Services\EmailQuestions\EmailAnswerPerformanceMetrics;
 use Filament\Widgets\ChartWidget;
 
-class AnswerSimilarityChart extends ChartWidget
+class FaqRepetitionChart extends ChartWidget
 {
     protected static bool $isLazy = false;
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 8;
 
     protected int|string|array $columnSpan = 1;
 
     public function getHeading(): string
     {
-        return __('admin.dashboard.answer_similarity');
+        return __('admin.dashboard.faq_repetition_distribution');
     }
 
     protected function getData(): array
     {
-        $metrics = app(EmailAnswerPerformanceMetrics::class)->dailySimilarityScores(30);
+        $distribution = app(EmailAnswerPerformanceMetrics::class)->faqRepetitionDistribution();
 
         return [
             'datasets' => [
                 [
-                    'label' => __('admin.dashboard.answer_similarity_dataset'),
-                    'data' => $metrics['similarity_scores'],
-                    'borderColor' => '#2f8f83',
-                    'backgroundColor' => 'rgba(47, 143, 131, 0.16)',
-                    'fill' => true,
-                    'tension' => 0.35,
-                    'spanGaps' => true,
-                    'pointRadius' => 0,
-                    'pointHoverRadius' => 4,
+                    'label' => __('admin.dashboard.faq_repetition_dataset'),
+                    'data' => $distribution['counts'],
+                    'backgroundColor' => ['#94a3b8', '#38bdf8', '#2f8f83'],
                 ],
             ],
-            'labels' => $metrics['labels'],
+            'labels' => $distribution['labels'],
         ];
     }
 
@@ -54,7 +48,9 @@ class AnswerSimilarityChart extends ChartWidget
             'scales' => [
                 'y' => [
                     'beginAtZero' => true,
-                    'max' => 100,
+                    'ticks' => [
+                        'precision' => 0,
+                    ],
                 ],
             ],
         ];
@@ -62,6 +58,6 @@ class AnswerSimilarityChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'line';
+        return 'bar';
     }
 }

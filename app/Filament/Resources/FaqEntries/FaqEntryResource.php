@@ -40,6 +40,7 @@ class FaqEntryResource extends Resource
             TextEntry::make('question')
                 ->columnSpanFull(),
             TextEntry::make('answer')
+                ->extraAttributes(['style' => 'white-space: pre-line;'])
                 ->columnSpanFull(),
             TextEntry::make('embedding')
                 ->label(__('admin.fields.embedding'))

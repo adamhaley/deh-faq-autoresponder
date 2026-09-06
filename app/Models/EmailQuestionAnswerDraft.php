@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Jobs\ComposeEmailThreadDraft;
+use App\Jobs\ScoreAnswerSemanticSimilarity;
 use Database\Factories\EmailQuestionAnswerDraftFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Log;
     'reviewed_by_user_id',
     'generated_answer',
     'final_answer',
+    'semantic_similarity_score',
     'status',
     'generation_reason',
     'generation_metadata',
@@ -105,6 +107,7 @@ class EmailQuestionAnswerDraft extends Model
         return [
             'generated_answer' => self::PendingGeneratedAnswer,
             'final_answer' => null,
+            'semantic_similarity_score' => null,
             'status' => self::StatusQueued,
             'generation_reason' => null,
             'generation_metadata' => null,
@@ -150,6 +153,8 @@ class EmailQuestionAnswerDraft extends Model
         }
 
         $this->applyFinalAnswerAsFaqOverride($this->final_answer);
+
+        ScoreAnswerSemanticSimilarity::dispatch($this->id);
 
         $threadId = $this->emailQuestion?->message?->thread_id;
 

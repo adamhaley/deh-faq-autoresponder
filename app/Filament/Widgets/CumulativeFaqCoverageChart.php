@@ -5,33 +5,33 @@ namespace App\Filament\Widgets;
 use App\Services\EmailQuestions\EmailAnswerPerformanceMetrics;
 use Filament\Widgets\ChartWidget;
 
-class AnswerSimilarityChart extends ChartWidget
+class CumulativeFaqCoverageChart extends ChartWidget
 {
     protected static bool $isLazy = false;
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 9;
 
     protected int|string|array $columnSpan = 1;
 
     public function getHeading(): string
     {
-        return __('admin.dashboard.answer_similarity');
+        return __('admin.dashboard.cumulative_faq_coverage');
     }
 
     protected function getData(): array
     {
-        $metrics = app(EmailAnswerPerformanceMetrics::class)->dailySimilarityScores(30);
+        $metrics = app(EmailAnswerPerformanceMetrics::class)->cumulativeFaqMetrics(30);
 
         return [
             'datasets' => [
                 [
-                    'label' => __('admin.dashboard.answer_similarity_dataset'),
-                    'data' => $metrics['similarity_scores'],
-                    'borderColor' => '#2f8f83',
-                    'backgroundColor' => 'rgba(47, 143, 131, 0.16)',
+                    'label' => __('admin.dashboard.cumulative_faq_coverage_dataset'),
+                    'data' => $metrics['cumulative_faq_coverage'],
+                    'borderColor' => '#8f1024',
+                    'backgroundColor' => 'rgba(143, 16, 36, 0.12)',
                     'fill' => true,
-                    'tension' => 0.35,
-                    'spanGaps' => true,
+                    'tension' => 0.2,
+                    'stepped' => false,
                     'pointRadius' => 0,
                     'pointHoverRadius' => 4,
                 ],
@@ -54,7 +54,9 @@ class AnswerSimilarityChart extends ChartWidget
             'scales' => [
                 'y' => [
                     'beginAtZero' => true,
-                    'max' => 100,
+                    'ticks' => [
+                        'precision' => 0,
+                    ],
                 ],
             ],
         ];

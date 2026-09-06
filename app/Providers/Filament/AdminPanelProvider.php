@@ -5,11 +5,18 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Widgets\AnswerPerformanceSection;
 use App\Filament\Widgets\AnswerSimilarityChart;
+use App\Filament\Widgets\CumulativeFaqCoverageChart;
+use App\Filament\Widgets\CumulativeWarmShareChart;
 use App\Filament\Widgets\EmailQuestionMisalignmentRateChart;
 use App\Filament\Widgets\EmailQuestionOverview;
+use App\Filament\Widgets\FaqRepetitionChart;
+use App\Filament\Widgets\FaqRepetitionSection;
 use App\Filament\Widgets\QuestionClassificationSection;
 use App\Filament\Widgets\RecentEmailQuestionMisalignments;
+use App\Filament\Widgets\SemanticAnswerSimilarityChart;
+use App\Filament\Widgets\WeeklyRepetitionChart;
 use App\Http\Middleware\SetLocaleFromBrowser;
+use App\Support\AppVersion;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -25,6 +32,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -36,6 +44,11 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
+            ->brandName(fn (): HtmlString => new HtmlString(
+                e(config('app.name')).(filled($version = AppVersion::current())
+                    ? ' <span style="display: inline-flex; align-items: flex-end; margin-left: 0.5rem; margin-bottom: 1px; font-size: 0.75rem; line-height: 1; font-weight: 400; color: #9ca3af;">v'.e($version).'</span>'
+                    : ''),
+            ))
             ->colors([
                 'primary' => Color::hex('#8f1024'),
             ])
@@ -54,10 +67,16 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AnswerPerformanceSection::class,
                 AnswerSimilarityChart::class,
+                SemanticAnswerSimilarityChart::class,
                 QuestionClassificationSection::class,
                 EmailQuestionOverview::class,
                 EmailQuestionMisalignmentRateChart::class,
                 RecentEmailQuestionMisalignments::class,
+                FaqRepetitionSection::class,
+                FaqRepetitionChart::class,
+                WeeklyRepetitionChart::class,
+                CumulativeFaqCoverageChart::class,
+                CumulativeWarmShareChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,

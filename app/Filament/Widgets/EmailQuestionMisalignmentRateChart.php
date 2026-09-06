@@ -32,6 +32,8 @@ class EmailQuestionMisalignmentRateChart extends ChartWidget
                     'fill' => true,
                     'tension' => 0.35,
                     'spanGaps' => true,
+                    'pointRadius' => 0,
+                    'pointHoverRadius' => 4,
                 ],
             ],
             'labels' => $metrics['labels'],
