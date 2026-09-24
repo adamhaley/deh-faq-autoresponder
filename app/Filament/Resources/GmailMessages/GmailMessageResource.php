@@ -514,7 +514,9 @@ class GmailMessageResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort(fn (Builder $query): Builder => self::applyDefaultTableSort($query))
+            ->defaultSort(fn (Builder $query): Builder => $query
+                ->orderByDesc('internal_date')
+                ->orderByDesc('gmail_messages.id'))
             ->persistFiltersInSession()
             ->deferFilters(false)
             ->columns([
@@ -621,47 +623,6 @@ class GmailMessageResource extends Resource
                     EmailQuestion::ReviewStatusValid,
                 ]);
         });
-    }
-
-    private static function applyDefaultTableSort(Builder $query): Builder
-    {
-        return $query
-            ->orderByRaw(<<<'SQL'
-                case
-                    when gmail_messages.questions_extracted_at is null and not exists (
-                        select 1
-                        from email_questions
-                        where email_questions.gmail_message_id = gmail_messages.id
-                    ) then 0
-                    when exists (
-                        select 1
-                        from email_questions
-                        left join email_question_answer_drafts
-                            on email_question_answer_drafts.email_question_id = email_questions.id
-                        where email_questions.gmail_message_id = gmail_messages.id
-                            and (
-                                (
-                                    email_questions.review_status = ?
-                                    and (
-                                        email_question_answer_drafts.id is null
-                                        or email_question_answer_drafts.status not in (?, ?)
-                                    )
-                                )
-                                or email_questions.review_status not in (?, ?, ?)
-                            )
-                    ) then 0
-                    else 1
-                end
-            SQL, [
-                EmailQuestion::ReviewStatusValid,
-                EmailQuestionAnswerDraft::StatusApproved,
-                EmailQuestionAnswerDraft::StatusRejected,
-                EmailQuestion::ReviewStatusNoise,
-                EmailQuestion::ReviewStatusUnanswerable,
-                EmailQuestion::ReviewStatusValid,
-            ])
-            ->orderByDesc('internal_date')
-            ->orderByDesc('gmail_messages.id');
     }
 
     public static function getEloquentQuery(): Builder
