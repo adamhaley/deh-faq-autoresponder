@@ -5,6 +5,13 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+
+# Vite inlines these at build time; .env is dockerignored, so they arrive as
+# build args (see the deploy workflow).
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT
+ARG VITE_REVERB_SCHEME
 RUN npm run build
 
 FROM dunglas/frankenphp:php8.4 AS app

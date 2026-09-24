@@ -41,7 +41,11 @@ Appended to the shared `docker-compose.yml`:
   `gmail:sync-mailboxes`, `email-questions:extract`,
   `email-questions:classify` every minute.
 
-All four are `restart: unless-stopped`. `deh-faq`/`deh-faq-queue`/
+- **`deh-faq-reverb`** — same image, `php artisan reverb:start
+  --host=0.0.0.0 --port=8081`. Pushes pipeline status changes to the admin
+  panel over websockets instead of polling.
+
+All five are `restart: unless-stopped`. `deh-faq`/`deh-faq-queue`/
 `deh-faq-scheduler` share one built image and get recreated together on every
 deploy (picking up new code automatically); `deh-faq-db` is never touched by
 a deploy — its data survives by construction, not luck (see below).
@@ -53,8 +57,21 @@ ai.deutsches-edelsteinhaus.de {
     reverse_proxy deh-faq:8080 {
         flush_interval -1
     }
+
+    handle /app* {
+        reverse_proxy deh-faq-reverb:8081
+    }
+    handle /apps* {
+        reverse_proxy deh-faq-reverb:8081
+    }
 }
 ```
+
+The `handle` blocks send Reverb websocket and publish traffic to
+`deh-faq-reverb`; the bare `reverse_proxy` stays the fallback for the app.
+The `VITE_REVERB_*` values are read from the server `.env` and passed as
+`docker build` args by the deploy workflow, since Vite inlines them at build
+time and `.env` is dockerignored.
 
 ## Environment
 
@@ -68,6 +85,9 @@ never committed). Notable production values:
   Postgres/pgvector, no Supabase dependency.
 - `QUEUE_CONNECTION=database`, `CACHE_STORE=database`,
   `SESSION_DRIVER=database` — no Redis dependency.
+- `BROADCAST_CONNECTION=reverb`, `REVERB_APP_ID`/`KEY`/`SECRET`,
+  `REVERB_HOST=ai.deutsches-edelsteinhaus.de`, `REVERB_PORT=443`,
+  `REVERB_SCHEME=https`, `REVERB_SERVER_PORT=8081`.
 - OpenAI key, and two separate Google OAuth client credential pairs (see
   "Google OAuth" below).
 

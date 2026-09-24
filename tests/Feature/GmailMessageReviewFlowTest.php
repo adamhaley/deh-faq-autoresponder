@@ -35,7 +35,7 @@ class GmailMessageReviewFlowTest extends TestCase
             ->assertCanSeeTableRecords([$message]);
     }
 
-    public function test_the_message_list_defaults_pending_messages_first_then_newest_first(): void
+    public function test_the_message_list_defaults_to_newest_first_regardless_of_review_state(): void
     {
         $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
 
@@ -71,9 +71,9 @@ class GmailMessageReviewFlowTest extends TestCase
         Livewire::test(ManageGmailMessages::class)
             ->assertOk()
             ->assertCanSeeTableRecords([
+                $newerResolvedMessage,
                 $newerPendingMessage,
                 $olderPendingMessage,
-                $newerResolvedMessage,
                 $olderResolvedMessage,
             ], inOrder: true);
     }
