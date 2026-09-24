@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.1.1...v1.1.2) (2026-09-24)
+
+
+### Bug Fixes
+
+* give the test suite dummy Reverb credentials ([b058cc5](https://github.com/adamhaley/deh-faq-autoresponder/commit/b058cc5cc6af1ddc477fa5c571b36530922869ed))
+
 ## [1.1.1](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.1.0...v1.1.1) (2026-09-24)
 
 
