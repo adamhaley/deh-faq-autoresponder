@@ -83,7 +83,13 @@ jobs:
             git checkout main
             git pull --ff-only origin main
 
-            docker build -t deh-faq-autoresponder:latest .
+            reverb_env() { grep "^$1=" .env | cut -d= -f2- | tr -d '"'; }
+            docker build \
+              --build-arg VITE_REVERB_APP_KEY="$(reverb_env REVERB_APP_KEY)" \
+              --build-arg VITE_REVERB_HOST="$(reverb_env REVERB_HOST)" \
+              --build-arg VITE_REVERB_PORT="$(reverb_env REVERB_PORT)" \
+              --build-arg VITE_REVERB_SCHEME="$(reverb_env REVERB_SCHEME)" \
+              -t deh-faq-autoresponder:latest .
             docker image prune -f
 
             cd /opt/megyk/n8n-docker-caddy
