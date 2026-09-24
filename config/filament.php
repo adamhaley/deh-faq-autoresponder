@@ -18,14 +18,14 @@ return [
 
         'echo' => [
             'broadcaster' => 'reverb',
-            'key' => env('VITE_REVERB_APP_KEY'),
-            'wsHost' => env('VITE_REVERB_HOST'),
-            'wsPort' => env('VITE_REVERB_PORT', 80),
-            'wssPort' => env('VITE_REVERB_PORT', 443),
+            'key' => env('REVERB_APP_KEY'),
+            'wsHost' => env('REVERB_HOST'),
+            'wsPort' => env('REVERB_PORT', 80),
+            'wssPort' => env('REVERB_PORT', 443),
             'authEndpoint' => '/broadcasting/auth',
             'disableStats' => true,
             'encrypted' => true,
-            'forceTLS' => env('VITE_REVERB_SCHEME', 'https') === 'https',
+            'forceTLS' => env('REVERB_SCHEME', 'https') === 'https',
         ],
 
     ],
