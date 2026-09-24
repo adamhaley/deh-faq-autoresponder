@@ -104,9 +104,6 @@ class GmailMessageResource extends Resource
                     ->columnSpanFull(),
                 Section::make(__('admin.sections.questions'))
                     ->schema(fn (GmailMessage $record): array => self::questionComponents($record))
-                    ->poll(fn (GmailMessage $record): ?string => $record->questions()->get()->contains(
-                        fn (EmailQuestion $question): bool => $question->hasActiveAsyncPipeline(),
-                    ) ? '3s' : null)
                     ->columnSpanFull(),
                 Section::make(__('admin.sections.composed_email'))
                     ->afterHeader([
@@ -123,7 +120,6 @@ class GmailMessageResource extends Resource
                             ->visible(fn (): bool => auth()->user()?->can('update', EmailTemplate::query()->first() ?? new EmailTemplate) ?? false),
                     ])
                     ->schema(fn (GmailMessage $record): array => self::threadDraftComponents($record))
-                    ->poll(fn (GmailMessage $record): ?string => self::composedEmailNeedsPolling($record) ? '3s' : null)
                     ->columnSpanFull(),
             ]);
     }
@@ -431,11 +427,6 @@ class GmailMessageResource extends Resource
                 ], true))
                 ->columnSpanFull(),
         ];
-    }
-
-    private static function composedEmailNeedsPolling(GmailMessage $record): bool
-    {
-        return self::freshMessageAwaitingThreadDraft($record);
     }
 
     /**

@@ -35,5 +35,6 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('gmail', fn (object $job): Limit => Limit::perMinute(60)->by('gmail'));
 
         DevCommands::artisan('schedule:work', 'schedule');
+        DevCommands::artisan('reverb:start', 'reverb');
     }
 }
