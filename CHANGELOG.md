@@ -1,3 +1,12 @@
+## [1.1.1](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.1.0...v1.1.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* pass Reverb Vite settings as build args ([4e8322c](https://github.com/adamhaley/deh-faq-autoresponder/commit/4e8322cb85e443e32934e2a9e852cab39fa5d01d))
+* read Filament Echo config from REVERB env ([7f2c35a](https://github.com/adamhaley/deh-faq-autoresponder/commit/7f2c35a5d5f98bf2f7000ac4022dafa968e45f83))
+* sort Gmail messages newest first ([d7c4321](https://github.com/adamhaley/deh-faq-autoresponder/commit/d7c4321dc58ea3c9058f7f9c9454c46d5710fc28))
+
 # [1.1.0](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.0.0...v1.1.0) (2026-09-06)
 
 
