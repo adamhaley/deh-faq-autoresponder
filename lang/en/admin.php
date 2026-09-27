@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'help' => [
+        'email_template_body_greeting' => 'A personalized greeting (e.g. "Sehr geehrte Frau Schmidt,") is generated automatically from the sender\'s name and added above this text on every draft — there is no greeting merge tag to place here.',
+    ],
+
     'navigation' => [
         'settings' => 'Settings',
         'webinar_responses' => 'Webinar Responses',

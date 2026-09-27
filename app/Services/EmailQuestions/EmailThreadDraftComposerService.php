@@ -82,10 +82,13 @@ class EmailThreadDraftComposerService
 
         $draft->gmail_mailbox_id = $mailbox->id;
         $draft->subject = $template->subject;
-        $draft->body = $template->renderBody(
-            $this->generateGreeting($participantMessage->participant_name),
-            $this->joinQuestionsAndAnswers($questions),
-        );
+        // The greeting is generated per-recipient and prepended here rather
+        // than inserted through the template's editable body: a non-technical
+        // reviewer editing the template in Filament could otherwise delete
+        // the merge tag by accident and have no obvious way to restore it,
+        // silently reverting every future draft to a generic salutation.
+        $draft->body = $this->renderGreeting($participantMessage->participant_name)
+            .$template->renderBody($this->joinQuestionsAndAnswers($questions));
 
         $raw = $this->buildRawMessage($to, $draft->subject, $draft->body, $this->messageIdHeader($latestMessage));
 
@@ -108,6 +111,11 @@ class EmailThreadDraftComposerService
         $draft->save();
 
         return $draft;
+    }
+
+    private function renderGreeting(?string $participantName): string
+    {
+        return sprintf('<p>%s,</p>', e($this->generateGreeting($participantName)));
     }
 
     private function generateGreeting(?string $participantName): string
