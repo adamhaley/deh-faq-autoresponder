@@ -27,7 +27,7 @@ class EmailThreadDraftComposerServiceTest extends TestCase
 
         EmailTemplate::factory()->create([
             'subject' => 'Ihre Webinarfrage',
-            'body' => '<p><span data-type="mergeTag" data-id="greeting">greeting</span></p><p><span data-type="mergeTag" data-id="questions">questions</span></p>',
+            'body' => '<p><span data-type="mergeTag" data-id="questions">questions</span></p>',
         ]);
 
         $mailbox = GmailMailbox::factory()->create();
@@ -114,6 +114,44 @@ class EmailThreadDraftComposerServiceTest extends TestCase
         $this->assertSame('existing-draft-id', $draft->gmail_draft_id);
         $this->assertSame(EmailThreadDraft::StatusUpdated, $draft->status);
         $this->assertSame(1, EmailThreadDraft::query()->count());
+    }
+
+    public function test_the_greeting_is_prepended_even_when_the_template_body_has_no_reference_to_it(): void
+    {
+        // Regression test: the greeting used to be a merge tag inside the
+        // editable template body, which a non-technical reviewer could
+        // delete by accident (reported 2026-09-27). It's now generated and
+        // prepended unconditionally, independent of what the template says.
+        EmailGreetingGenerator::fake([
+            ['greeting' => 'Sehr geehrter Herr Wolfgang'],
+        ])->preventStrayPrompts();
+
+        EmailTemplate::factory()->create([
+            'body' => '<p>Guten Tag</p><p><span data-type="mergeTag" data-id="questions">questions</span></p>',
+        ]);
+
+        $mailbox = GmailMailbox::factory()->create();
+        $message = GmailMessage::factory()->for($mailbox, 'mailbox')->create([
+            'thread_id' => 'thread-no-greeting-tag',
+            'participant_name' => 'Wolfgang',
+        ]);
+
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create();
+
+        EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $question->id,
+            'status' => EmailQuestionAnswerDraft::StatusApproved,
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake(fn () => Http::response(['id' => 'draft-456']));
+
+        $draft = app(EmailThreadDraftComposerService::class)->composeForThread('thread-no-greeting-tag');
+
+        $this->assertStringContainsString('Sehr geehrter Herr Wolfgang,', $draft->body);
     }
 
     public function test_it_does_nothing_when_the_thread_is_not_fully_approved(): void

@@ -8,9 +8,10 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
 
 /**
- * Seeds the single default email template (subject + HTML body, with
- * {{greeting}} and {{questions}} placeholders), matching the content
- * currently used in the legacy n8n "Generate Email from Approved" workflow.
+ * Seeds the single default email template (subject + HTML body, with a
+ * {{questions}} placeholder), matching the content currently used in the
+ * legacy n8n "Generate Email from Approved" workflow. The greeting is not
+ * part of this template -- see EmailThreadDraftComposerService::renderGreeting().
  * Editable afterward via the Email Templates Filament resource.
  *
  * Idempotent: safe to re-run, keyed on row existence rather than `name`.

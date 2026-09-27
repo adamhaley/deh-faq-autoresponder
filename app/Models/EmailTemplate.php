@@ -15,11 +15,10 @@ class EmailTemplate extends Model
     /** @use HasFactory<EmailTemplateFactory> */
     use HasFactory;
 
-    public function renderBody(string $greeting, string $questionsHtml): string
+    public function renderBody(string $questionsHtml): string
     {
         return RichContentRenderer::make($this->body)
             ->mergeTags([
-                'greeting' => new HtmlString(e($greeting)),
                 'questions' => new HtmlString($questionsHtml),
             ])
             ->toHtml();

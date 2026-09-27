@@ -54,9 +54,9 @@ class EmailTemplateResource extends Resource
                     ->columnSpanFull(),
                 RichEditor::make('body')
                     ->label(__('admin.fields.body'))
+                    ->helperText(__('admin.help.email_template_body_greeting'))
                     ->required()
                     ->mergeTags([
-                        'greeting' => 'Greeting',
                         'questions' => 'Questions & answers',
                     ])
                     ->columnSpanFull(),
