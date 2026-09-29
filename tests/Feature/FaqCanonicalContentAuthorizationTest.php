@@ -22,14 +22,24 @@ class FaqCanonicalContentAuthorizationTest extends TestCase
         $this->actingAs($admin)->get('/admin/faq-entries')->assertOk();
     }
 
-    public function test_admin_cannot_manually_mutate_faq_entries(): void
+    public function test_admin_can_manually_mutate_faq_entries(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
         $faqEntry = FaqEntry::factory()->create();
 
-        $this->assertFalse($admin->can('create', FaqEntry::class));
-        $this->assertFalse($admin->can('update', $faqEntry));
-        $this->assertFalse($admin->can('delete', $faqEntry));
+        $this->assertTrue($admin->can('create', FaqEntry::class));
+        $this->assertTrue($admin->can('update', $faqEntry));
+        $this->assertTrue($admin->can('delete', $faqEntry));
+    }
+
+    public function test_reviewer_cannot_manually_mutate_faq_entries(): void
+    {
+        $reviewer = User::factory()->create(['role' => UserRole::Reviewer, 'is_active' => true]);
+        $faqEntry = FaqEntry::factory()->create();
+
+        $this->assertFalse($reviewer->can('create', FaqEntry::class));
+        $this->assertFalse($reviewer->can('update', $faqEntry));
+        $this->assertFalse($reviewer->can('delete', $faqEntry));
     }
 
     public function test_reviewer_cannot_view_faq_entries(): void

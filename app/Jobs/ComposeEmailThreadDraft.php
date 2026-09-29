@@ -20,7 +20,7 @@ class ComposeEmailThreadDraft implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 600;
 
-    public function __construct(public string $threadId) {}
+    public function __construct(public string $threadId, public ?int $userId = null) {}
 
     /**
      * @return array<int, int>
@@ -53,7 +53,7 @@ class ComposeEmailThreadDraft implements ShouldBeUnique, ShouldQueue
 
     public function handle(EmailThreadDraftComposerService $composer): void
     {
-        $composer->composeForThread($this->threadId);
+        $composer->composeForThread($this->threadId, $this->userId);
         $this->broadcastStatusChanged();
     }
 

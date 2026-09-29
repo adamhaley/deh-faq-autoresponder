@@ -28,7 +28,7 @@ class EmailThreadDraftComposerService
         private readonly GmailClient $gmail,
     ) {}
 
-    public function composeForThread(string $threadId): ?EmailThreadDraft
+    public function composeForThread(string $threadId, ?int $userId = null): ?EmailThreadDraft
     {
         $questions = EmailQuestion::query()
             ->where('review_status', EmailQuestion::ReviewStatusValid)
@@ -51,11 +51,12 @@ class EmailThreadDraftComposerService
             return null;
         }
 
-        $template = EmailTemplate::query()->first();
+        $template = EmailTemplate::forUser($userId);
 
         if ($template === null) {
             Log::warning('No email template configured; cannot compose thread draft.', [
                 'thread_id' => $threadId,
+                'user_id' => $userId,
             ]);
 
             return null;
@@ -81,6 +82,7 @@ class EmailThreadDraftComposerService
         $wasExisting = $draft->exists;
 
         $draft->gmail_mailbox_id = $mailbox->id;
+        $draft->user_id = $userId;
         $draft->subject = $template->subject;
         // The greeting is generated per-recipient and prepended here rather
         // than inserted through the template's editable body: a non-technical

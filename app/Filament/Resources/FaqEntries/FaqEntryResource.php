@@ -4,7 +4,12 @@ namespace App\Filament\Resources\FaqEntries;
 
 use App\Filament\Resources\FaqEntries\Pages\ManageFaqEntries;
 use App\Models\FaqEntry;
+use App\Services\Faq\FaqEntryEmbeddingService;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -34,6 +39,20 @@ class FaqEntryResource extends Resource
         return __('admin.resources.faq_entry.plural');
     }
 
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([
+            Textarea::make('question')
+                ->required()
+                ->rows(2)
+                ->columnSpanFull(),
+            Textarea::make('answer')
+                ->required()
+                ->rows(6)
+                ->columnSpanFull(),
+        ]);
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
@@ -58,9 +77,27 @@ class FaqEntryResource extends Resource
                 TextColumn::make('answer')->limit(120),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
+            ->headerActions([
+                CreateAction::make()
+                    ->mutateFormDataUsing(fn (array $data): array => self::withGeneratedEmbedding($data)),
+            ])
             ->recordActions([
                 ViewAction::make(),
+                EditAction::make()
+                    ->mutateFormDataUsing(fn (array $data): array => self::withGeneratedEmbedding($data)),
+                DeleteAction::make(),
             ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private static function withGeneratedEmbedding(array $data): array
+    {
+        $data['embedding'] = app(FaqEntryEmbeddingService::class)->embed($data['question']);
+
+        return $data;
     }
 
     public static function getPages(): array

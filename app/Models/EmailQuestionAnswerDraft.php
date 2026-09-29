@@ -159,7 +159,7 @@ class EmailQuestionAnswerDraft extends Model
         $threadId = $this->emailQuestion?->message?->thread_id;
 
         if ($threadId !== null) {
-            ComposeEmailThreadDraft::dispatch($threadId);
+            ComposeEmailThreadDraft::dispatch($threadId, $this->reviewed_by_user_id);
         }
     }
 
