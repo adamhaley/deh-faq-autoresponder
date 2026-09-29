@@ -113,11 +113,11 @@ class GmailMessageResource extends Resource
                             ->color('gray')
                             ->link()
                             ->schema(fn (Schema $schema): Schema => EmailTemplateResource::form($schema))
-                            ->fillForm(fn (): array => EmailTemplate::query()->first()?->toArray() ?? [])
-                            ->action(function (array $data): void {
-                                EmailTemplate::query()->first()?->update($data);
+                            ->fillForm(fn (GmailMessage $record): array => self::templateForRecord($record)?->toArray() ?? [])
+                            ->action(function (array $data, GmailMessage $record): void {
+                                self::templateForRecord($record)?->update($data);
                             })
-                            ->visible(fn (): bool => auth()->user()?->can('update', EmailTemplate::query()->first() ?? new EmailTemplate) ?? false),
+                            ->visible(fn (GmailMessage $record): bool => auth()->user()?->can('update', self::templateForRecord($record) ?? new EmailTemplate) ?? false),
                     ])
                     ->schema(fn (GmailMessage $record): array => self::threadDraftComponents($record))
                     ->columnSpanFull(),
@@ -427,6 +427,20 @@ class GmailMessageResource extends Resource
                 ], true))
                 ->columnSpanFull(),
         ];
+    }
+
+    /**
+     * The template governing this message's thread: whoever's approval
+     * most recently composed it, if it's been composed already, else the
+     * current viewer's own template (they're the one likely reviewing it).
+     * Falls back to the shared default in either case if that user has no
+     * personal template of their own.
+     */
+    private static function templateForRecord(GmailMessage $record): ?EmailTemplate
+    {
+        $userId = $record->threadDraft?->user_id ?? auth()->id();
+
+        return EmailTemplate::forUser($userId);
     }
 
     /**

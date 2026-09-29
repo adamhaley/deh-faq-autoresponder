@@ -3,6 +3,7 @@
 return [
     'help' => [
         'email_template_body_greeting' => 'A personalized greeting (e.g. "Sehr geehrte Frau Schmidt,") is generated automatically from the sender\'s name and added above this text on every draft — there is no greeting merge tag to place here.',
+        'email_template_owner' => 'Leave empty for the shared default, used whenever the approving reviewer has no personal template of their own.',
     ],
 
     'navigation' => [
@@ -117,6 +118,7 @@ return [
         'status' => 'Status',
         'subject' => 'Subject',
         'template_name' => 'Template name',
+        'template_owner' => 'Personal template for',
         'text_body' => 'Text body',
         'updated_at' => 'Updated at',
     ],
@@ -193,6 +195,7 @@ return [
 
     'placeholders' => [
         'unknown' => 'Unknown',
+        'shared_default_template' => 'Shared default',
         'inbox' => 'INBOX',
         'not_normalized_yet' => 'Not normalized yet',
         'not_reviewed_yet' => 'Not reviewed yet',

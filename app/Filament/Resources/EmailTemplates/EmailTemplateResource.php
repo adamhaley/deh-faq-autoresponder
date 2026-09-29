@@ -5,8 +5,11 @@ namespace App\Filament\Resources\EmailTemplates;
 use App\Filament\Resources\EmailTemplates\Pages\ManageEmailTemplates;
 use App\Models\EmailTemplate;
 use BackedEnum;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -47,8 +50,14 @@ class EmailTemplateResource extends Resource
             ->components([
                 TextInput::make('name')
                     ->label(__('admin.fields.template_name'))
-                    ->disabled()
-                    ->dehydrated(false),
+                    ->required(),
+                Select::make('user_id')
+                    ->label(__('admin.fields.template_owner'))
+                    ->helperText(__('admin.help.email_template_owner'))
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->unique(ignoreRecord: true),
                 TextInput::make('subject')
                     ->required()
                     ->columnSpanFull(),
@@ -68,11 +77,18 @@ class EmailTemplateResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->label(__('admin.fields.template_name')),
+                TextColumn::make('user.name')
+                    ->label(__('admin.fields.template_owner'))
+                    ->placeholder(__('admin.placeholders.shared_default_template')),
                 TextColumn::make('subject')->limit(60),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
+            ->headerActions([
+                CreateAction::make(),
+            ])
             ->recordActions([
                 EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 

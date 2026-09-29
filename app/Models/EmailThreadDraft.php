@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'gmail_mailbox_id',
     'thread_id',
+    'user_id',
     'gmail_draft_id',
     'subject',
     'body',
@@ -42,6 +43,15 @@ class EmailThreadDraft extends Model
     public function mailbox(): BelongsTo
     {
         return $this->belongsTo(GmailMailbox::class, 'gmail_mailbox_id');
+    }
+
+    /**
+     * Whoever approved the answer that most recently triggered this
+     * thread's compose -- determines which EmailTemplate was used.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

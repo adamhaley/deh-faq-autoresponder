@@ -9,6 +9,7 @@ use App\Models\EmailTemplate;
 use App\Models\EmailThreadDraft;
 use App\Models\GmailMailbox;
 use App\Models\GmailMessage;
+use App\Models\User;
 use App\Services\EmailQuestions\EmailThreadDraftComposerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -152,6 +153,66 @@ class EmailThreadDraftComposerServiceTest extends TestCase
         $draft = app(EmailThreadDraftComposerService::class)->composeForThread('thread-no-greeting-tag');
 
         $this->assertStringContainsString('Sehr geehrter Herr Wolfgang,', $draft->body);
+    }
+
+    public function test_it_uses_the_approving_users_personal_template_when_one_exists(): void
+    {
+        EmailGreetingGenerator::fake([
+            ['greeting' => 'Sehr geehrte Damen und Herren'],
+        ])->preventStrayPrompts();
+
+        EmailTemplate::factory()->create(['subject' => 'Shared default subject']);
+        $tatjana = User::factory()->create();
+        EmailTemplate::factory()->create([
+            'user_id' => $tatjana->id,
+            'subject' => "Tatjana's subject",
+        ]);
+
+        $message = GmailMessage::factory()->create(['thread_id' => 'thread-personal-template']);
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create();
+        EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $question->id,
+            'status' => EmailQuestionAnswerDraft::StatusApproved,
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake(fn () => Http::response(['id' => 'draft-personal']));
+
+        $draft = app(EmailThreadDraftComposerService::class)->composeForThread('thread-personal-template', $tatjana->id);
+
+        $this->assertSame("Tatjana's subject", $draft->subject);
+        $this->assertSame($tatjana->id, $draft->user_id);
+    }
+
+    public function test_it_falls_back_to_the_shared_default_template_when_the_approving_user_has_no_personal_one(): void
+    {
+        EmailGreetingGenerator::fake([
+            ['greeting' => 'Sehr geehrte Damen und Herren'],
+        ])->preventStrayPrompts();
+
+        EmailTemplate::factory()->create(['subject' => 'Shared default subject']);
+        $anna = User::factory()->create();
+
+        $message = GmailMessage::factory()->create(['thread_id' => 'thread-fallback-template']);
+        $question = EmailQuestion::factory()
+            ->for($message, 'message')
+            ->reviewedAs(EmailQuestion::ReviewStatusValid)
+            ->create();
+        EmailQuestionAnswerDraft::factory()->create([
+            'email_question_id' => $question->id,
+            'status' => EmailQuestionAnswerDraft::StatusApproved,
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake(fn () => Http::response(['id' => 'draft-fallback']));
+
+        $draft = app(EmailThreadDraftComposerService::class)->composeForThread('thread-fallback-template', $anna->id);
+
+        $this->assertSame('Shared default subject', $draft->subject);
+        $this->assertSame($anna->id, $draft->user_id);
     }
 
     public function test_it_does_nothing_when_the_thread_is_not_fully_approved(): void
