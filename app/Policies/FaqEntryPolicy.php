@@ -28,7 +28,7 @@ class FaqEntryPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
@@ -36,7 +36,7 @@ class FaqEntryPolicy
      */
     public function update(User $user, FaqEntry $faqEntry): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
@@ -44,7 +44,7 @@ class FaqEntryPolicy
      */
     public function delete(User $user, FaqEntry $faqEntry): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
