@@ -1,3 +1,11 @@
+# [1.2.0](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.1.3...v1.2.0) (2026-09-29)
+
+
+### Features
+
+* let admins create and edit FAQ entries ([8022d29](https://github.com/adamhaley/deh-faq-autoresponder/commit/8022d2910bbbebc894395eb468106bf4d6f76864))
+* support a personal email template per reviewer ([6594a50](https://github.com/adamhaley/deh-faq-autoresponder/commit/6594a50907fba1dca3dba95e91780f55a4591f37))
+
 ## [1.1.3](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.1.2...v1.1.3) (2026-09-27)
 
 
