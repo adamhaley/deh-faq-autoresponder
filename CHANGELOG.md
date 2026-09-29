@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.2.0...v1.3.0) (2026-09-29)
+
+
+### Features
+
+* default the template owner field to the logged-in user ([3243508](https://github.com/adamhaley/deh-faq-autoresponder/commit/3243508db69b2705bca3391e9703789ca11d117e))
+
 # [1.2.0](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.1.3...v1.2.0) (2026-09-29)
 
 
