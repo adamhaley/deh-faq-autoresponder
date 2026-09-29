@@ -57,6 +57,7 @@ class EmailTemplateResource extends Resource
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
+                    ->default(fn (): ?int => auth()->id())
                     ->unique(ignoreRecord: true),
                 TextInput::make('subject')
                     ->required()
