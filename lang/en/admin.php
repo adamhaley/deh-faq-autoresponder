@@ -3,7 +3,7 @@
 return [
     'help' => [
         'email_template_body_greeting' => 'A personalized greeting (e.g. "Sehr geehrte Frau Schmidt,") is generated automatically from the sender\'s name and added above this text on every draft — there is no greeting merge tag to place here.',
-        'email_template_owner' => 'Leave empty for the shared default, used whenever the approving reviewer has no personal template of their own.',
+        'email_template_owner' => 'Defaults to you. Clear it to edit the shared default instead, used whenever the approving reviewer has no personal template of their own.',
     ],
 
     'navigation' => [
