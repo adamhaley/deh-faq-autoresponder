@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.4.0...v1.4.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* show the duplicate template action as an icon ([2a2dff4](https://github.com/adamhaley/deh-faq-autoresponder/commit/2a2dff4a3f674c0fe653815492daa57c5288abf3))
+
 # [1.4.0](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.3.0...v1.4.0) (2026-09-30)
 
 
