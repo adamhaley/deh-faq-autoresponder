@@ -126,6 +126,7 @@ return [
         'draft_actions' => 'Entwurfsaktionen',
         'edit_final_answer' => 'Finale Antwort bearbeiten',
         'edit_faq_approved_response' => 'Freigegebene FAQ-Antwort bearbeiten',
+        'duplicate_for_user' => 'Für Benutzer duplizieren',
         'edit_template' => 'Vorlage bearbeiten',
         'generate_draft_answer' => 'Antwortentwurf generieren',
         'needs_revision' => 'Überarbeitung nötig',

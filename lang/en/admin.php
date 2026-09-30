@@ -3,6 +3,7 @@
 return [
     'help' => [
         'email_template_body_greeting' => 'A personalized greeting (e.g. "Sehr geehrte Frau Schmidt,") is generated automatically from the sender\'s name and added above this text on every draft — there is no greeting merge tag to place here.',
+        'email_template_duplicate_owner' => 'Creates a personal copy of this template for the chosen reviewer, which they can then edit on their own. The original is not changed.',
         'email_template_owner' => 'Defaults to you. Clear it to edit the shared default instead, used whenever the approving reviewer has no personal template of their own.',
     ],
 
@@ -134,6 +135,7 @@ return [
         'draft_actions' => 'Draft actions',
         'edit_final_answer' => 'Edit final answer',
         'edit_faq_approved_response' => 'Edit FAQ approved response',
+        'duplicate_for_user' => 'Duplicate for a user',
         'edit_template' => 'Edit template',
         'generate_draft_answer' => 'Generate draft answer',
         'needs_revision' => 'Needs revision',
