@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.3.0...v1.4.0) (2026-09-30)
+
+
+### Features
+
+* add duplicate-for-user email template action ([dab656b](https://github.com/adamhaley/deh-faq-autoresponder/commit/dab656bdf6d2ab5c96a07f259feb1548ba1caffa))
+
 # [1.3.0](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.2.0...v1.3.0) (2026-09-29)
 
 
