@@ -93,6 +93,8 @@ class EmailTemplateResource extends Resource
             ->recordActions([
                 ReplicateAction::make('duplicate')
                     ->label(__('admin.actions.duplicate_for_user'))
+                    ->iconButton()
+                    ->tooltip(__('admin.actions.duplicate_for_user'))
                     ->modalHeading(__('admin.actions.duplicate_for_user'))
                     ->authorize(fn (): bool => auth()->user()?->can('create', EmailTemplate::class) ?? false)
                     ->schema([
