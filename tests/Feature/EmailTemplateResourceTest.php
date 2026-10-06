@@ -99,4 +99,15 @@ class EmailTemplateResourceTest extends TestCase
         Livewire::test(ManageEmailTemplates::class)
             ->assertTableActionHidden('duplicate', $default);
     }
+
+    public function test_the_table_identifies_a_personal_template_owner_by_email(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+        $owner = User::factory()->create(['name' => 'Anna Streeb', 'email' => 'anna@example.com']);
+        $template = EmailTemplate::factory()->create(['user_id' => $owner->id]);
+        $this->actingAs($admin);
+
+        Livewire::test(ManageEmailTemplates::class)
+            ->assertTableColumnStateSet('user.email', 'anna@example.com', $template);
+    }
 }

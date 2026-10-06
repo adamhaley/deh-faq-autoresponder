@@ -57,8 +57,8 @@ class EmailTemplateResource extends Resource
                 Select::make('user_id')
                     ->label(__('admin.fields.template_owner'))
                     ->helperText(__('admin.help.email_template_owner'))
-                    ->relationship('user', 'name')
-                    ->searchable()
+                    ->relationship('user', 'email')
+                    ->searchable(['email', 'name'])
                     ->preload()
                     ->default(fn (): ?int => auth()->id())
                     ->unique(ignoreRecord: true),
@@ -81,7 +81,7 @@ class EmailTemplateResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->label(__('admin.fields.template_name')),
-                TextColumn::make('user.name')
+                TextColumn::make('user.email')
                     ->label(__('admin.fields.template_owner'))
                     ->placeholder(__('admin.placeholders.shared_default_template')),
                 TextColumn::make('subject')->limit(60),
