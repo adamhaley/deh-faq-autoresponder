@@ -1,3 +1,11 @@
+## [1.4.2](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.4.1...v1.4.2) (2026-10-06)
+
+
+### Bug Fixes
+
+* identify email template owners by email ([ab29ad1](https://github.com/adamhaley/deh-faq-autoresponder/commit/ab29ad1e4c50c515fed6be854d720308af153e32))
+* make webinar response columns toggleable ([760c1d6](https://github.com/adamhaley/deh-faq-autoresponder/commit/760c1d6b9d0c2833644c89028f162235ef0ec43e))
+
 ## [1.4.1](https://github.com/adamhaley/deh-faq-autoresponder/compare/v1.4.0...v1.4.1) (2026-09-30)
 
 
