@@ -548,14 +548,14 @@ class GmailMessageResource extends Resource
                         default => __('admin.placeholders.no_reply_needed'),
                     }),
                 TextColumn::make('id')->label(__('admin.fields.id'))->sortable()->copyable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('participant_name')->label(__('admin.fields.participant'))->placeholder(__('admin.placeholders.unknown'))->searchable(),
-                TextColumn::make('questions_count')->label(__('admin.fields.questions'))->badge()->color('gray'),
-                TextColumn::make('mailbox.email')->label(__('admin.fields.mailbox'))->searchable()->sortable(),
-                TextColumn::make('from_email')->label(__('admin.fields.from'))->searchable()->sortable(),
-                TextColumn::make('subject')->searchable()->limit(60),
-                TextColumn::make('snippet')->limit(80),
-                TextColumn::make('internal_date')->label(__('admin.fields.received'))->dateTime()->sortable(),
-                TextColumn::make('imported_at')->dateTime()->sortable(),
+                TextColumn::make('participant_name')->label(__('admin.fields.participant'))->placeholder(__('admin.placeholders.unknown'))->searchable()->toggleable(),
+                TextColumn::make('questions_count')->label(__('admin.fields.questions'))->badge()->color('gray')->toggleable(),
+                TextColumn::make('mailbox.email')->label(__('admin.fields.mailbox'))->searchable()->sortable()->toggleable(),
+                TextColumn::make('from_email')->label(__('admin.fields.from'))->searchable()->sortable()->toggleable(),
+                TextColumn::make('subject')->searchable()->limit(60)->toggleable(),
+                TextColumn::make('snippet')->limit(80)->toggleable(),
+                TextColumn::make('internal_date')->label(__('admin.fields.received'))->dateTime()->sortable()->toggleable(),
+                TextColumn::make('imported_at')->dateTime()->sortable()->toggleable(),
             ])
             ->filters([
                 SelectFilter::make('processing_status')
