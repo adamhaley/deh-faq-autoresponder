@@ -15,52 +15,93 @@ class EmailAnswerPerformanceMetricsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_calculates_daily_generated_to_approved_answer_similarity(): void
+    public function test_it_lists_recent_wording_similarity_oldest_first_labelled_by_review_date(): void
     {
-        Carbon::setTestNow(Carbon::parse('2026-08-13 12:00:00'));
+        config(['app.display_timezone' => 'UTC']);
+        $this->createReviewedDraft('same answer', 'same answer', null, '2026-08-12 10:00:00');
+        $this->createReviewedDraft('abc', 'xyz', null, '2026-08-10 10:00:00');
 
-        EmailQuestionAnswerDraft::factory()->create([
-            'generated_answer' => 'identical answer',
-            'final_answer' => 'identical answer',
-            'semantic_similarity_score' => 100,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
-            'reviewed_at' => now()->subDays(2),
-        ]);
+        $recent = app(EmailAnswerPerformanceMetrics::class)->recentWordingSimilarity();
 
-        EmailQuestionAnswerDraft::factory()->create([
-            'generated_answer' => 'same answer',
-            'final_answer' => 'same answer',
-            'semantic_similarity_score' => 90,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
-            'reviewed_at' => now()->subDay(),
-        ]);
+        $this->assertSame(['Aug 10', 'Aug 12'], $recent['labels']);
+        $this->assertSame([0, 100], $recent['scores']);
+    }
 
-        EmailQuestionAnswerDraft::factory()->create([
-            'generated_answer' => 'abc',
-            'final_answer' => 'xyz',
-            'semantic_similarity_score' => null,
-            'status' => EmailQuestionAnswerDraft::StatusApproved,
-            'reviewed_at' => now()->subDay(),
-        ]);
+    public function test_it_averages_the_trend_over_the_last_ten_reviews(): void
+    {
+        $this->createReviewedDraft('abc', 'xyz', null, '2026-08-01 10:00:00');
 
-        EmailQuestionAnswerDraft::factory()->create([
-            'generated_answer' => 'ignored draft',
-            'final_answer' => 'ignored final',
-            'status' => EmailQuestionAnswerDraft::StatusDraft,
-            'reviewed_at' => now()->subDay(),
-        ]);
+        foreach (range(2, 11) as $day) {
+            $this->createReviewedDraft('same answer', 'same answer', null, sprintf('2026-08-%02d 10:00:00', $day));
+        }
 
+        $recent = app(EmailAnswerPerformanceMetrics::class)->recentWordingSimilarity();
+
+        $this->assertSame([0, 50, 67, 75, 80, 83, 86, 88, 89, 90, 100], $recent['trend']);
+    }
+
+    public function test_it_only_keeps_the_most_recent_hundred_reviews(): void
+    {
+        $this->createReviewedDraft('abc', 'xyz', null, '2026-01-01 10:00:00');
+
+        foreach (range(1, EmailAnswerPerformanceMetrics::RecentReviews) as $minute) {
+            $this->createReviewedDraft('same answer', 'same answer', null, Carbon::parse('2026-08-01 10:00:00')->addMinutes($minute));
+        }
+
+        $recent = app(EmailAnswerPerformanceMetrics::class)->recentWordingSimilarity();
+
+        $this->assertSame(array_fill(0, EmailAnswerPerformanceMetrics::RecentReviews, 100), $recent['scores']);
+    }
+
+    public function test_it_does_not_drift_when_nothing_has_been_reviewed_for_a_long_time(): void
+    {
+        $this->createReviewedDraft('same answer', 'same answer', null, '2026-08-01 10:00:00');
         $metrics = app(EmailAnswerPerformanceMetrics::class);
-        $daily = $metrics->dailySimilarityScores(3);
+        $beforeTheQuietStretch = $metrics->recentWordingSimilarity();
 
-        $this->assertSame(['Aug 11', 'Aug 12', 'Aug 13'], $daily['labels']);
-        $this->assertSame([100, 50, null], $daily['similarity_scores']);
-        $this->assertSame([100, 90, null], $daily['semantic_similarity_scores']);
-        $this->assertSame([1, 2, 0], $daily['approved_counts']);
+        Carbon::setTestNow(Carbon::parse('2026-12-01 12:00:00'));
+        $afterTheQuietStretch = $metrics->recentWordingSimilarity();
+        Carbon::setTestNow();
+
+        $this->assertSame($beforeTheQuietStretch, $afterTheQuietStretch);
+    }
+
+    public function test_it_ignores_drafts_that_were_not_approved(): void
+    {
+        $this->createReviewedDraft('same answer', 'same answer', null, '2026-08-01 10:00:00', EmailQuestionAnswerDraft::StatusDraft);
+
+        $recent = app(EmailAnswerPerformanceMetrics::class)->recentWordingSimilarity();
+
+        $this->assertSame([], $recent['scores']);
+    }
+
+    public function test_it_labels_reviews_in_the_display_timezone(): void
+    {
+        config(['app.display_timezone' => 'Pacific/Auckland']);
+        $this->createReviewedDraft('same answer', 'same answer', null, '2026-08-13 12:00:00');
+
+        $recent = app(EmailAnswerPerformanceMetrics::class)->recentWordingSimilarity();
+
+        $this->assertSame(['Aug 14'], $recent['labels']);
+    }
+
+    public function test_it_lists_recent_semantic_similarity_without_unscored_drafts(): void
+    {
+        $this->createReviewedDraft('same answer', 'same answer', 90, '2026-08-01 10:00:00');
+        $this->createReviewedDraft('same answer', 'same answer', null, '2026-08-02 10:00:00');
+        $this->createReviewedDraft('same answer', 'same answer', 70, '2026-08-03 10:00:00');
+
+        $recent = app(EmailAnswerPerformanceMetrics::class)->recentSemanticSimilarity();
+
+        $this->assertSame([90, 70], $recent['scores']);
+    }
+
+    public function test_it_normalises_markup_before_scoring_wording_similarity(): void
+    {
+        $metrics = app(EmailAnswerPerformanceMetrics::class);
+
         $this->assertSame(100, $metrics->answerSimilarityScore('<p>Same&nbsp;answer</p>', 'Same answer'));
         $this->assertNull($metrics->answerSimilarityScore('', 'Final answer'));
-
-        Carbon::setTestNow();
     }
 
     public function test_it_buckets_faq_repetition_distribution_by_times_asked(): void
@@ -143,6 +184,22 @@ class EmailAnswerPerformanceMetricsTest extends TestCase
             'email_question_id' => $question->id,
             'status' => EmailQuestionAnswerDraft::StatusApproved,
             'reviewed_at' => $reviewedAt ?? now(),
+        ]);
+    }
+
+    private function createReviewedDraft(
+        string $generated,
+        string $final,
+        ?int $semanticScore,
+        string|Carbon $reviewedAt,
+        string $status = EmailQuestionAnswerDraft::StatusApproved,
+    ): EmailQuestionAnswerDraft {
+        return EmailQuestionAnswerDraft::factory()->create([
+            'generated_answer' => $generated,
+            'final_answer' => $final,
+            'semantic_similarity_score' => $semanticScore,
+            'status' => $status,
+            'reviewed_at' => $reviewedAt,
         ]);
     }
 }

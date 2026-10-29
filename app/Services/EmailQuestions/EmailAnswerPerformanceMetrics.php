@@ -4,55 +4,104 @@ namespace App\Services\EmailQuestions;
 
 use App\Models\EmailQuestionAnswerDraft;
 use Carbon\CarbonPeriod;
+use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class EmailAnswerPerformanceMetrics
 {
+    public const RecentReviews = 100;
+
+    public const TrendWindow = 10;
+
     /**
-     * @return array{labels: list<string>, similarity_scores: list<int|null>, semantic_similarity_scores: list<int|null>, approved_counts: list<int>}
+     * The most recent approved drafts, oldest first, scored on wording
+     * overlap, with a rolling average over the last TrendWindow of them.
+     *
+     * Plotted by review order, not calendar day: reviewers work in bursts,
+     * and a rolling calendar window scrolls old reviews out of view during
+     * quiet stretches. By review order the chart only moves when a review
+     * actually happens.
+     *
+     * @return array{labels: list<string>, scores: list<int>, trend: list<int>}
      */
-    public function dailySimilarityScores(int $days): array
+    public function recentWordingSimilarity(): array
     {
-        $start = now()->subDays($days - 1)->startOfDay();
-        $end = now()->endOfDay();
-        $draftsByDay = EmailQuestionAnswerDraft::query()
+        return $this->recentSimilarity(
+            EmailQuestionAnswerDraft::query(),
+            fn (EmailQuestionAnswerDraft $draft): ?int => $this->answerSimilarityScore(
+                $draft->generated_answer,
+                $draft->final_answer,
+            ),
+        );
+    }
+
+    /**
+     * Same shape as recentWordingSimilarity(), on the stored embedding
+     * score. Drafts approved before that score existed are left out, not
+     * zeroed.
+     *
+     * @return array{labels: list<string>, scores: list<int>, trend: list<int>}
+     */
+    public function recentSemanticSimilarity(): array
+    {
+        return $this->recentSimilarity(
+            EmailQuestionAnswerDraft::query()->whereNotNull('semantic_similarity_score'),
+            fn (EmailQuestionAnswerDraft $draft): ?int => $draft->semantic_similarity_score,
+        );
+    }
+
+    /**
+     * @param  Builder<EmailQuestionAnswerDraft>  $query
+     * @param  Closure(EmailQuestionAnswerDraft): ?int  $score
+     * @return array{labels: list<string>, scores: list<int>, trend: list<int>}
+     */
+    private function recentSimilarity(Builder $query, Closure $score): array
+    {
+        $drafts = $query
             ->where('status', EmailQuestionAnswerDraft::StatusApproved)
             ->whereNotNull('reviewed_at')
             ->whereNotNull('generated_answer')
             ->whereNotNull('final_answer')
-            ->whereBetween('reviewed_at', [$start, $end])
+            ->latest('reviewed_at')
+            ->latest('id')
+            ->limit(self::RecentReviews)
             ->get(['generated_answer', 'final_answer', 'semantic_similarity_score', 'reviewed_at'])
-            ->groupBy(fn (EmailQuestionAnswerDraft $draft): string => $draft->reviewed_at?->toDateString() ?? '');
+            ->reverse()
+            ->values();
 
         $labels = [];
-        $similarityScores = [];
-        $semanticSimilarityScores = [];
-        $approvedCounts = [];
+        $scores = [];
 
-        foreach (CarbonPeriod::create($start, '1 day', $end) as $date) {
-            $day = $date->toDateString();
-            $drafts = $draftsByDay->get($day, collect());
+        foreach ($drafts as $draft) {
+            $value = $score($draft);
 
-            $labels[] = $date->format('M j');
-            $similarityScores[] = $this->averageSimilarityScore($drafts);
-            $semanticSimilarityScores[] = $this->averageSemanticSimilarityScore($drafts);
-            $approvedCounts[] = $drafts->count();
+            if ($value === null) {
+                continue;
+            }
+
+            $labels[] = $draft->reviewed_at?->clone()->timezone(config('app.display_timezone'))->format('M j') ?? '';
+            $scores[] = $value;
         }
 
-        return [
-            'labels' => $labels,
-            'similarity_scores' => $similarityScores,
-            'semantic_similarity_scores' => $semanticSimilarityScores,
-            'approved_counts' => $approvedCounts,
-        ];
+        $trend = [];
+
+        foreach (array_keys($scores) as $index) {
+            $offset = max(0, $index - self::TrendWindow + 1);
+            $recent = array_slice($scores, $offset, $index - $offset + 1);
+
+            $trend[] = (int) round(array_sum($recent) / count($recent));
+        }
+
+        return ['labels' => $labels, 'scores' => $scores, 'trend' => $trend];
     }
 
     /**
      * How many distinct FAQ entries have been asked exactly once, twice, or
      * 3+ times, counting each approved draft against its single best-ranked
      * FAQ match. Answers "is this actually repeating, and how much" -
-     * distinct from dailySimilarityScores(), which tracks answer quality,
+     * distinct from the recent similarity series, which track answer quality,
      * not question repetition.
      *
      * @return array{labels: list<string>, counts: list<int>}

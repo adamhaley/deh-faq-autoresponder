@@ -18,9 +18,14 @@ class EmailQuestionMisalignmentRateChart extends ChartWidget
         return __('admin.dashboard.misalignment_rate');
     }
 
+    public function getDescription(): ?string
+    {
+        return __('admin.dashboard.misalignment_rate_description', ['count' => EmailQuestionDashboardMetrics::TrendWindow]);
+    }
+
     protected function getData(): array
     {
-        $metrics = app(EmailQuestionDashboardMetrics::class)->dailyMisalignmentRates(30);
+        $metrics = app(EmailQuestionDashboardMetrics::class)->recentMisalignmentRates();
 
         return [
             'datasets' => [
@@ -30,8 +35,7 @@ class EmailQuestionMisalignmentRateChart extends ChartWidget
                     'borderColor' => '#d16068',
                     'backgroundColor' => 'rgba(209, 96, 104, 0.16)',
                     'fill' => true,
-                    'tension' => 0.35,
-                    'spanGaps' => true,
+                    'cubicInterpolationMode' => 'monotone',
                     'pointRadius' => 0,
                     'pointHoverRadius' => 4,
                 ],
@@ -52,6 +56,11 @@ class EmailQuestionMisalignmentRateChart extends ChartWidget
                 ],
             ],
             'scales' => [
+                'x' => [
+                    'ticks' => [
+                        'maxTicksLimit' => 10,
+                    ],
+                ],
                 'y' => [
                     'beginAtZero' => true,
                     'max' => 100,

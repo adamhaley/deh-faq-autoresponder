@@ -20,18 +20,26 @@ class AnswerSimilarityChart extends ChartWidget
 
     protected function getData(): array
     {
-        $metrics = app(EmailAnswerPerformanceMetrics::class)->dailySimilarityScores(30);
+        $metrics = app(EmailAnswerPerformanceMetrics::class)->recentWordingSimilarity();
 
         return [
             'datasets' => [
                 [
-                    'label' => __('admin.dashboard.answer_similarity_dataset'),
-                    'data' => $metrics['similarity_scores'],
+                    'label' => __('admin.dashboard.answer_similarity_reviews'),
+                    'data' => $metrics['scores'],
+                    'showLine' => false,
+                    'borderColor' => 'rgba(47, 143, 131, 0.45)',
+                    'backgroundColor' => 'rgba(47, 143, 131, 0.45)',
+                    'pointRadius' => 3,
+                    'pointHoverRadius' => 5,
+                ],
+                [
+                    'label' => __('admin.dashboard.answer_similarity_dataset', ['count' => EmailAnswerPerformanceMetrics::TrendWindow]),
+                    'data' => $metrics['trend'],
                     'borderColor' => '#2f8f83',
                     'backgroundColor' => 'rgba(47, 143, 131, 0.16)',
                     'fill' => true,
-                    'tension' => 0.35,
-                    'spanGaps' => true,
+                    'cubicInterpolationMode' => 'monotone',
                     'pointRadius' => 0,
                     'pointHoverRadius' => 4,
                 ],
@@ -48,10 +56,15 @@ class AnswerSimilarityChart extends ChartWidget
         return [
             'plugins' => [
                 'legend' => [
-                    'display' => false,
+                    'display' => true,
                 ],
             ],
             'scales' => [
+                'x' => [
+                    'ticks' => [
+                        'maxTicksLimit' => 10,
+                    ],
+                ],
                 'y' => [
                     'beginAtZero' => true,
                     'max' => 100,

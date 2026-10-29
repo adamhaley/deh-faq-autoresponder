@@ -3,13 +3,16 @@
 namespace App\Services\EmailQuestions;
 
 use App\Models\EmailQuestion;
-use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class EmailQuestionDashboardMetrics
 {
+    public const RecentReviews = 300;
+
+    public const TrendWindow = 30;
+
     public function pendingReviewCount(): int
     {
         return EmailQuestion::query()
@@ -43,36 +46,43 @@ class EmailQuestionDashboardMetrics
     }
 
     /**
-     * @return array{labels: list<string>, misalignment_rates: list<int|null>, reviewed_counts: list<int>}
+     * Rolling misalignment rate over the last TrendWindow reviewed
+     * questions, for each of the most recent RecentReviews, oldest first.
+     *
+     * By review order, not calendar day: reviewers work in bursts, and a
+     * rolling calendar window scrolls everything out of view during a quiet
+     * stretch. Rate rather than per-question points, since a single
+     * question is only ever aligned or not. Points before a full window
+     * exists are dropped once there is enough data, since a rate over the
+     * first one or two reviews swings between 0 and 100.
+     *
+     * @return array{labels: list<string>, misalignment_rates: list<int>}
      */
-    public function dailyMisalignmentRates(int $days): array
+    public function recentMisalignmentRates(): array
     {
-        $start = now()->subDays($days - 1)->startOfDay();
-        $end = now()->endOfDay();
-        $questionsByDay = $this->reviewedQuestionsQuery()
-            ->whereBetween('reviewed_at', [$start, $end])
+        $questions = $this->reviewedQuestionsQuery()
+            ->latest('reviewed_at')
+            ->latest('id')
+            ->limit(self::RecentReviews)
             ->get()
-            ->groupBy(fn (EmailQuestion $question): string => $question->reviewed_at?->toDateString() ?? '');
+            ->reverse()
+            ->values();
 
         $labels = [];
         $misalignmentRates = [];
-        $reviewedCounts = [];
 
-        foreach (CarbonPeriod::create($start, '1 day', $end) as $date) {
-            $day = $date->toDateString();
-            $questions = $questionsByDay->get($day, collect());
-            $reviewedCount = $questions->count();
-            $alignmentRate = $this->alignmentRate($questions);
+        foreach ($questions as $index => $question) {
+            $offset = max(0, $index - self::TrendWindow + 1);
 
-            $labels[] = $date->format('M j');
-            $reviewedCounts[] = $reviewedCount;
-            $misalignmentRates[] = $alignmentRate === null ? null : 100 - $alignmentRate;
+            $labels[] = $question->reviewed_at?->clone()->timezone(config('app.display_timezone'))->format('M j') ?? '';
+            $misalignmentRates[] = 100 - (int) $this->alignmentRate($questions->slice($offset, $index - $offset + 1));
         }
 
+        $warmUp = count($misalignmentRates) > self::TrendWindow ? self::TrendWindow - 1 : 0;
+
         return [
-            'labels' => $labels,
-            'misalignment_rates' => $misalignmentRates,
-            'reviewed_counts' => $reviewedCounts,
+            'labels' => array_slice($labels, $warmUp),
+            'misalignment_rates' => array_slice($misalignmentRates, $warmUp),
         ];
     }
 
