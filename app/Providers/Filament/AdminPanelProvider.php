@@ -16,6 +16,7 @@ use App\Filament\Widgets\RecentEmailQuestionMisalignments;
 use App\Filament\Widgets\SemanticAnswerSimilarityChart;
 use App\Filament\Widgets\WeeklyRepetitionChart;
 use App\Http\Middleware\SetLocaleFromBrowser;
+use App\Services\Simulation\SimulationGuard;
 use App\Support\AppVersion;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -27,11 +28,13 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
@@ -52,6 +55,12 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::hex('#8f1024'),
             ])
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => str_starts_with((string) DB::connection()->getDatabaseName(), SimulationGuard::DatabasePrefix)
+                    ? '<div style="background:#b45309;color:#fff;text-align:center;padding:0.5rem;font-weight:600;">Simulierte Daten: simulierte Fragen und simulierte Prüferin. Keine echten Ergebnisse.</div>'
+                    : '',
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->navigationGroups([
