@@ -49,7 +49,6 @@ return [
 
     'openai' => [
         'api_key' => env('OPENAI_API_KEY'),
-        'model' => env('AI_DEFAULT_MODEL', 'gpt-5-mini'),
         'embedding_model' => env('AI_EMBEDDING_MODEL', 'text-embedding-3-small'),
     ],
 
