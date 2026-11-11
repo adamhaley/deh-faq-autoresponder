@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\EmailQuestion;
+use App\Providers\Filament\AdminPanelProvider;
 use App\Services\EmailQuestions\EmailQuestionDashboardMetrics;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -16,6 +17,12 @@ class RecentEmailQuestionMisalignments extends TableWidget
     protected static ?int $sort = 6;
 
     protected int|string|array $columnSpan = 'full';
+
+    /** Shows question text, so it stays off the anonymised simulation demo. */
+    public static function canView(): bool
+    {
+        return ! AdminPanelProvider::onSimulatedData();
+    }
 
     public function table(Table $table): Table
     {

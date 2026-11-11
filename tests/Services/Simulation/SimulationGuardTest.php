@@ -46,4 +46,18 @@ class SimulationGuardTest extends TestCase
 
         (new SimulationGuard)->enter('deh_simulation');
     }
+
+    public static function databaseProvider(): Generator
+    {
+        yield 'loop-on simulation' => ['deh_simulation_loop_on', true];
+        yield 'app database' => ['deh_faq_autoresponder', false];
+        yield 'production copy' => ['deh_prod_copy', false];
+    }
+
+    #[Test]
+    #[DataProvider('databaseProvider')]
+    public function it_recognises_simulation_databases(string $database, bool $expected): void
+    {
+        $this->assertSame($expected, SimulationGuard::isSimulationDatabase($database));
+    }
 }

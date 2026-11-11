@@ -48,7 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login(Login::class)
             ->brandName(fn (): HtmlString => new HtmlString(
-                e(config('app.name')).(filled($version = AppVersion::current())
+                e(self::onSimulatedData() ? SimulationGuard::DemoBrandName : config('app.name')).(filled($version = AppVersion::current())
                     ? ' <span style="display: inline-flex; align-items: flex-end; margin-left: 0.5rem; margin-bottom: 1px; font-size: 0.75rem; line-height: 1; font-weight: 400; color: #9ca3af;">v'.e($version).'</span>'
                     : ''),
             ))
@@ -57,8 +57,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 PanelsRenderHook::BODY_START,
-                fn (): string => str_starts_with((string) DB::connection()->getDatabaseName(), SimulationGuard::DatabasePrefix)
-                    ? '<div style="background:#b45309;color:#fff;text-align:center;padding:0.5rem;font-weight:600;">Simulierte Daten: simulierte Fragen und simulierte Prüferin. Keine echten Ergebnisse.</div>'
+                fn (): string => self::onSimulatedData()
+                    ? '<div style="background:#b45309;color:#fff;text-align:center;padding:0.5rem;font-weight:600;">'.e(app()->getLocale() === 'de'
+                        ? 'Simulierte Daten: simulierte Fragen und simulierte Prüferin. Keine echten Ergebnisse.'
+                        : 'Simulated data: simulated questions and a simulated reviewer. Not real results.').'</div>'
                     : '',
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
@@ -102,5 +104,10 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+    }
+
+    public static function onSimulatedData(): bool
+    {
+        return SimulationGuard::isSimulationDatabase((string) DB::connection()->getDatabaseName());
     }
 }

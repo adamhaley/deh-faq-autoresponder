@@ -22,13 +22,21 @@ class SimulationGuard
 
     private const OllamaContextTokens = 8192;
 
+    /** Neutral name shown instead of the client's while on simulated data. */
+    public const DemoBrandName = 'FAQ Autoresponder';
+
+    public static function isSimulationDatabase(string $database): bool
+    {
+        return str_starts_with($database, self::DatabasePrefix);
+    }
+
     public function assertSafe(string $environment, string $database): void
     {
         if ($environment !== 'local') {
             throw new RuntimeException("Refusing to simulate: APP_ENV is [{$environment}], not [local].");
         }
 
-        if (! str_starts_with($database, self::DatabasePrefix)) {
+        if (! self::isSimulationDatabase($database)) {
             throw new RuntimeException('Refusing to simulate: database ['.$database.'] does not start with ['.self::DatabasePrefix.'].');
         }
     }
